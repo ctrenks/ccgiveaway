@@ -23,7 +23,8 @@ interface PreviewData {
 export default function ImportProduct() {
   const [url, setUrl] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [condition, setCondition] = useState<"NEW" | "USED">("NEW");
+  const [condition, setCondition] = useState<"NEW" | "OPENED" | "USED">("NEW");
+  const [manualPrice, setManualPrice] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [error, setError] = useState("");
@@ -62,7 +63,12 @@ export default function ImportProduct() {
       const res = await fetch("/api/products/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, quantity, condition }),
+        body: JSON.stringify({ 
+          url, 
+          quantity, 
+          condition,
+          manualPrice: manualPrice ? parseFloat(manualPrice) : undefined,
+        }),
       });
       const data = await res.json();
 
@@ -221,14 +227,39 @@ export default function ImportProduct() {
                 </label>
                 <select
                   value={condition}
-                  onChange={(e) => setCondition(e.target.value as "NEW" | "USED")}
+                  onChange={(e) => setCondition(e.target.value as "NEW" | "OPENED" | "USED")}
                   className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
                 >
-                  <option value="NEW">New</option>
+                  <option value="NEW">New (Sealed)</option>
+                  <option value="OPENED">Opened</option>
                   <option value="USED">Used</option>
                 </select>
               </div>
             </div>
+
+            {/* Manual Price Override */}
+            {(!preview.priceInfo.tcgPlayerPrice || preview.priceInfo.tcgPlayerPrice === 0) && (
+              <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <label className="block text-sm font-medium text-yellow-400 mb-2">
+                  ⚠️ Price not found - Enter manually
+                </label>
+                <div className="flex gap-3 items-center">
+                  <span className="text-slate-400">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={manualPrice}
+                    onChange={(e) => setManualPrice(e.target.value)}
+                    placeholder="0.00"
+                    className="w-32 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
+                  />
+                  <span className="text-slate-500 text-sm">
+                    (TCGPlayer market price)
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Import Button */}
             <button

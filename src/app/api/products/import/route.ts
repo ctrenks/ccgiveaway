@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { url, quantity = 1, condition = "NEW", customDiscount } = body;
+    const { url, quantity = 1, condition = "NEW", customDiscount, manualPrice } = body;
 
     if (!url) {
       return NextResponse.json({ error: "TCGPlayer URL is required" }, { status: 400 });
@@ -66,9 +66,9 @@ export async function POST(request: NextRequest) {
       discountValue: settings?.discountValue ? Number(settings.discountValue) : 10,
     };
 
-    // Get or determine price
-    const originalPrice = tcgProduct.marketPrice || tcgProduct.listedPrice || 0;
-    const ourPrice = calculateDiscountedPrice(originalPrice, discountSettings);
+    // Get or determine price - use manual price if provided, otherwise use scraped price
+    const originalPrice = manualPrice || tcgProduct.marketPrice || tcgProduct.listedPrice || 0;
+    const ourPrice = originalPrice > 0 ? calculateDiscountedPrice(originalPrice, discountSettings) : 0;
 
     // Find or create category (default to "Trading Cards")
     let category = await prisma.category.findUnique({
