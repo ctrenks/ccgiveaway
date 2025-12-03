@@ -154,6 +154,7 @@ model Product {
 
 enum Condition {
   NEW
+  OPENED
   USED
 }
 
