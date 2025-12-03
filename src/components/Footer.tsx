@@ -12,7 +12,7 @@ export function Footer() {
                 <span className="text-xl">✨</span>
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Collector Care
+                Collector Card
               </span>
             </Link>
             <p className="text-slate-500 text-sm">
@@ -77,7 +77,7 @@ export function Footer() {
 
         <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-slate-600 text-sm">
-            © {new Date().getFullYear()} Collector Care Giveaway. All rights reserved.
+            © {new Date().getFullYear()} Collector Card Giveaway. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link href="/privacy" className="text-slate-600 hover:text-slate-400 text-sm transition-colors">

@@ -18,15 +18,15 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Collector Care Giveaway | Rare Trading Cards & Giveaways",
+  title: "Collector Card Giveaway | Rare Trading Cards & Giveaways",
   description: "Your premier destination for rare and collectible trading cards. Magic: The Gathering, Pokémon, Yu-Gi-Oh! and more. Enter our exclusive giveaways!",
   keywords: ["trading cards", "collector cards", "magic the gathering", "pokemon cards", "yu-gi-oh", "card giveaways", "rare cards"],
-  authors: [{ name: "Collector Care Giveaway" }],
+  authors: [{ name: "Collector Card Giveaway" }],
   openGraph: {
-    title: "Collector Care Giveaway",
+    title: "Collector Card Giveaway",
     description: "Discover rare collector cards and enter exclusive giveaways",
     url: "https://collectorcaredgiveaway.com",
-    siteName: "Collector Care Giveaway",
+    siteName: "Collector Card Giveaway",
     type: "website",
   },
 };

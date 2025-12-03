@@ -35,12 +35,12 @@ export async function sendVerificationRequest({
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Sign in to Collector Care Giveaway</title>
+        <title>Sign in to Collector Card Giveaway</title>
       </head>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0f0f; margin: 0; padding: 40px 20px;">
         <div style="max-width: 500px; margin: 0 auto; background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%); border-radius: 16px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
           <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">✨ Collector Care Giveaway</h1>
+            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">✨ Collector Card Giveaway</h1>
             <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 14px;">Your Gateway to Rare Cards</p>
           </div>
           <div style="padding: 40px 30px; text-align: center;">
@@ -57,7 +57,7 @@ export async function sendVerificationRequest({
           </div>
           <div style="background: rgba(0,0,0,0.2); padding: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1);">
             <p style="color: #666; margin: 0; font-size: 12px;">
-              © ${new Date().getFullYear()} Collector Care Giveaway • ${host}
+              © ${new Date().getFullYear()} Collector Card Giveaway • ${host}
             </p>
           </div>
         </div>
@@ -65,14 +65,14 @@ export async function sendVerificationRequest({
     </html>
   `;
 
-  const emailText = `Sign in to Collector Care Giveaway\n\nClick here to sign in: ${url}\n\nIf you didn't request this email, you can safely ignore it.`;
+  const emailText = `Sign in to Collector Card Giveaway\n\nClick here to sign in: ${url}\n\nIf you didn't request this email, you can safely ignore it.`;
 
   // Try Resend first, fall back to nodemailer
   if (resend) {
     await resend.emails.send({
-      from: from || "Collector Care Giveaway <noreply@collectorcaredgiveaway.com>",
+      from: from || "Collector Card Giveaway <noreply@collectorcaredgiveaway.com>",
       to: email,
-      subject: `🔮 Sign in to Collector Care Giveaway`,
+      subject: `🔮 Sign in to Collector Card Giveaway`,
       html: emailHtml,
       text: emailText,
     });
@@ -80,7 +80,7 @@ export async function sendVerificationRequest({
     await transporter.sendMail({
       from: from || process.env.EMAIL_FROM,
       to: email,
-      subject: `🔮 Sign in to Collector Care Giveaway`,
+      subject: `🔮 Sign in to Collector Card Giveaway`,
       html: emailHtml,
       text: emailText,
     });
@@ -99,7 +99,7 @@ export async function sendEmail({
   html: string;
   text?: string;
 }) {
-  const from = process.env.EMAIL_FROM || "Collector Care Giveaway <noreply@collectorcaredgiveaway.com>";
+  const from = process.env.EMAIL_FROM || "Collector Card Giveaway <noreply@collectorcaredgiveaway.com>";
 
   if (resend) {
     return await resend.emails.send({ from, to, subject, html, text });

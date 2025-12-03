@@ -19,7 +19,7 @@ export function Header() {
             </div>
             <div className="hidden sm:block">
               <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Collector Care
+                Collector Card
               </span>
               <span className="text-xs text-slate-500 block -mt-1">Giveaway</span>
             </div>
