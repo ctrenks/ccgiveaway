@@ -5,21 +5,38 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const category = searchParams.get("category");
+    const subType = searchParams.get("subType");
     const rarity = searchParams.get("rarity");
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
+    const condition = searchParams.get("condition");
     const sort = searchParams.get("sort") || "newest";
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "12");
+    const featured = searchParams.get("featured");
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = {
+      active: true, // Only show active products
+    };
 
     if (category) {
       where.category = { slug: category };
     }
 
+    if (subType) {
+      where.subType = { name: subType };
+    }
+
     if (rarity) {
       where.rarity = rarity;
+    }
+
+    if (condition) {
+      where.condition = condition;
+    }
+
+    if (featured === "true") {
+      where.featured = true;
     }
 
     if (minPrice || maxPrice) {
@@ -43,8 +60,8 @@ export async function GET(request: NextRequest) {
         orderBy.createdAt = "desc";
     }
 
-    const [cards, total] = await Promise.all([
-      prisma.card.findMany({
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
         where,
         orderBy,
         skip: (page - 1) * limit,
@@ -56,13 +73,18 @@ export async function GET(request: NextRequest) {
               slug: true,
             },
           },
+          subType: {
+            select: {
+              name: true,
+            },
+          },
         },
       }),
-      prisma.card.count({ where }),
+      prisma.product.count({ where }),
     ]);
 
     return NextResponse.json({
-      cards,
+      products,
       pagination: {
         page,
         limit,
@@ -71,10 +93,11 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching cards:", error);
+    console.error("Error fetching products:", error);
     return NextResponse.json(
-      { error: "Failed to fetch cards" },
+      { error: "Failed to fetch products" },
       { status: 500 }
     );
   }
 }
+
