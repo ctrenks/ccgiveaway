@@ -63,9 +63,9 @@ export default function ImportProduct() {
       const res = await fetch("/api/products/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          url, 
-          quantity, 
+        body: JSON.stringify({
+          url,
+          quantity,
           condition,
           manualPrice: manualPrice ? parseFloat(manualPrice) : undefined,
         }),
@@ -275,4 +275,3 @@ export default function ImportProduct() {
     </div>
   );
 }
-

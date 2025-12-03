@@ -32,14 +32,14 @@ export function parseTCGPlayerUrl(url: string): { productId: string; game: strin
   try {
     const urlObj = new URL(url);
     const pathParts = urlObj.pathname.split("/").filter(Boolean);
-    
+
     if (pathParts[0] !== "product" || pathParts.length < 3) {
       return null;
     }
 
     const productId = pathParts[1];
     const fullSlug = pathParts[2];
-    
+
     // Extract game from slug (first part before the set name)
     const slugParts = fullSlug.split("-");
     const game = slugParts[0]; // magic, pokemon, yugioh, etc.
@@ -76,7 +76,7 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
     }
 
     const html = await response.text();
-    
+
     // Debug: Log a portion of the HTML to see what we're getting
     console.log("TCGPlayer HTML length:", html.length);
 
@@ -98,7 +98,7 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
     if (product.name && product.name.includes(" - ")) {
       product.name = product.name.split(" - ")[0].trim();
     }
-    
+
     // Remove " | TCGplayer" from name if present
     if (product.name && product.name.includes(" | ")) {
       product.name = product.name.split(" | ")[0].trim();
@@ -133,17 +133,17 @@ function extractMetaContent(html: string, property: string): string | undefined 
   const regex1 = new RegExp(`<meta[^>]*property=["']${property}["'][^>]*content=["']([^"']+)["']`, "i");
   const match1 = html.match(regex1);
   if (match1) return match1[1];
-  
+
   // Try content before property
   const regex2 = new RegExp(`<meta[^>]*content=["']([^"']+)["'][^>]*property=["']${property}["']`, "i");
   const match2 = html.match(regex2);
   if (match2) return match2[1];
-  
+
   // Try name attribute (for og: tags sometimes)
   const regex3 = new RegExp(`<meta[^>]*name=["']${property}["'][^>]*content=["']([^"']+)["']`, "i");
   const match3 = html.match(regex3);
   if (match3) return match3[1];
-  
+
   return undefined;
 }
 
@@ -151,15 +151,15 @@ function extractProductName(html: string): string | undefined {
   // Try og:title first
   const ogTitle = extractMetaContent(html, "og:title");
   if (ogTitle) return ogTitle;
-  
+
   // Try title tag
   const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
   if (titleMatch) return titleMatch[1].trim();
-  
+
   // Try h1 tag
   const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
   if (h1Match) return h1Match[1].trim();
-  
+
   return undefined;
 }
 
@@ -179,11 +179,11 @@ function extractSetName(html: string): string | undefined {
       }
     }
   }
-  
+
   // Look for set name in specific patterns
   const setMatch = html.match(/"setName"\s*:\s*"([^"]+)"/i);
   if (setMatch) return setMatch[1];
-  
+
   // Look for expansion/set in the page
   const expansionMatch = html.match(/expansion["\s:]+([^"<,]+)/i);
   if (expansionMatch) return expansionMatch[1].trim();
@@ -195,11 +195,11 @@ function extractCardNumber(html: string): string | undefined {
   // Look for card number pattern like "#102/165" or "102/165"
   const numberMatch = html.match(/#?\s*(\d+\s*\/\s*\d+)/);
   if (numberMatch) return numberMatch[1].replace(/\s/g, "");
-  
+
   // Look for collector number
   const collectorMatch = html.match(/collector\s*number[:\s]+([^\s<]+)/i);
   if (collectorMatch) return collectorMatch[1];
-  
+
   return undefined;
 }
 
@@ -207,10 +207,10 @@ function extractRarity(html: string): string | undefined {
   // Common rarities in order of precedence
   const rarities = [
     "Mythic Rare", "Secret Rare", "Ultra Rare", "Illustration Rare",
-    "Special Art Rare", "Holo Rare", "Rare Holo", "Rare", 
+    "Special Art Rare", "Holo Rare", "Rare Holo", "Rare",
     "Uncommon", "Common"
   ];
-  
+
   const lowerHtml = html.toLowerCase();
   for (const rarity of rarities) {
     if (lowerHtml.includes(rarity.toLowerCase())) {
@@ -222,7 +222,7 @@ function extractRarity(html: string): string | undefined {
 
 function extractPrice(html: string): number | undefined {
   // Try multiple price extraction methods
-  
+
   // Method 1: Look for JSON-LD Product schema
   const jsonLdMatch = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
   if (jsonLdMatch) {
@@ -253,14 +253,14 @@ function extractPrice(html: string): number | undefined {
       }
     }
   }
-  
+
   // Method 2: Look for market price patterns
   const marketPricePatterns = [
     /market\s*price[:\s]*\$?([\d,]+\.?\d*)/i,
     /marketPrice["\s:]+\$?([\d,]+\.?\d*)/i,
     /"market"[:\s]+"?\$?([\d,]+\.?\d*)"?/i,
   ];
-  
+
   for (const pattern of marketPricePatterns) {
     const match = html.match(pattern);
     if (match) {
@@ -271,7 +271,7 @@ function extractPrice(html: string): number | undefined {
       }
     }
   }
-  
+
   // Method 3: Look for price in data attributes or specific elements
   const pricePatterns = [
     /data-price=["']?\$?([\d,]+\.?\d*)["']?/i,
@@ -280,7 +280,7 @@ function extractPrice(html: string): number | undefined {
     /class="price[^"]*"[^>]*>\$?([\d,]+\.?\d*)/i,
     />\s*\$\s*([\d,]+\.?\d*)\s*</,
   ];
-  
+
   for (const pattern of pricePatterns) {
     const match = html.match(pattern);
     if (match) {
@@ -291,9 +291,9 @@ function extractPrice(html: string): number | undefined {
       }
     }
   }
-  
+
   // Method 4: Look for og:price meta tags
-  const ogPrice = extractMetaContent(html, "og:price:amount") || 
+  const ogPrice = extractMetaContent(html, "og:price:amount") ||
                   extractMetaContent(html, "product:price:amount");
   if (ogPrice) {
     const price = parseFloat(ogPrice.replace(",", ""));
@@ -302,14 +302,14 @@ function extractPrice(html: string): number | undefined {
       return price;
     }
   }
-  
+
   console.log("No price found in HTML");
   return undefined;
 }
 
 function extractFromSlug(slug: string, type: "name" | "set"): string {
   const parts = slug.split("-");
-  
+
   if (type === "set" && parts.length >= 3) {
     // Set name is typically after the game name and before the card name
     // e.g., "magic-modern-horizons-3-card-name" -> "modern horizons 3"
@@ -325,7 +325,7 @@ function extractFromSlug(slug: string, type: "name" | "set"): string {
       .join(" ")
       .replace(/\b\w/g, c => c.toUpperCase());
   }
-  
+
   if (type === "name") {
     // Card name is typically the last parts after the set
     // Take last 2-4 parts depending on length
@@ -334,7 +334,7 @@ function extractFromSlug(slug: string, type: "name" | "set"): string {
       .join(" ")
       .replace(/\b\w/g, c => c.toUpperCase());
   }
-  
+
   return slug;
 }
 
