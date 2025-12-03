@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { ROLES } from "@/types/next-auth";
+import { ROLES } from "@/lib/constants";
 import { SettingsForm } from "./SettingsForm";
 
 export default async function AdminSettings() {

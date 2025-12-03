@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ROLES } from "@/types/next-auth";
+import { ROLES } from "@/lib/constants";
 import {
   fetchTCGPlayerProduct,
   parseTCGPlayerUrl,

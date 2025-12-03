@@ -1,7 +1,7 @@
 import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { ROLES } from "@/types/next-auth";
+import { ROLES } from "@/lib/constants";
 
 export async function POST(request: NextRequest) {
   try {

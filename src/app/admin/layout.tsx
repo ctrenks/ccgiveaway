@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { ROLES } from "@/types/next-auth";
+import { ROLES } from "@/lib/constants";
 import Link from "next/link";
 
 export default async function AdminLayout({
