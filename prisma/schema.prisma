@@ -1,4 +1,4 @@
-// Prisma schema for Collector Care Giveaway
+// Prisma schema for Collector Card Giveaway
 // https://pris.ly/d/prisma-schema
 
 generator client {
@@ -45,7 +45,7 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  role          Int       @default(0)  // 0=user, 5=moderator, 9=admin
+  role          Int       @default(0) // 0=user, 5=moderator, 9=admin
   accounts      Account[]
   sessions      Session[]
   orders        Order[]
@@ -61,106 +61,139 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// Store Models
+// Store Models - Categories are dynamically added
 model Category {
   id          String    @id @default(cuid())
-  name        String    @unique
+  name        String    @unique // "Trading Cards", "Toys", "Collectibles", etc.
   slug        String    @unique
   description String?
-  image       String?
-  cards       Card[]
+  image       String? // Vercel Blob URL
+  products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
 
-model Card {
+// SubTypes for autocomplete suggestions (e.g., "Magic The Gathering", "Pokemon", etc.)
+model SubType {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
   id          String      @id @default(cuid())
-  name        String
+  name        String // Product name (required)
   slug        String      @unique
   description String?     @db.Text
-  image       String?
+  image       String? // Vercel Blob URL
+  
+  // Pricing & Inventory
   price       Decimal     @db.Decimal(10, 2)
-  stock       Int         @default(0)
-  rarity      Rarity      @default(COMMON)
-  condition   Condition   @default(NEAR_MINT)
-  set         String?
-  cardNumber  String?
+  quantity    Int         @default(0) // Stock quantity
+  
+  // Card-specific fields (optional)
+  setName     String? // e.g., "Foundations", "Base Set"
+  cardNumber  String? // e.g., "102/165", "PSA 10"
+  
+  // Condition
+  condition   Condition?  @default(NEW)
+  
+  // Categorization
   categoryId  String
   category    Category    @relation(fields: [categoryId], references: [id])
-  orderItems  OrderItem[]
+  subTypeId   String?
+  subType     SubType?    @relation(fields: [subTypeId], references: [id])
+  
+  // Additional fields
+  sku         String?     @unique // Optional SKU for inventory
+  rarity      String? // Free-form rarity text
   featured    Boolean     @default(false)
+  active      Boolean     @default(true) // Show/hide in store
+  
+  // Relations
+  orderItems  OrderItem[]
+  
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
   @@index([categoryId])
+  @@index([subTypeId])
   @@index([slug])
-}
-
-enum Rarity {
-  COMMON
-  UNCOMMON
-  RARE
-  MYTHIC_RARE
-  ULTRA_RARE
-  SECRET_RARE
-  LEGENDARY
+  @@index([active])
 }
 
 enum Condition {
-  MINT
-  NEAR_MINT
-  EXCELLENT
-  GOOD
-  PLAYED
-  POOR
+  NEW
+  USED
 }
 
 model Order {
-  id         String      @id @default(cuid())
-  userId     String
-  user       User        @relation(fields: [userId], references: [id])
-  status     OrderStatus @default(PENDING)
-  total      Decimal     @db.Decimal(10, 2)
-  items      OrderItem[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id            String      @id @default(cuid())
+  orderNumber   String      @unique @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  status        OrderStatus @default(PENDING)
+  subtotal      Decimal     @db.Decimal(10, 2)
+  tax           Decimal     @default(0) @db.Decimal(10, 2)
+  shipping      Decimal     @default(0) @db.Decimal(10, 2)
+  total         Decimal     @db.Decimal(10, 2)
+  
+  // Shipping info
+  shippingName    String?
+  shippingAddress String?
+  shippingCity    String?
+  shippingState   String?
+  shippingZip     String?
+  shippingCountry String?
+  
+  items       OrderItem[]
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   @@index([userId])
+  @@index([status])
 }
 
 model OrderItem {
-  id       String  @id @default(cuid())
-  orderId  String
-  order    Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  cardId   String
-  card     Card    @relation(fields: [cardId], references: [id])
-  quantity Int
-  price    Decimal @db.Decimal(10, 2)
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2) // Price at time of order
 
   @@index([orderId])
-  @@index([cardId])
+  @@index([productId])
 }
 
 enum OrderStatus {
   PENDING
+  PAID
   PROCESSING
   SHIPPED
   DELIVERED
   CANCELLED
+  REFUNDED
 }
 
 // Giveaway Models
 model Giveaway {
-  id          String            @id @default(cuid())
+  id          String          @id @default(cuid())
   title       String
-  description String?           @db.Text
-  image       String?
+  description String?         @db.Text
+  image       String? // Vercel Blob URL
+  prize       String? // Description of prize
+  prizeValue  Decimal?        @db.Decimal(10, 2)
   startDate   DateTime
   endDate     DateTime
-  active      Boolean           @default(true)
+  active      Boolean         @default(true)
   entries     GiveawayEntry[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  winnerId    String? // Email of winner after draw
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 }
 
 model GiveawayEntry {
