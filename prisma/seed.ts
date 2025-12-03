@@ -50,6 +50,20 @@ async function main() {
   }
   console.log("✅ SubTypes created");
 
+  // Create default settings
+  await prisma.settings.upsert({
+    where: { id: "default" },
+    update: {},
+    create: {
+      id: "default",
+      discountType: "percentage",
+      discountValue: 10, // 10% off TCGPlayer prices
+      autoSyncEnabled: true,
+      syncIntervalDays: 3,
+    },
+  });
+  console.log("✅ Default settings created");
+
   console.log("🎉 Database seeded successfully!");
 }
 

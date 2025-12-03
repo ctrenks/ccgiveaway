@@ -81,6 +81,16 @@ model SubType {
   createdAt DateTime  @default(now())
 }
 
+// Store settings (discount, etc.)
+model Settings {
+  id              String  @id @default("default")
+  discountType    String  @default("percentage") // "percentage" or "fixed"
+  discountValue   Decimal @default(10) @db.Decimal(5, 2) // 10 = 10% or $10
+  autoSyncEnabled Boolean @default(true)
+  syncIntervalDays Int    @default(3)
+  updatedAt       DateTime @updatedAt
+}
+
 model Product {
   id          String      @id @default(cuid())
   name        String // Product name (required)
@@ -89,8 +99,9 @@ model Product {
   image       String? // Vercel Blob URL
 
   // Pricing & Inventory
-  price       Decimal     @db.Decimal(10, 2)
-  quantity    Int         @default(0) // Stock quantity
+  price         Decimal   @db.Decimal(10, 2) // Our selling price (after discount)
+  originalPrice Decimal?  @db.Decimal(10, 2) // TCGPlayer market price
+  quantity      Int       @default(0) // Stock quantity
 
   // Card-specific fields (optional)
   setName     String? // e.g., "Foundations", "Base Set"
@@ -110,6 +121,11 @@ model Product {
   rarity      String? // Free-form rarity text
   featured    Boolean     @default(false)
   active      Boolean     @default(true) // Show/hide in store
+
+  // TCGPlayer integration
+  tcgPlayerId   String?   @unique // TCGPlayer product ID for re-scanning
+  tcgPlayerUrl  String?   // Full TCGPlayer URL
+  lastPriceSync DateTime? // Last time price was synced from TCGPlayer
 
   // Relations
   orderItems  OrderItem[]
