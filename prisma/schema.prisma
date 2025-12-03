@@ -85,19 +85,19 @@ model SubType {
 // Store settings (discount, giveaway credits, etc.)
 model Settings {
   id              String  @id @default("default")
-  
+
   // Price discount settings
   discountType    String  @default("percentage") // "percentage" or "fixed"
   discountValue   Decimal @default(10) @db.Decimal(5, 2) // 10 = 10% or $10
-  
+
   // TCGPlayer sync settings
   autoSyncEnabled  Boolean @default(true)
   syncIntervalDays Int     @default(3)
-  
+
   // Giveaway credits settings
   giveawayCreditsPerDollar Decimal @default(0.1) @db.Decimal(5, 2) // 0.1 = 1 credit per $10 spent
   giveawayCreditsEnabled   Boolean @default(true)
-  
+
   updatedAt       DateTime @updatedAt
 }
 
@@ -167,10 +167,10 @@ model Order {
   tax           Decimal     @default(0) @db.Decimal(10, 2)
   shipping      Decimal     @default(0) @db.Decimal(10, 2)
   total         Decimal     @db.Decimal(10, 2)
-  
+
   // Giveaway credits earned from this order
   creditsEarned Int         @default(0)
-  
+
   // Shipping info
   shippingName    String?
   shippingAddress String?
@@ -178,7 +178,7 @@ model Order {
   shippingState   String?
   shippingZip     String?
   shippingCountry String?
-  
+
   items       OrderItem[]
   notes       String?
   createdAt   DateTime    @default(now())
