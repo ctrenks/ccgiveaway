@@ -1,6 +1,13 @@
 import { Resend } from "resend";
 import nodemailer from "nodemailer";
-import type { SendVerificationRequestParams } from "next-auth/providers/email";
+
+interface SendVerificationRequestParams {
+  identifier: string;
+  url: string;
+  provider: {
+    from?: string;
+  };
+}
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
