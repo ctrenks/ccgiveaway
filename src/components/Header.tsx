@@ -2,11 +2,23 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 
 export function Header() {
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
+
+  // Fetch user credits
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetch("/api/user/credits")
+        .then((res) => res.json())
+        .then((data) => setCredits(data.credits))
+        .catch(() => setCredits(0));
+    }
+  }, [session?.user?.id]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-purple-500/10">
@@ -55,13 +67,46 @@ export function Header() {
               <div className="w-8 h-8 rounded-full bg-slate-800 animate-pulse" />
             ) : session ? (
               <div className="flex items-center gap-3">
-                <div className="hidden sm:block text-right">
-                  <p className="text-sm text-white font-medium">{session.user?.name || session.user?.email?.split("@")[0]}</p>
-                  <p className="text-xs text-slate-500">{session.user?.email}</p>
-                </div>
+                {/* Giveaway Credits */}
+                <Link
+                  href="/giveaways"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-full hover:bg-amber-500/20 transition-colors"
+                  title="Giveaway Credits"
+                >
+                  <span className="text-amber-400">🎁</span>
+                  <span className="text-amber-400 font-bold text-sm">
+                    {credits !== null ? credits : "..."}
+                  </span>
+                </Link>
+
+                {/* User Menu */}
+                <Link href="/profile" className="flex items-center gap-3 group">
+                  <div className="hidden sm:block text-right">
+                    <p className="text-sm text-white font-medium group-hover:text-purple-400 transition-colors">
+                      {session.user?.name || session.user?.email?.split("@")[0]}
+                    </p>
+                    <p className="text-xs text-slate-500">View Profile</p>
+                  </div>
+                  <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center ring-2 ring-transparent group-hover:ring-purple-500/50 transition-all">
+                    {session.user?.image ? (
+                      <Image
+                        src={session.user.image}
+                        alt="Avatar"
+                        width={36}
+                        height={36}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white text-sm font-bold">
+                        {(session.user?.name || session.user?.email || "U")[0].toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+
                 <button
                   onClick={() => signOut()}
-                  className="px-4 py-2 text-sm text-slate-400 hover:text-white border border-slate-700 hover:border-purple-500/50 rounded-lg transition-all"
+                  className="px-3 py-2 text-sm text-slate-400 hover:text-white border border-slate-700 hover:border-purple-500/50 rounded-lg transition-all"
                 >
                   Sign Out
                 </button>
@@ -95,6 +140,12 @@ export function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-slate-800">
             <div className="flex flex-col gap-4">
+              {session && (
+                <div className="flex items-center gap-2 pb-3 border-b border-slate-800">
+                  <span className="text-amber-400">🎁</span>
+                  <span className="text-amber-400 font-bold">{credits ?? 0} credits</span>
+                </div>
+              )}
               <Link href="/store" className="text-slate-300 hover:text-white transition-colors font-medium">
                 Store
               </Link>
@@ -104,6 +155,11 @@ export function Header() {
               <Link href="/giveaways" className="text-slate-300 hover:text-white transition-colors font-medium">
                 🎁 Giveaways
               </Link>
+              {session && (
+                <Link href="/profile" className="text-slate-300 hover:text-white transition-colors font-medium">
+                  👤 Profile
+                </Link>
+              )}
             </div>
           </div>
         )}

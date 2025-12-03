@@ -42,11 +42,21 @@ model Session {
 model User {
   id              String    @id @default(cuid())
   name            String?
+  displayName     String?   @unique // Unique display name
   email           String?   @unique
   emailVerified   DateTime?
-  image           String?
+  image           String?   // Avatar URL (Vercel Blob)
   role            Int       @default(0) // 0=user, 5=moderator, 9=admin
   giveawayCredits Int       @default(0) // Earned credits for giveaway entries
+  
+  // Shipping address
+  shippingName    String?
+  shippingAddress String?
+  shippingCity    String?
+  shippingState   String?
+  shippingZip     String?
+  shippingCountry String?
+  
   accounts        Account[]
   sessions        Session[]
   orders          Order[]

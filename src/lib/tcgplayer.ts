@@ -32,14 +32,14 @@ export function parseTCGPlayerUrl(url: string): { productId: string; game: strin
   try {
     const urlObj = new URL(url);
     const pathParts = urlObj.pathname.split("/").filter(Boolean);
-    
+
     if (pathParts[0] !== "product" || pathParts.length < 3) {
       return null;
     }
 
     const productId = pathParts[1];
     const fullSlug = pathParts[2];
-    
+
     // Extract game from slug (first part before the set name)
     const slugParts = fullSlug.split("-");
     const game = slugParts[0]; // magic, pokemon, yugioh, etc.
@@ -57,7 +57,7 @@ async function fetchTCGPlayerPrice(productId: string): Promise<{ marketPrice?: n
   try {
     // TCGPlayer's internal price API endpoint
     const priceUrl = `https://mp-search-api.tcgplayer.com/v1/product/${productId}/pricepoints`;
-    
+
     const response = await fetch(priceUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -70,7 +70,7 @@ async function fetchTCGPlayerPrice(productId: string): Promise<{ marketPrice?: n
     if (response.ok) {
       const data = await response.json();
       console.log("TCGPlayer price API response:", JSON.stringify(data).slice(0, 500));
-      
+
       // Extract prices from response
       if (data && Array.isArray(data)) {
         const normalPrices = data.find((p: Record<string, unknown>) => p.printingType === "Normal" || p.condition === "Near Mint");
@@ -89,7 +89,7 @@ async function fetchTCGPlayerPrice(productId: string): Promise<{ marketPrice?: n
         }
       }
     }
-    
+
     // Try alternate API endpoint
     const altUrl = `https://mpapi.tcgplayer.com/v2/product/${productId}/pricepoints`;
     const altResponse = await fetch(altUrl, {
@@ -98,7 +98,7 @@ async function fetchTCGPlayerPrice(productId: string): Promise<{ marketPrice?: n
         "Accept": "application/json",
       },
     });
-    
+
     if (altResponse.ok) {
       const altData = await altResponse.json();
       console.log("TCGPlayer alt API response:", JSON.stringify(altData).slice(0, 500));
@@ -141,7 +141,7 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
     }
 
     const html = await response.text();
-    
+
     // Try to get price from TCGPlayer's API
     const priceData = await fetchTCGPlayerPrice(parsed.productId);
     console.log("Fetched price data:", priceData);
@@ -203,21 +203,21 @@ function extractMetaContent(html: string, property: string): string | undefined 
   const regex1 = new RegExp(`<meta[^>]*property=["']${property}["'][^>]*content=["']([^"']+)["']`, "i");
   const match1 = html.match(regex1);
   if (match1) return match1[1];
-  
+
   const regex2 = new RegExp(`<meta[^>]*content=["']([^"']+)["'][^>]*property=["']${property}["']`, "i");
   const match2 = html.match(regex2);
   if (match2) return match2[1];
-  
+
   return undefined;
 }
 
 function extractProductName(html: string): string | undefined {
   const ogTitle = extractMetaContent(html, "og:title");
   if (ogTitle) return ogTitle;
-  
+
   const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
   if (titleMatch) return titleMatch[1].trim();
-  
+
   return undefined;
 }
 
@@ -235,7 +235,7 @@ function extractSetName(html: string): string | undefined {
       }
     }
   }
-  
+
   const setMatch = html.match(/"setName"\s*:\s*"([^"]+)"/i);
   if (setMatch) return setMatch[1];
 
@@ -245,7 +245,7 @@ function extractSetName(html: string): string | undefined {
 function extractCardNumber(html: string): string | undefined {
   const numberMatch = html.match(/#?\s*(\d+\s*\/\s*\d+)/);
   if (numberMatch) return numberMatch[1].replace(/\s/g, "");
-  
+
   return undefined;
 }
 
@@ -254,7 +254,7 @@ function extractRarity(html: string): string | undefined {
     "Mythic Rare", "Secret Rare", "Ultra Rare", "Illustration Rare",
     "Special Art Rare", "Holo Rare", "Rare", "Uncommon", "Common"
   ];
-  
+
   const lowerHtml = html.toLowerCase();
   for (const rarity of rarities) {
     if (lowerHtml.includes(rarity.toLowerCase())) {
@@ -284,14 +284,14 @@ function extractPriceFromHtml(html: string): number | undefined {
       }
     }
   }
-  
+
   // Try various price patterns
   const patterns = [
     /"marketPrice":\s*([\d.]+)/i,
     /"price":\s*([\d.]+)/i,
     /data-price=["']?([\d.]+)/i,
   ];
-  
+
   for (const pattern of patterns) {
     const match = html.match(pattern);
     if (match) {
@@ -299,13 +299,13 @@ function extractPriceFromHtml(html: string): number | undefined {
       if (!isNaN(price) && price > 0 && price < 100000) return price;
     }
   }
-  
+
   return undefined;
 }
 
 function extractFromSlug(slug: string, type: "name" | "set"): string {
   const parts = slug.split("-");
-  
+
   if (type === "set" && parts.length >= 3) {
     let setEndIndex = parts.length - 1;
     for (let i = parts.length - 1; i >= 1; i--) {
@@ -318,14 +318,14 @@ function extractFromSlug(slug: string, type: "name" | "set"): string {
       .join(" ")
       .replace(/\b\w/g, c => c.toUpperCase());
   }
-  
+
   if (type === "name") {
     const namePartsCount = Math.min(4, Math.max(2, Math.floor(parts.length / 2)));
     return parts.slice(-namePartsCount)
       .join(" ")
       .replace(/\b\w/g, c => c.toUpperCase());
   }
-  
+
   return slug;
 }
 
