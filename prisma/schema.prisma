@@ -48,7 +48,7 @@ model User {
   image           String?   // Avatar URL (Vercel Blob)
   role            Int       @default(0) // 0=user, 5=moderator, 9=admin
   giveawayCredits Int       @default(0) // Earned credits for giveaway entries
-  
+
   // Shipping address
   shippingName    String?
   shippingAddress String?
@@ -56,7 +56,7 @@ model User {
   shippingState   String?
   shippingZip     String?
   shippingCountry String?
-  
+
   accounts        Account[]
   sessions        Session[]
   orders          Order[]
