@@ -1,13 +1,13 @@
-import { NextAuthOptions } from "next-auth";
-import EmailProvider from "next-auth/providers/email";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import NextAuth from "next-auth";
+import Email from "next-auth/providers/email";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationRequest } from "@/lib/email";
 
-export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as NextAuthOptions["adapter"],
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  adapter: PrismaAdapter(prisma),
   providers: [
-    EmailProvider({
+    Email({
       server: {
         host: process.env.SMTP_HOST,
         port: Number(process.env.SMTP_PORT),
@@ -38,4 +38,4 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "database",
   },
-};
+});

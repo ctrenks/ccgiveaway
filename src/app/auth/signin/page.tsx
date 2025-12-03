@@ -12,12 +12,12 @@ export default function SignInPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
+    
     await signIn("email", {
       email,
       redirect: false,
     });
-
+    
     setSubmitted(true);
     setIsLoading(false);
   };
