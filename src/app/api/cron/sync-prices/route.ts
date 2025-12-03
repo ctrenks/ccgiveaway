@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     // For manual triggers, we'll reuse the GET logic
     // In production, you'd add proper auth here
     const cronSecret = process.env.CRON_SECRET || "manual-trigger";
-    
+
     const newRequest = new NextRequest(request.url, {
       headers: new Headers({
         ...Object.fromEntries(request.headers),
@@ -163,4 +163,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

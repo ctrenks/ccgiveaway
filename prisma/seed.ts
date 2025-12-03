@@ -60,9 +60,11 @@ async function main() {
       discountValue: 10, // 10% off TCGPlayer prices
       autoSyncEnabled: true,
       syncIntervalDays: 3,
+      giveawayCreditsPerDollar: 0.1, // 1 credit per $10 spent
+      giveawayCreditsEnabled: true,
     },
   });
-  console.log("✅ Default settings created");
+  console.log("✅ Default settings created (10% discount, 1 credit per $10)");
 
   console.log("🎉 Database seeded successfully!");
 }

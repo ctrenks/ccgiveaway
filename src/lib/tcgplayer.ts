@@ -32,14 +32,14 @@ export function parseTCGPlayerUrl(url: string): { productId: string; game: strin
   try {
     const urlObj = new URL(url);
     const pathParts = urlObj.pathname.split("/").filter(Boolean);
-    
+
     if (pathParts[0] !== "product" || pathParts.length < 3) {
       return null;
     }
 
     const productId = pathParts[1];
     const fullSlug = pathParts[2];
-    
+
     // Extract game from slug (first part before the set name)
     const slugParts = fullSlug.split("-");
     const game = slugParts[0]; // magic, pokemon, yugioh, etc.
@@ -120,7 +120,7 @@ export function calculateDiscountedPrice(
 function extractMetaContent(html: string, property: string): string | undefined {
   const regex = new RegExp(`<meta[^>]*property=["']${property}["'][^>]*content=["']([^"']+)["']`, "i");
   const altRegex = new RegExp(`<meta[^>]*content=["']([^"']+)["'][^>]*property=["']${property}["']`, "i");
-  
+
   const match = html.match(regex) || html.match(altRegex);
   return match?.[1];
 }
@@ -174,18 +174,18 @@ function extractPrice(html: string, type: "market" | "listed"): number | undefin
 
 function extractFromSlug(slug: string, type: "name" | "set"): string {
   const parts = slug.split("-");
-  
+
   if (type === "set" && parts.length >= 3) {
     // Set name is typically the 2nd and 3rd parts
     // e.g., "magic-modern-horizons-3-card-name" -> "modern horizons 3"
     return parts.slice(1, -2).join(" ").replace(/\b\w/g, c => c.toUpperCase());
   }
-  
+
   if (type === "name") {
     // Card name is typically the last parts
     return parts.slice(-2).join(" ").replace(/\b\w/g, c => c.toUpperCase());
   }
-  
+
   return slug;
 }
 
@@ -205,4 +205,3 @@ export function mapGameToSubType(game: string): string {
   };
   return mapping[game.toLowerCase()] || game.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }
-
