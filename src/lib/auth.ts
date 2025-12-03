@@ -1,11 +1,12 @@
 import NextAuth from "next-auth";
+import type { NextAuthConfig } from "next-auth";
 import Email from "next-auth/providers/email";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationRequest } from "@/lib/email";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma) as NextAuthConfig["adapter"],
   providers: [
     Email({
       server: {
