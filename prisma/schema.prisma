@@ -87,33 +87,33 @@ model Product {
   slug        String      @unique
   description String?     @db.Text
   image       String? // Vercel Blob URL
-  
+
   // Pricing & Inventory
   price       Decimal     @db.Decimal(10, 2)
   quantity    Int         @default(0) // Stock quantity
-  
+
   // Card-specific fields (optional)
   setName     String? // e.g., "Foundations", "Base Set"
   cardNumber  String? // e.g., "102/165", "PSA 10"
-  
+
   // Condition
   condition   Condition?  @default(NEW)
-  
+
   // Categorization
   categoryId  String
   category    Category    @relation(fields: [categoryId], references: [id])
   subTypeId   String?
   subType     SubType?    @relation(fields: [subTypeId], references: [id])
-  
+
   // Additional fields
   sku         String?     @unique // Optional SKU for inventory
   rarity      String? // Free-form rarity text
   featured    Boolean     @default(false)
   active      Boolean     @default(true) // Show/hide in store
-  
+
   // Relations
   orderItems  OrderItem[]
-  
+
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -138,7 +138,7 @@ model Order {
   tax           Decimal     @default(0) @db.Decimal(10, 2)
   shipping      Decimal     @default(0) @db.Decimal(10, 2)
   total         Decimal     @db.Decimal(10, 2)
-  
+
   // Shipping info
   shippingName    String?
   shippingAddress String?
@@ -146,7 +146,7 @@ model Order {
   shippingState   String?
   shippingZip     String?
   shippingCountry String?
-  
+
   items       OrderItem[]
   notes       String?
   createdAt   DateTime    @default(now())
