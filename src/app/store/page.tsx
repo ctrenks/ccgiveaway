@@ -9,11 +9,11 @@ export const revalidate = 0;
 
 async function getProducts(categorySlug?: string) {
   const where: { active: boolean; category?: { slug: string } } = { active: true };
-  
+
   if (categorySlug) {
     where.category = { slug: categorySlug };
   }
-  
+
   const products = await prisma.product.findMany({
     where,
     include: { category: true, subType: true },
