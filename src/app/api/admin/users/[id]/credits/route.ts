@@ -41,7 +41,13 @@ export async function POST(
       data: { giveawayCredits: balanceAfter },
       include: {
         _count: {
-          select: { orders: true },
+          select: { 
+            orders: {
+              where: {
+                status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] },
+              },
+            },
+          },
         },
       },
     }),

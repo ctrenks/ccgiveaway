@@ -9,7 +9,13 @@ export default async function AdminUsersPage() {
     orderBy: { createdAt: "desc" },
     include: {
       _count: {
-        select: { orders: true },
+        select: { 
+          orders: {
+            where: {
+              status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] },
+            },
+          },
+        },
       },
     },
   });

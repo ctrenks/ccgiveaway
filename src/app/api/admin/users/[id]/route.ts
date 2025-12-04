@@ -19,7 +19,13 @@ export async function GET(
     where: { id },
     include: {
       _count: {
-        select: { orders: true },
+        select: { 
+          orders: {
+            where: {
+              status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] },
+            },
+          },
+        },
       },
     },
   });
@@ -28,12 +34,17 @@ export async function GET(
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // Get credit logs
-  const creditLogs = await prisma.creditLog.findMany({
-    where: { userId: id },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
+  // Get credit logs (may not exist if migration not run)
+  let creditLogs: unknown[] = [];
+  try {
+    creditLogs = await prisma.creditLog.findMany({
+      where: { userId: id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+  } catch {
+    // CreditLog table may not exist yet
+  }
 
   return NextResponse.json({ user, creditLogs });
 }
@@ -82,7 +93,13 @@ export async function PUT(
     },
     include: {
       _count: {
-        select: { orders: true },
+        select: { 
+          orders: {
+            where: {
+              status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] },
+            },
+          },
+        },
       },
     },
   });
