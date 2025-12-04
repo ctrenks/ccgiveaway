@@ -1,4 +1,4 @@
-// TCGPlayer scraper for importing card data
+// TCGPlayer scraper for importing card data using Scrapfly
 
 export interface TCGPlayerProduct {
   productId: string;
@@ -25,7 +25,7 @@ export function parseTCGPlayerUrl(url: string): { productId: string; game: strin
   try {
     const urlObj = new URL(url);
     const pathParts = urlObj.pathname.split("/").filter(Boolean);
-
+    
     if (pathParts[0] !== "product" || pathParts.length < 3) {
       return null;
     }
@@ -42,79 +42,78 @@ export function parseTCGPlayerUrl(url: string): { productId: string; game: strin
 }
 
 /**
- * Fetch price from TCGPlayer's API
+ * Fetch page using Scrapfly API (renders JavaScript)
  */
-async function fetchPriceFromAPI(productId: string): Promise<{ marketPrice: number; lowPrice: number } | null> {
-  const endpoints = [
-    // Main marketplace API
-    `https://mp-search-api.tcgplayer.com/v1/product/${productId}/pricepoints`,
-    // Alternate API
-    `https://mpapi.tcgplayer.com/v2/product/${productId}/pricepoints`,
-    // Product details API
-    `https://mpapi.tcgplayer.com/v2/product/${productId}/details`,
-    // Another variant
-    `https://www.tcgplayer.com/api/v2/product/${productId}/pricepoints`,
-  ];
-
-  for (const apiUrl of endpoints) {
-    try {
-      console.log("Trying price API:", apiUrl);
-
-      const response = await fetch(apiUrl, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-          "Accept": "application/json, text/plain, */*",
-          "Accept-Language": "en-US,en;q=0.9",
-          "Origin": "https://www.tcgplayer.com",
-          "Referer": "https://www.tcgplayer.com/",
-        },
-        cache: "no-store",
-      });
-
-      console.log("API response status:", response.status);
-
-      if (response.ok) {
-        const text = await response.text();
-        console.log("API response:", text.substring(0, 500));
-
-        try {
-          const data = JSON.parse(text);
-
-          // Try to extract price from various response formats
-          if (Array.isArray(data)) {
-            for (const item of data) {
-              if (item.marketPrice || item.price) {
-                return {
-                  marketPrice: item.marketPrice || item.price || 0,
-                  lowPrice: item.lowPrice || item.lowestPrice || item.marketPrice || 0,
-                };
-              }
-            }
-          } else if (data.marketPrice || data.price) {
-            return {
-              marketPrice: data.marketPrice || data.price || 0,
-              lowPrice: data.lowPrice || data.lowestPrice || 0,
-            };
-          } else if (data.results && Array.isArray(data.results)) {
-            for (const item of data.results) {
-              if (item.marketPrice || item.price) {
-                return {
-                  marketPrice: item.marketPrice || item.price || 0,
-                  lowPrice: item.lowPrice || item.lowestPrice || 0,
-                };
-              }
-            }
-          }
-        } catch (e) {
-          console.log("Failed to parse JSON:", e);
-        }
-      }
-    } catch (error) {
-      console.log("API request failed:", error);
-    }
+async function fetchWithScrapfly(url: string): Promise<string | null> {
+  const apiKey = process.env.SCRAPFLY_API_KEY;
+  
+  if (!apiKey) {
+    console.error("SCRAPFLY_API_KEY not set");
+    return null;
   }
 
-  return null;
+  try {
+    const scrapflyUrl = new URL("https://api.scrapfly.io/scrape");
+    scrapflyUrl.searchParams.set("key", apiKey);
+    scrapflyUrl.searchParams.set("url", url);
+    scrapflyUrl.searchParams.set("render_js", "true");
+    scrapflyUrl.searchParams.set("asp", "true"); // Anti-scraping protection bypass
+    scrapflyUrl.searchParams.set("country", "us");
+    
+    console.log("Fetching via Scrapfly:", url);
+    
+    const response = await fetch(scrapflyUrl.toString(), {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Scrapfly error:", response.status, errorText);
+      return null;
+    }
+
+    const data = await response.json();
+    
+    if (data.result?.content) {
+      console.log("Scrapfly returned HTML, length:", data.result.content.length);
+      return data.result.content;
+    }
+    
+    console.error("No content in Scrapfly response");
+    return null;
+  } catch (error) {
+    console.error("Scrapfly request failed:", error);
+    return null;
+  }
+}
+
+/**
+ * Fallback: Fetch page directly (may not get JS-rendered content)
+ */
+async function fetchDirect(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      console.error("Direct fetch failed:", response.status);
+      return null;
+    }
+
+    return await response.text();
+  } catch (error) {
+    console.error("Direct fetch error:", error);
+    return null;
+  }
 }
 
 /**
@@ -154,7 +153,7 @@ function extractPriceFromHTML(html: string): number {
 }
 
 /**
- * Fetch product data from TCGPlayer
+ * Fetch product data from TCGPlayer using Scrapfly
  */
 export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProduct | null> {
   try {
@@ -165,34 +164,24 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
 
     console.log("Fetching TCGPlayer product:", parsed.productId);
 
-    // Fetch the product page
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      console.error("Page fetch failed:", response.status);
-      throw new Error(`Failed to fetch: ${response.status}`);
+    // Try Scrapfly first (renders JavaScript, gets real prices)
+    let html = await fetchWithScrapfly(url);
+    
+    // Fallback to direct fetch if Scrapfly fails
+    if (!html) {
+      console.log("Scrapfly failed, trying direct fetch...");
+      html = await fetchDirect(url);
     }
 
-    const html = await response.text();
+    if (!html) {
+      throw new Error("Failed to fetch page content");
+    }
+
     console.log("HTML length:", html.length);
 
-    // Extract price from HTML first (most reliable since user confirmed it's there)
-    let marketPrice = extractPriceFromHTML(html);
+    // Extract price from rendered HTML
+    const marketPrice = extractPriceFromHTML(html);
     console.log("Price from HTML:", marketPrice);
-
-    // If no price in HTML, try API as fallback
-    if (marketPrice === 0) {
-      const priceData = await fetchPriceFromAPI(parsed.productId);
-      console.log("Price data from API:", priceData);
-      marketPrice = priceData?.marketPrice || 0;
-    }
 
     // Extract other data from HTML
     const name = extractName(html, parsed.slug);
