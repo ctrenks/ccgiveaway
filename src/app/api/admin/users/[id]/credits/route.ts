@@ -41,7 +41,7 @@ export async function POST(
       data: { giveawayCredits: balanceAfter },
       include: {
         _count: {
-          select: { 
+          select: {
             orders: {
               where: {
                 status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] },
@@ -71,8 +71,8 @@ export async function POST(
       console.log("CreditLog table not available, skipping log creation");
     }
 
-    return NextResponse.json({ 
-      user, 
+    return NextResponse.json({
+      user,
       log: log || {
         id: "temp",
         amount,
