@@ -23,7 +23,15 @@ async function getProducts(categorySlug?: string) {
 }
 
 async function getCategories() {
+  // Only get categories that have at least one active product
   const categories = await prisma.category.findMany({
+    where: {
+      products: {
+        some: {
+          active: true,
+        },
+      },
+    },
     orderBy: { name: "asc" },
   });
   return categories;
