@@ -82,19 +82,19 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     if (data.result?.content) {
       const html = data.result.content;
       console.log("Scrapfly returned HTML, length:", html.length);
-      
+
       // Debug: Search for dollar amounts in the response
       const dollarMatches = html.match(/\$[\d,]+\.?\d*/g);
       if (dollarMatches) {
         console.log("Dollar amounts found in HTML:", dollarMatches.slice(0, 10));
       }
-      
+
       // Debug: Look for price-related content
       const priceSection = html.match(/.{0,100}price-points.{0,200}/i);
       if (priceSection) {
         console.log("Price section found:", priceSection[0]);
       }
-      
+
       return html;
     }
 
