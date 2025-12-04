@@ -69,14 +69,14 @@ export async function GET(request: Request) {
     }
 
     const fullName = `${shipping.firstName || ""} ${shipping.lastName || ""}`.trim() || order.user.name || "Customer";
-    
+
     // Combine all items into a description
     const itemDescriptions = order.items
       .map((item) => `${item.product.name} x${item.quantity}`)
       .join("; ");
-    
+
     const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
-    
+
     // Estimate weight - trading cards are light, ~1oz per card
     const estimatedWeight = Math.max(1, totalQuantity); // At least 1 oz
 
@@ -123,4 +123,3 @@ export async function GET(request: Request) {
     },
   });
 }
-

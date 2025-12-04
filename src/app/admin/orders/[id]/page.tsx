@@ -67,7 +67,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       const res = await fetch(`/api/admin/orders/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           status: newStatus,
           notes: trackingNumber ? `Tracking: ${trackingNumber}` : undefined,
         }),
@@ -304,4 +304,3 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     </div>
   );
 }
-
