@@ -25,7 +25,7 @@ export function parseTCGPlayerUrl(url: string): { productId: string; game: strin
   try {
     const urlObj = new URL(url);
     const pathParts = urlObj.pathname.split("/").filter(Boolean);
-    
+
     if (pathParts[0] !== "product" || pathParts.length < 3) {
       return null;
     }
@@ -46,7 +46,7 @@ export function parseTCGPlayerUrl(url: string): { productId: string; game: strin
  */
 async function fetchWithScrapfly(url: string): Promise<string | null> {
   const apiKey = process.env.SCRAPFLY_API_KEY;
-  
+
   if (!apiKey) {
     console.error("SCRAPFLY_API_KEY not set");
     return null;
@@ -59,9 +59,9 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     scrapflyUrl.searchParams.set("render_js", "true");
     scrapflyUrl.searchParams.set("asp", "true"); // Anti-scraping protection bypass
     scrapflyUrl.searchParams.set("country", "us");
-    
+
     console.log("Fetching via Scrapfly:", url);
-    
+
     const response = await fetch(scrapflyUrl.toString(), {
       method: "GET",
       headers: {
@@ -76,12 +76,12 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     }
 
     const data = await response.json();
-    
+
     if (data.result?.content) {
       console.log("Scrapfly returned HTML, length:", data.result.content.length);
       return data.result.content;
     }
-    
+
     console.error("No content in Scrapfly response");
     return null;
   } catch (error) {
@@ -166,7 +166,7 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
 
     // Try Scrapfly first (renders JavaScript, gets real prices)
     let html = await fetchWithScrapfly(url);
-    
+
     // Fallback to direct fetch if Scrapfly fails
     if (!html) {
       console.log("Scrapfly failed, trying direct fetch...");
