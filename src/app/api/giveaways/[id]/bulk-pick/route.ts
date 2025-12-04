@@ -3,18 +3,32 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ROLES } from "@/lib/constants";
 
-// Helper to get next business day at 7:30 PM EST
-function getNextDrawDate(): Date {
+// Helper to get next business day draw schedule
+// Draw: 7:30 PM EST, Entry Cutoff: 5:00 PM EST same day
+function getDrawSchedule(): { drawDate: Date; entryCutoff: Date } {
   const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  while (tomorrow.getDay() === 0 || tomorrow.getDay() === 6) {
-    tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  // Find next business day
+  const drawDay = new Date(now);
+  drawDay.setDate(drawDay.getDate() + 1);
+  
+  // Skip weekends (0 = Sunday, 6 = Saturday)
+  while (drawDay.getDay() === 0 || drawDay.getDay() === 6) {
+    drawDay.setDate(drawDay.getDate() + 1);
   }
 
-  tomorrow.setUTCHours(0, 30, 0, 0);
-  return tomorrow;
+  // Create draw date at 7:30 PM EST
+  // EST is UTC-5, so 7:30 PM EST = 00:30 UTC next day
+  const drawDate = new Date(drawDay);
+  drawDate.setUTCHours(0, 30, 0, 0);
+  drawDate.setUTCDate(drawDate.getUTCDate() + 1);
+  
+  // Create entry cutoff at 5:00 PM EST same day as draw
+  // 5:00 PM EST = 22:00 UTC
+  const entryCutoff = new Date(drawDay);
+  entryCutoff.setUTCHours(22, 0, 0, 0);
+
+  return { drawDate, entryCutoff };
 }
 
 // Find best available pick for a slot
@@ -286,8 +300,7 @@ export async function POST(
 
   // Check if minimum participation reached
   if (giveaway.status === "OPEN" && newTotalPicks >= giveaway.minParticipation) {
-    const drawDate = getNextDrawDate();
-    const entryCutoff = new Date(drawDate.getTime() - 5 * 60 * 60 * 1000);
+    const { drawDate, entryCutoff } = getDrawSchedule();
 
     await prisma.giveaway.update({
       where: { id },

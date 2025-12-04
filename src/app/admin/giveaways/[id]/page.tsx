@@ -324,6 +324,27 @@ export default function EditGiveawayPage({
               >
                 View Public Page
               </Link>
+              {["OPEN", "FILLING"].includes(giveaway.status) && (
+                <button
+                  onClick={async () => {
+                    if (!confirm("Recalculate draw date to next business day?")) return;
+                    const res = await fetch(`/api/admin/giveaways/${giveaway.id}/recalculate-draw`, {
+                      method: "POST",
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      setSuccess(`Draw updated: Entries close 5 PM EST, Draw at 7:30 PM EST`);
+                      // Refresh page to show new dates
+                      window.location.reload();
+                    } else {
+                      setError(data.error || "Failed to recalculate");
+                    }
+                  }}
+                  className="block w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white text-center rounded-lg transition-colors"
+                >
+                  Recalculate Draw Date
+                </button>
+              )}
               {giveaway.status === "CLOSED" && (
                 <Link
                   href={`/admin/giveaways/${giveaway.id}/draw`}

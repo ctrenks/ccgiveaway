@@ -54,6 +54,7 @@ export default function GiveawayPage({
   const [freeEntriesRemaining, setFreeEntriesRemaining] = useState(0);
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState("");
+  const [drawCountdown, setDrawCountdown] = useState("");
 
   // Pick form state
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
@@ -104,38 +105,50 @@ export default function GiveawayPage({
       .catch(() => setLoadingSlot(false));
   }, [selectedSlot, id, giveaway]);
 
-  // Countdown timer
+  // Countdown timers for entry cutoff and draw
   useEffect(() => {
-    if (!giveaway?.entryCutoff) return;
+    if (!giveaway) return;
 
-    const updateCountdown = () => {
-      const cutoff = new Date(giveaway.entryCutoff!).getTime();
-      const now = Date.now();
-      const diff = cutoff - now;
-
-      if (diff <= 0) {
-        setCountdown("Entries closed");
-        return;
-      }
-
+    const formatTime = (diff: number): string => {
+      if (diff <= 0) return "";
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
       const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-      if (days > 0) {
-        setCountdown(`${days}d ${hours}h ${minutes}m`);
-      } else if (hours > 0) {
-        setCountdown(`${hours}h ${minutes}m ${seconds}s`);
-      } else {
-        setCountdown(`${minutes}m ${seconds}s`);
+      if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+      if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+      return `${minutes}m ${seconds}s`;
+    };
+
+    const updateCountdowns = () => {
+      const now = Date.now();
+
+      // Entry cutoff countdown
+      if (giveaway.entryCutoff) {
+        const cutoffDiff = new Date(giveaway.entryCutoff).getTime() - now;
+        if (cutoffDiff <= 0) {
+          setCountdown("Entries closed");
+        } else {
+          setCountdown(formatTime(cutoffDiff));
+        }
+      }
+
+      // Draw countdown
+      if (giveaway.drawDate) {
+        const drawDiff = new Date(giveaway.drawDate).getTime() - now;
+        if (drawDiff <= 0) {
+          setDrawCountdown("Draw time!");
+        } else {
+          setDrawCountdown(formatTime(drawDiff));
+        }
       }
     };
 
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
+    updateCountdowns();
+    const interval = setInterval(updateCountdowns, 1000);
     return () => clearInterval(interval);
-  }, [giveaway?.entryCutoff]);
+  }, [giveaway]);
 
   const handleAutoPick = async () => {
     try {
@@ -309,13 +322,25 @@ export default function GiveawayPage({
                 </div>
 
                 {/* Countdown */}
-                {giveaway.entryCutoff && canPick && (
-                  <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
-                    <div className="flex items-center justify-between">
-                      <span className="text-amber-400">⏱️ Entries close in:</span>
-                      <span className="text-2xl font-bold text-white font-mono">
-                        {countdown}
-                      </span>
+                {giveaway.drawDate && (
+                  <div className="mt-4 space-y-3">
+                    {giveaway.entryCutoff && canPick && (
+                      <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                        <div className="flex items-center justify-between">
+                          <span className="text-amber-400">⏱️ Entries close at 5 PM EST:</span>
+                          <span className="text-2xl font-bold text-white font-mono">
+                            {countdown}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+                      <div className="flex items-center justify-between">
+                        <span className="text-purple-400">🎲 Draw at 7:30 PM EST:</span>
+                        <span className="text-2xl font-bold text-white font-mono">
+                          {drawCountdown}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}

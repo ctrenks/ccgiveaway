@@ -3,22 +3,33 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ROLES } from "@/lib/constants";
 
-// Helper to get next business day at 7:30 PM EST
-function getNextDrawDate(): Date {
+// Helper to get next business day draw schedule
+// Draw: 7:30 PM EST, Entry Cutoff: 5:00 PM EST same day
+function getDrawSchedule(): { drawDate: Date; entryCutoff: Date } {
   const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  // Skip weekends
-  while (tomorrow.getDay() === 0 || tomorrow.getDay() === 6) {
-    tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  // Find next business day
+  const drawDay = new Date(now);
+  drawDay.setDate(drawDay.getDate() + 1);
+  
+  // Skip weekends (0 = Sunday, 6 = Saturday)
+  while (drawDay.getDay() === 0 || drawDay.getDay() === 6) {
+    drawDay.setDate(drawDay.getDate() + 1);
   }
 
-  // Set to 7:30 PM EST (19:30 EST = 00:30 UTC next day in winter, 23:30 UTC in summer)
-  // Using fixed offset for EST (-5 hours from UTC)
-  tomorrow.setUTCHours(0, 30, 0, 0); // 7:30 PM EST = 00:30 UTC next day
+  // Create draw date at 7:30 PM EST
+  // EST is UTC-5, so 7:30 PM EST = 00:30 UTC next day (in standard time)
+  // But to be safe, we'll calculate based on the draw day
+  const drawDate = new Date(drawDay);
+  drawDate.setUTCHours(0, 30, 0, 0); // This puts us at 00:30 UTC = 7:30 PM EST previous calendar day
+  drawDate.setUTCDate(drawDate.getUTCDate() + 1); // Move to correct day
+  
+  // Create entry cutoff at 5:00 PM EST same day as draw
+  // 5:00 PM EST = 22:00 UTC
+  const entryCutoff = new Date(drawDay);
+  entryCutoff.setUTCHours(22, 0, 0, 0);
 
-  return tomorrow;
+  return { drawDate, entryCutoff };
 }
 
 export async function POST(
@@ -178,8 +189,7 @@ export async function POST(
 
   // Check if we hit minimum participation
   if (giveaway.status === "OPEN" && newTotalPicks >= giveaway.minParticipation) {
-    const drawDate = getNextDrawDate();
-    const entryCutoff = new Date(drawDate.getTime() - 5 * 60 * 60 * 1000); // 5 hours before
+    const { drawDate, entryCutoff } = getDrawSchedule();
 
     await prisma.giveaway.update({
       where: { id },
