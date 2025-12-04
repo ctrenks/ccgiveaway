@@ -351,7 +351,7 @@ export default function GiveawayPage({
                   <span className="text-red-400 ml-2">■</span> = Taken
                   <span className="text-slate-700 ml-2">■</span> = Available
                 </p>
-                
+
                 {/* Visual grid of number ranges */}
                 <div className="space-y-2">
                   {[0, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((rangeStart) => {
@@ -506,7 +506,7 @@ export default function GiveawayPage({
                         <span className="text-slate-400">Available:</span>
                         <span className="text-green-400 font-medium">{slotData.totalAvailable}</span>
                       </div>
-                      
+
                       {slotData.largestGaps.length > 0 && (
                         <div>
                           <div className="text-xs text-slate-500 mb-2">Best gaps (click to use):</div>
