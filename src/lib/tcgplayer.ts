@@ -136,57 +136,72 @@ async function fetchDirect(url: string): Promise<string | null> {
  * Extract price from HTML
  */
 function extractPriceFromHTML(html: string): number {
-  // Look for the specific price-points span class the user found
+  // First, find ALL dollar amounts in the HTML
+  const allPrices = html.match(/\$[\d,]+\.?\d*/g);
+  
+  if (allPrices && allPrices.length > 0) {
+    console.log("Dollar amounts in extractPriceFromHTML:", allPrices.slice(0, 10));
+    
+    // Parse all prices and filter reasonable ones ($0.01 - $10000)
+    const validPrices: number[] = [];
+    for (const priceStr of allPrices) {
+      const price = parseFloat(priceStr.replace(/[$,]/g, ""));
+      if (price >= 0.01 && price < 10000) {
+        validPrices.push(price);
+      }
+    }
+    
+    if (validPrices.length > 0) {
+      // TCGPlayer typically shows Market Price prominently
+      // Look for a price that appears multiple times (likely the market price)
+      const priceCounts = new Map<number, number>();
+      for (const price of validPrices) {
+        // Round to 2 decimals for comparison
+        const rounded = Math.round(price * 100) / 100;
+        priceCounts.set(rounded, (priceCounts.get(rounded) || 0) + 1);
+      }
+      
+      // Find most common price (appears most frequently)
+      let mostCommonPrice = validPrices[0];
+      let maxCount = 0;
+      for (const [price, count] of priceCounts.entries()) {
+        if (count > maxCount) {
+          maxCount = count;
+          mostCommonPrice = price;
+        }
+      }
+      
+      // If a price appears multiple times, use it (likely the market price)
+      if (maxCount > 1) {
+        console.log("Using most common price:", mostCommonPrice, "appears", maxCount, "times");
+        return mostCommonPrice;
+      }
+      
+      // Otherwise use the first valid price
+      console.log("Using first valid price:", validPrices[0]);
+      return validPrices[0];
+    }
+  }
+
+  // Fallback: Try specific patterns
   const patterns = [
-    // Main price display: <span class="price-points__upper__price">$38.39</span>
-    /price-points__upper__price[^>]*>\s*\$([\d,]+\.?\d*)/i,
-    /class=["'][^"']*price-points__upper__price[^"']*["'][^>]*>\s*\$([\d,]+\.?\d*)/i,
-    // With potential nested spans
-    /price-points__upper__price[^>]*>[^<]*\$([\d,]+\.?\d*)/i,
-    // Market price patterns
-    /class=["'][^"']*market-price[^"']*["'][^>]*>\s*\$([\d,]+\.?\d*)/i,
-    /market-price[^>]*>\s*\$([\d,]+\.?\d*)/i,
-    // Listing price
-    /listing-price[^>]*>\s*\$([\d,]+\.?\d*)/i,
-    // TCG specific selectors
-    /product-price[^>]*>\s*\$([\d,]+\.?\d*)/i,
-    /spotlight__price[^>]*>\s*\$([\d,]+\.?\d*)/i,
-    // Data attribute patterns
-    /data-price=["']\$?([\d,.]+)["']/i,
-    /data-market-price=["']\$?([\d,.]+)["']/i,
-    // JSON patterns in script tags
     /"marketPrice"\s*:\s*([\d.]+)/i,
     /"lowPrice"\s*:\s*([\d.]+)/i,
     /"price"\s*:\s*([\d.]+)/i,
-    // Generic: any dollar amount > $1 in a span/div (likely a price)
-    /<(?:span|div)[^>]*>\s*\$([\d,]+\.[\d]{2})\s*<\/(?:span|div)>/i,
   ];
 
   for (const pattern of patterns) {
     const match = html.match(pattern);
     if (match && match[1]) {
-      const price = parseFloat(match[1].replace(/,/g, ""));
+      const price = parseFloat(match[1]);
       if (price > 0) {
-        console.log("Found price in HTML:", price, "using pattern:", pattern.toString().substring(0, 60));
+        console.log("Found price via JSON pattern:", price);
         return price;
       }
     }
   }
 
-  // Last resort: Find all dollar amounts and pick the most likely price
-  // (usually the first one that's > $0.01 and < $10000)
-  const allPrices = html.match(/\$([\d,]+\.[\d]{2})/g);
-  if (allPrices && allPrices.length > 0) {
-    console.log("All dollar amounts found:", allPrices.slice(0, 5));
-    for (const priceStr of allPrices) {
-      const price = parseFloat(priceStr.replace(/[$,]/g, ""));
-      if (price >= 0.01 && price < 10000) {
-        console.log("Using first reasonable price:", price);
-        return price;
-      }
-    }
-  }
-
+  console.log("No price found in HTML");
   return 0;
 }
 
