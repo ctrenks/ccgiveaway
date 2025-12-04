@@ -77,9 +77,10 @@ export async function POST(
   }
 
   // Validate slot number
-  if (slot < 1 || slot > giveaway.slotCount) {
+  const minSlot = giveaway.hasBoxTopper ? 0 : 1;
+  if (slot < minSlot || slot > giveaway.slotCount) {
     return NextResponse.json(
-      { error: `Slot must be between 1 and ${giveaway.slotCount}` },
+      { error: `Slot must be between ${minSlot} and ${giveaway.slotCount}` },
       { status: 400 }
     );
   }

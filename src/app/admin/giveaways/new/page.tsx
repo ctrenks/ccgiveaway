@@ -13,6 +13,7 @@ export default function NewGiveawayPage() {
     title: "",
     description: "",
     slotCount: 36,
+    hasBoxTopper: false,
     minParticipation: 10000,
     freeEntriesPerUser: 10,
     prizeValue: "",
@@ -145,6 +146,23 @@ export default function NewGiveawayPage() {
               <p className="text-xs text-slate-500 mt-1">
                 Usually 36 for booster box
               </p>
+            </div>
+
+            <div className="flex items-center">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.hasBoxTopper}
+                  onChange={(e) =>
+                    setFormData({ ...formData, hasBoxTopper: e.target.checked })
+                  }
+                  className="w-5 h-5 rounded border-slate-700 bg-slate-800 text-purple-500 focus:ring-purple-500"
+                />
+                <div>
+                  <div className="text-white">Has Box Topper</div>
+                  <div className="text-xs text-slate-500">Adds a special bonus slot</div>
+                </div>
+              </label>
             </div>
 
             <div>

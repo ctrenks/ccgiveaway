@@ -11,6 +11,7 @@ interface Giveaway {
   description: string | null;
   image: string | null;
   slotCount: number;
+  hasBoxTopper: boolean;
   minParticipation: number;
   freeEntriesPerUser: number;
   status: string;
@@ -287,8 +288,49 @@ export default function GiveawayPage({
             {/* Slot Grid */}
             <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
               <h2 className="text-xl font-bold text-white mb-4">
-                Select a Slot ({giveaway.slotCount} available)
+                Select a Slot ({giveaway.slotCount}{giveaway.hasBoxTopper ? " + Box Topper" : ""})
               </h2>
+
+              {/* Box Topper Slot (Slot 0) */}
+              {giveaway.hasBoxTopper && (
+                <div className="mb-4">
+                  {(() => {
+                    const pickCount = giveaway.slotCounts[0] || 0;
+                    const isSelected = selectedSlot === 0;
+                    const userHasPick = userPicks.some((p) => p.slot === 0);
+                    const winner = giveaway.winners.find((w) => w.slot === 0);
+
+                    return (
+                      <button
+                        onClick={() => canPick && setSelectedSlot(0)}
+                        disabled={!canPick}
+                        className={`
+                          relative w-full py-3 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-2
+                          ${
+                            winner
+                              ? "bg-green-500/20 border-2 border-green-500 text-green-400"
+                              : isSelected
+                              ? "bg-gradient-to-r from-amber-500 to-orange-500 border-2 border-amber-400 text-white"
+                              : userHasPick
+                              ? "bg-amber-500/20 border border-amber-500/50 text-amber-400"
+                              : "bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-400 hover:border-amber-500/50"
+                          }
+                          ${!canPick ? "cursor-default" : "cursor-pointer"}
+                        `}
+                      >
+                        <span>⭐</span>
+                        <span>Box Topper</span>
+                        {pickCount > 0 && (
+                          <span className="bg-slate-700 text-xs px-2 py-0.5 rounded-full">
+                            {pickCount} picks
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })()}
+                </div>
+              )}
+
               <div className="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-12 gap-2">
                 {Array.from({ length: giveaway.slotCount }, (_, i) => i + 1).map(
                   (slot) => {
@@ -595,30 +637,31 @@ export default function GiveawayPage({
               </div>
             )}
 
-            {/* Your Picks */}
-            {userPicks.length > 0 && (
-              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
-                <h2 className="text-xl font-bold text-white mb-4">
-                  Your Picks ({userPicks.length})
-                </h2>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {userPicks.map((pick, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between p-2 bg-slate-800/50 rounded-lg"
-                    >
-                      <span className="text-slate-400">Slot {pick.slot}</span>
-                      <span className="font-mono text-purple-400">{pick.pickNumber}</span>
-                      {pick.isFreeEntry && (
-                        <span className="text-xs text-green-400">FREE</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Your Picks - Full Width Below */}
+        {userPicks.length > 0 && (
+          <div className="mt-8 bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-xl font-bold text-white mb-4">
+              Your Picks ({userPicks.length})
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
+              {userPicks.map((pick, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg"
+                >
+                  <span className="text-slate-400 text-sm">Slot {pick.slot}</span>
+                  <span className="font-mono text-purple-400 font-bold">{pick.pickNumber}</span>
+                  {pick.isFreeEntry && (
+                    <span className="text-[10px] text-green-400 bg-green-500/20 px-1 rounded">FREE</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

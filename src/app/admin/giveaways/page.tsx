@@ -116,6 +116,14 @@ export default async function AdminGiveaways() {
                           Enter Result
                         </Link>
                       )}
+                      {["OPEN", "FILLING", "CLOSED"].includes(giveaway.status) && (
+                        <Link
+                          href={`/admin/giveaways/${giveaway.id}/cancel`}
+                          className="text-red-400 hover:text-red-300 text-sm"
+                        >
+                          Cancel
+                        </Link>
+                      )}
                     </div>
                   </td>
                 </tr>

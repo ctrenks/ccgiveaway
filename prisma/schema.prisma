@@ -235,28 +235,29 @@ model Giveaway {
 
   // Slot configuration
   slotCount   Int             @default(36) // Number of items/packs in the box (1-100)
-
+  hasBoxTopper Boolean        @default(false) // Special bonus slot for box topper
+  
   // Participation settings
   minParticipation   Int      @default(10000) // Minimum picks to trigger draw
   freeEntriesPerUser Int      @default(10)    // Free entries per user per giveaway
-
+  
   // Status tracking
   status      GiveawayStatus  @default(OPEN)
   totalPicks  Int             @default(0)     // Counter for total picks made
-
+  
   // Draw information
   drawDate       DateTime?    // Set when min participation is reached (next business day 7:30 PM EST)
   entryCutoff    DateTime?    // 5 hours before draw time
   pick3Result    String?      // Ohio Lottery Pick 3 result (e.g., "247")
   pick3Date      DateTime?    // Date of the Pick 3 drawing
-
+  
   // Prize info
   prizeValue  Decimal?        @db.Decimal(10, 2) // Total value of the box
-
+  
   // Relations
   picks       GiveawayPick[]
   winners     GiveawayWinner[]
-
+  
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
