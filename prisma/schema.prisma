@@ -253,7 +253,7 @@ model Giveaway {
   // Slot configuration
   slotCount   Int             @default(36) // Number of items/packs in the box (1-100)
   hasBoxTopper Boolean        @default(false) // Special bonus slot for box topper
-  
+
   // Participation settings
   minParticipation   Int      @default(10000) // Minimum picks to trigger draw
   freeEntriesPerUser Int      @default(10)    // Free entries per user per giveaway
