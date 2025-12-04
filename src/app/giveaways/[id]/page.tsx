@@ -33,6 +33,13 @@ interface UserPick {
   isFreeEntry: boolean;
 }
 
+interface SlotData {
+  takenNumbers: string[];
+  totalTaken: number;
+  totalAvailable: number;
+  largestGaps: Array<{ start: number; end: number; size: number }>;
+}
+
 export default function GiveawayPage({
   params,
 }: {
@@ -54,6 +61,10 @@ export default function GiveawayPage({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Slot data for showing taken numbers
+  const [slotData, setSlotData] = useState<SlotData | null>(null);
+  const [loadingSlot, setLoadingSlot] = useState(false);
+
   // Fetch giveaway data
   useEffect(() => {
     fetch(`/api/giveaways/${id}`)
@@ -68,6 +79,23 @@ export default function GiveawayPage({
       })
       .catch(() => setLoading(false));
   }, [id]);
+
+  // Fetch slot data when slot is selected
+  useEffect(() => {
+    if (!selectedSlot || !giveaway) {
+      setSlotData(null);
+      return;
+    }
+
+    setLoadingSlot(true);
+    fetch(`/api/giveaways/${id}/slot/${selectedSlot}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setSlotData(data);
+        setLoadingSlot(false);
+      })
+      .catch(() => setLoadingSlot(false));
+  }, [selectedSlot, id, giveaway]);
 
   // Countdown timer
   useEffect(() => {
@@ -312,6 +340,68 @@ export default function GiveawayPage({
               </div>
             </div>
 
+            {/* Taken Numbers Visualization */}
+            {selectedSlot && slotData && slotData.takenNumbers.length > 0 && (
+              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                <h2 className="text-xl font-bold text-white mb-4">
+                  Slot {selectedSlot} - Number Map
+                </h2>
+                <p className="text-slate-400 text-sm mb-4">
+                  {slotData.totalTaken} numbers taken, {slotData.totalAvailable} available.
+                  <span className="text-red-400 ml-2">■</span> = Taken
+                  <span className="text-slate-700 ml-2">■</span> = Available
+                </p>
+                
+                {/* Visual grid of number ranges */}
+                <div className="space-y-2">
+                  {[0, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((rangeStart) => {
+                    const rangeEnd = rangeStart + 99;
+                    const takenInRange = slotData.takenNumbers.filter((n) => {
+                      const num = parseInt(n);
+                      return num >= rangeStart && num <= rangeEnd;
+                    });
+                    const takenPercent = (takenInRange.length / 100) * 100;
+
+                    return (
+                      <div key={rangeStart} className="flex items-center gap-2">
+                        <span className="text-xs text-slate-500 w-16 font-mono">
+                          {String(rangeStart).padStart(3, "0")}-{String(rangeEnd).padStart(3, "0")}
+                        </span>
+                        <div className="flex-1 h-4 bg-slate-800 rounded overflow-hidden relative">
+                          <div
+                            className="h-full bg-red-500/50 transition-all"
+                            style={{ width: `${takenPercent}%` }}
+                          />
+                          <span className="absolute inset-0 flex items-center justify-center text-[10px] text-white">
+                            {takenInRange.length}/100
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Expandable list of all taken numbers */}
+                <details className="mt-4">
+                  <summary className="text-sm text-purple-400 cursor-pointer hover:text-purple-300">
+                    View all {slotData.totalTaken} taken numbers
+                  </summary>
+                  <div className="mt-2 max-h-40 overflow-y-auto bg-slate-800/50 rounded-lg p-3">
+                    <div className="flex flex-wrap gap-1">
+                      {slotData.takenNumbers.map((num) => (
+                        <span
+                          key={num}
+                          className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-xs font-mono rounded"
+                        >
+                          {num}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </details>
+              </div>
+            )}
+
             {/* Winners List */}
             {giveaway.status === "COMPLETED" && giveaway.winners.length > 0 && (
               <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
@@ -383,6 +473,18 @@ export default function GiveawayPage({
                       maxLength={3}
                       className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white text-2xl font-mono text-center tracking-widest focus:outline-none focus:border-purple-500"
                     />
+                    {/* Show if number is taken */}
+                    {pickNumber.length === 3 && slotData && (
+                      <div className={`mt-2 text-sm ${
+                        slotData.takenNumbers.includes(pickNumber.padStart(3, "0"))
+                          ? "text-red-400"
+                          : "text-green-400"
+                      }`}>
+                        {slotData.takenNumbers.includes(pickNumber.padStart(3, "0"))
+                          ? "❌ This number is already taken"
+                          : "✓ This number is available"}
+                      </div>
+                    )}
                   </div>
 
                   <button
@@ -392,6 +494,48 @@ export default function GiveawayPage({
                   >
                     🎲 Auto-Pick (Best Odds)
                   </button>
+
+                  {/* Slot Info Panel */}
+                  {selectedSlot && slotData && (
+                    <div className="bg-slate-800/50 rounded-lg p-3 space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-400">Numbers taken:</span>
+                        <span className="text-white font-medium">{slotData.totalTaken}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-400">Available:</span>
+                        <span className="text-green-400 font-medium">{slotData.totalAvailable}</span>
+                      </div>
+                      
+                      {slotData.largestGaps.length > 0 && (
+                        <div>
+                          <div className="text-xs text-slate-500 mb-2">Best gaps (click to use):</div>
+                          <div className="flex flex-wrap gap-1">
+                            {slotData.largestGaps.slice(0, 3).map((gap, i) => {
+                              const midpoint = String(Math.floor((gap.start + gap.end) / 2)).padStart(3, "0");
+                              return (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => setPickNumber(midpoint)}
+                                  className="px-2 py-1 bg-slate-700 hover:bg-purple-600 rounded text-xs font-mono text-white transition-colors"
+                                  title={`Gap: ${String(gap.start).padStart(3, "0")} - ${String(gap.end).padStart(3, "0")} (${gap.size} numbers)`}
+                                >
+                                  {midpoint}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {loadingSlot && (
+                    <div className="text-center text-slate-500 text-sm">
+                      Loading slot data...
+                    </div>
+                  )}
 
                   {/* Entry Type */}
                   <div className="space-y-2">
