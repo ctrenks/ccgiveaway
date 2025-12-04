@@ -3,13 +3,14 @@ import Link from "next/link";
 
 export default async function AdminDashboard() {
   // Fetch stats
-  const [productCount, categoryCount, orderCount, userCount, giveawayCount] =
+  const [productCount, categoryCount, orderCount, userCount, giveawayCount, subscriptionCount] =
     await Promise.all([
       prisma.product.count(),
       prisma.category.count(),
       prisma.order.count(),
       prisma.user.count(),
       prisma.giveaway.count({ where: { status: { in: ["OPEN", "FILLING"] } } }),
+      prisma.subscription.count({ where: { status: "ACTIVE" } }),
     ]);
 
   const stats = [
@@ -18,6 +19,7 @@ export default async function AdminDashboard() {
     { label: "Orders", value: orderCount, href: "/admin/orders", icon: "🛒" },
     { label: "Users", value: userCount, href: "/admin/users", icon: "👥" },
     { label: "Active Giveaways", value: giveawayCount, href: "/admin/giveaways", icon: "🎁" },
+    { label: "Subscribers", value: subscriptionCount, href: "/admin/subscriptions", icon: "⭐" },
   ];
 
   return (
@@ -25,7 +27,7 @@ export default async function AdminDashboard() {
       <h1 className="text-3xl font-bold text-white mb-8">Dashboard</h1>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
         {stats.map((stat) => (
           <Link
             key={stat.label}

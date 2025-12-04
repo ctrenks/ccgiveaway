@@ -49,6 +49,14 @@ model User {
   role            Int       @default(0) // 0=user, 1=banned, 5=moderator, 9=admin
   giveawayCredits Int       @default(0) // Earned credits for giveaway entries
 
+  // Subscription
+  subscriptionTier     SubscriptionTier? // null = no subscription
+  subscriptionId       String?           // PayPal subscription ID
+  subscriptionStart    DateTime?         // When subscription started
+  subscriptionEnd      DateTime?         // When current period ends
+  lastCreditsGranted   DateTime?         // Last time monthly credits were granted
+  freeShippingUsedAt   DateTime?         // When free shipping was last used this period
+
   // Shipping address
   shippingName    String?
   shippingAddress String?
@@ -61,8 +69,44 @@ model User {
   sessions        Session[]
   orders          Order[]
   creditLogs      CreditLog[]  // Log of manual credit adjustments
+  subscription    Subscription?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+enum SubscriptionTier {
+  BASIC    // $20/month - 5% off, free shipping on wins, 100 credits
+  PLUS     // $35/month - 5% off, free shipping all, 200 credits
+  PREMIUM  // $50/month - 7% off, free shipping all, 340 credits
+}
+
+model Subscription {
+  id              String            @id @default(cuid())
+  userId          String            @unique
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier            SubscriptionTier
+  status          SubscriptionStatus @default(PENDING)
+  paypalSubscriptionId String?      @unique
+  paymentMethod   String            @default("paypal") // paypal or crypto
+  amount          Decimal           @db.Decimal(10, 2)
+  
+  // Billing cycle
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  
+  // Crypto payments tracked manually
+  cryptoNote      String?           // For manual tracking of crypto payments
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+enum SubscriptionStatus {
+  PENDING     // Awaiting first payment
+  ACTIVE      // Currently active
+  CANCELLED   // User cancelled, will end at period end
+  EXPIRED     // Subscription ended
+  PAUSED      // Temporarily paused
 }
 
 // Log of manual credit adjustments by admin

@@ -53,6 +53,9 @@ export function Header() {
             <Link href="/giveaways" className="text-slate-300 hover:text-white transition-colors font-medium flex items-center gap-1">
               <span>🎁</span> Giveaways
             </Link>
+            <Link href="/subscribe" className="text-amber-400 hover:text-amber-300 transition-colors font-medium flex items-center gap-1">
+              <span>⭐</span> VIP
+            </Link>
             {isMod && (
               <Link href="/admin" className="text-purple-400 hover:text-purple-300 transition-colors font-medium flex items-center gap-1">
                 <span>⚙️</span> Admin
@@ -157,6 +160,9 @@ export function Header() {
               </Link>
               <Link href="/giveaways" className="text-slate-300 hover:text-white transition-colors font-medium">
                 🎁 Giveaways
+              </Link>
+              <Link href="/subscribe" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
+                ⭐ VIP Membership
               </Link>
               {session && (
                 <Link href="/profile" className="text-slate-300 hover:text-white transition-colors font-medium">
