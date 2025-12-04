@@ -24,7 +24,7 @@ export default function AddToCartButton({ product, className = "" }: AddToCartBu
 
   const handleAdd = () => {
     if (!canAdd) return;
-    
+
     addItem({
       id: product.id,
       name: product.name,
@@ -32,7 +32,7 @@ export default function AddToCartButton({ product, className = "" }: AddToCartBu
       image: product.image,
       maxQuantity: product.quantity,
     });
-    
+
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   };
@@ -64,4 +64,3 @@ export default function AddToCartButton({ product, className = "" }: AddToCartBu
     </button>
   );
 }
-

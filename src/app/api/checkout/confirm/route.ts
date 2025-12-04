@@ -10,7 +10,7 @@ const PAYPAL_API_URL = process.env.NODE_ENV === "production"
 
 async function getPayPalAccessToken(): Promise<string> {
   const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString("base64");
-  
+
   const response = await fetch(`${PAYPAL_API_URL}/v1/oauth2/token`, {
     method: "POST",
     headers: {
@@ -129,4 +129,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

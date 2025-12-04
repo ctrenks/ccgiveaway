@@ -44,7 +44,7 @@ export default function CheckoutSuccessPage() {
         <h1 className="text-3xl font-bold text-white mb-4">
           {confirmed ? "Payment Successful!" : "Processing Payment..."}
         </h1>
-        
+
         {confirmed ? (
           <>
             <p className="text-slate-400 mb-8">
@@ -87,4 +87,3 @@ export default function CheckoutSuccessPage() {
     </div>
   );
 }
-

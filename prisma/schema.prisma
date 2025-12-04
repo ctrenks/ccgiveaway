@@ -174,21 +174,20 @@ model Order {
   userId        String
   user          User        @relation(fields: [userId], references: [id])
   status        OrderStatus @default(PENDING)
-  subtotal      Decimal     @db.Decimal(10, 2)
+  subtotal      Decimal?    @db.Decimal(10, 2)
   tax           Decimal     @default(0) @db.Decimal(10, 2)
   shipping      Decimal     @default(0) @db.Decimal(10, 2)
   total         Decimal     @db.Decimal(10, 2)
 
+  // Payment info
+  paymentProvider String?   // "paypal", "coinbase", etc.
+  paymentId       String?   // Payment provider's order/charge ID
+
   // Giveaway credits earned from this order
   creditsEarned Int         @default(0)
 
-  // Shipping info
-  shippingName    String?
-  shippingAddress String?
-  shippingCity    String?
-  shippingState   String?
-  shippingZip     String?
-  shippingCountry String?
+  // Shipping info (stored as JSON string)
+  shippingAddress String?   @db.Text
 
   items       OrderItem[]
   notes       String?
@@ -197,6 +196,7 @@ model Order {
 
   @@index([userId])
   @@index([status])
+  @@index([paymentId])
 }
 
 model OrderItem {
