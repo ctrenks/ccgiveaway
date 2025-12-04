@@ -226,31 +226,90 @@ enum OrderStatus {
   REFUNDED
 }
 
-// Giveaway Models
+// Giveaway Models - Lottery-style pick system
 model Giveaway {
   id          String          @id @default(cuid())
-  title       String
+  title       String          // e.g., "Ikoria Booster Box"
   description String?         @db.Text
-  image       String? // Vercel Blob URL
-  prize       String? // Description of prize
-  prizeValue  Decimal?        @db.Decimal(10, 2)
-  startDate   DateTime
-  endDate     DateTime
-  active      Boolean         @default(true)
-  entries     GiveawayEntry[]
-  winnerId    String? // Email of winner after draw
+  image       String?         // Vercel Blob URL - picture of sealed box
+
+  // Slot configuration
+  slotCount   Int             @default(36) // Number of items/packs in the box (1-100)
+  
+  // Participation settings
+  minParticipation   Int      @default(10000) // Minimum picks to trigger draw
+  freeEntriesPerUser Int      @default(10)    // Free entries per user per giveaway
+  
+  // Status tracking
+  status      GiveawayStatus  @default(OPEN)
+  totalPicks  Int             @default(0)     // Counter for total picks made
+  
+  // Draw information
+  drawDate       DateTime?    // Set when min participation is reached (next business day 7:30 PM EST)
+  entryCutoff    DateTime?    // 5 hours before draw time
+  pick3Result    String?      // Ohio Lottery Pick 3 result (e.g., "247")
+  pick3Date      DateTime?    // Date of the Pick 3 drawing
+  
+  // Prize info
+  prizeValue  Decimal?        @db.Decimal(10, 2) // Total value of the box
+  
+  // Relations
+  picks       GiveawayPick[]
+  winners     GiveawayWinner[]
+  
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+
+  @@index([status])
 }
 
-model GiveawayEntry {
-  id         String   @id @default(cuid())
-  giveawayId String
-  giveaway   Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
-  email      String
-  name       String?
-  createdAt  DateTime @default(now())
+enum GiveawayStatus {
+  OPEN        // Accepting picks, hasn't hit minimum
+  FILLING     // Hit minimum, draw date set, still accepting until cutoff
+  CLOSED      // Cutoff passed, waiting for Pick 3 result
+  COMPLETED   // Winners determined
+  CANCELLED   // Giveaway cancelled
+}
 
-  @@unique([giveawayId, email])
+model GiveawayPick {
+  id          String   @id @default(cuid())
+  giveawayId  String
+  giveaway    Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  userId      String
+  
+  // The pick itself
+  slot        Int      // Which slot (1 to slotCount)
+  pickNumber  String   // 001-999 (stored as string to preserve leading zeros)
+  
+  // Entry type
+  isFreeEntry Boolean  @default(false) // True if used free entry, false if used credit
+  
+  createdAt   DateTime @default(now())
+
   @@index([giveawayId])
+  @@index([userId])
+  @@index([giveawayId, slot])
+  @@index([giveawayId, slot, pickNumber])
+}
+
+model GiveawayWinner {
+  id          String   @id @default(cuid())
+  giveawayId  String
+  giveaway    Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  userId      String
+  
+  slot        Int      // Which slot they won
+  pickNumber  String   // Their winning pick number
+  distance    Int      // How far from Pick 3 (0 = exact match)
+  
+  // Fulfillment
+  claimed     Boolean  @default(false)
+  shippedAt   DateTime?
+  trackingNumber String?
+  
+  createdAt   DateTime @default(now())
+
+  @@unique([giveawayId, slot]) // Only one winner per slot
+  @@index([giveawayId])
+  @@index([userId])
 }

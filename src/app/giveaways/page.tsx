@@ -1,212 +1,261 @@
-"use client";
-
-import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import Image from "next/image";
 
-// Sample giveaways data
-const giveaways = [
-  {
-    id: "1",
-    title: "Charizard 1st Edition Base Set",
-    description: "Win this iconic Charizard 1st Edition from the original Base Set. One of the most sought-after cards in the Pokémon TCG!",
-    image: null,
-    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    entries: 1234,
-    value: "$15,000",
-    active: true,
-  },
-  {
-    id: "2",
-    title: "Magic Power Nine Mystery Box",
-    description: "A mystery box guaranteed to contain one Power Nine card! Could be a Black Lotus, Mox, or Time Walk.",
-    image: null,
-    endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-    entries: 5678,
-    value: "$10,000+",
-    active: true,
-  },
-  {
-    id: "3",
-    title: "Blue-Eyes White Dragon Collection",
-    description: "Complete set of Blue-Eyes White Dragon cards including the original LOB-001!",
-    image: null,
-    endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-    entries: 892,
-    value: "$2,500",
-    active: true,
-  },
-];
+export const dynamic = "force-dynamic";
 
-function GiveawayCard({ giveaway }: { giveaway: typeof giveaways[0] }) {
-  const { data: session } = useSession();
-  const [entered, setEntered] = useState(false);
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const endDate = new Date(giveaway.endDate);
-  const now = new Date();
-  const timeLeft = endDate.getTime() - now.getTime();
-  const daysLeft = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-  const hoursLeft = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-  const handleEnter = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setEntered(true);
-    setIsSubmitting(false);
-  };
-
-  return (
-    <div className="bg-gradient-to-br from-slate-900/90 to-purple-900/20 rounded-3xl overflow-hidden border border-purple-500/20 hover:border-purple-500/40 transition-all">
-      {/* Image/Preview */}
-      <div className="relative h-48 bg-gradient-to-br from-purple-900/50 to-pink-900/50 flex items-center justify-center">
-        <span className="text-6xl">🎁</span>
-        {/* Value Badge */}
-        <div className="absolute top-4 right-4 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-white font-bold shadow-lg">
-          {giveaway.value}
-        </div>
-        {/* Time Badge */}
-        <div className="absolute bottom-4 left-4 px-4 py-2 bg-black/50 backdrop-blur-sm rounded-full text-white text-sm">
-          ⏰ {daysLeft}d {hoursLeft}h left
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="p-6">
-        <h3 className="text-xl font-bold text-white mb-2">{giveaway.title}</h3>
-        <p className="text-slate-400 text-sm mb-4 line-clamp-2">{giveaway.description}</p>
-
-        {/* Stats */}
-        <div className="flex items-center gap-4 mb-6 text-sm">
-          <div className="flex items-center gap-2 text-slate-400">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            <span>{giveaway.entries.toLocaleString()} entries</span>
-          </div>
-        </div>
-
-        {/* Entry Form */}
-        {entered ? (
-          <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-4 text-center">
-            <span className="text-green-400 font-medium">✓ You&apos;re entered! Good luck!</span>
-          </div>
-        ) : session ? (
-          <button
-            onClick={() => setEntered(true)}
-            className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl shadow-lg transition-all"
-          >
-            Enter Giveaway
-          </button>
-        ) : (
-          <form onSubmit={handleEnter} className="space-y-3">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email to participate"
-              required
-              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-            />
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl shadow-lg transition-all disabled:opacity-50"
-            >
-              {isSubmitting ? "Entering..." : "Enter Giveaway"}
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
-  );
+async function getGiveaways() {
+  return prisma.giveaway.findMany({
+    where: {
+      status: {
+        in: ["OPEN", "FILLING", "CLOSED"],
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    include: {
+      _count: {
+        select: { picks: true },
+      },
+    },
+  });
 }
 
-export default function GiveawaysPage() {
+async function getCompletedGiveaways() {
+  return prisma.giveaway.findMany({
+    where: { status: "COMPLETED" },
+    orderBy: { updatedAt: "desc" },
+    take: 5,
+    include: {
+      _count: {
+        select: { picks: true, winners: true },
+      },
+    },
+  });
+}
+
+const statusColors: Record<string, string> = {
+  OPEN: "bg-green-500/20 text-green-400 border-green-500/30",
+  FILLING: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+  CLOSED: "bg-red-500/20 text-red-400 border-red-500/30",
+  COMPLETED: "bg-slate-500/20 text-slate-400 border-slate-500/30",
+};
+
+const statusLabels: Record<string, string> = {
+  OPEN: "Open for Picks",
+  FILLING: "Draw Date Set!",
+  CLOSED: "Awaiting Results",
+  COMPLETED: "Completed",
+};
+
+export default async function GiveawaysPage() {
+  const [activeGiveaways, completedGiveaways] = await Promise.all([
+    getGiveaways(),
+    getCompletedGiveaways(),
+  ]);
+
   return (
     <div className="min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-12">
-          <nav className="flex items-center justify-center gap-2 text-sm text-slate-500 mb-4">
-            <Link href="/" className="hover:text-purple-400 transition-colors">Home</Link>
+        <div className="mb-12">
+          <nav className="flex items-center gap-2 text-sm text-slate-500 mb-4">
+            <Link href="/" className="hover:text-purple-400 transition-colors">
+              Home
+            </Link>
             <span>/</span>
             <span className="text-white">Giveaways</span>
           </nav>
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full border border-purple-500/30 mb-6">
-            <span className="text-2xl">🎁</span>
-            <span className="text-purple-400 font-medium">Free Entry</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Active Giveaways</h1>
-          <p className="text-slate-400 max-w-2xl mx-auto">
-            Enter for a chance to win rare and valuable collector cards.
-            New giveaways are added weekly – it&apos;s completely free to enter!
+          <h1 className="text-4xl font-bold text-white mb-4">🎁 Card Giveaways</h1>
+          <p className="text-slate-400 max-w-2xl">
+            Pick your lucky numbers for a chance to win sealed products! Every account gets{" "}
+            <span className="text-purple-400 font-medium">10 free entries</span> per giveaway.
+            Earn more entries by shopping in our store.
           </p>
         </div>
 
-        {/* Giveaways Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {giveaways.map((giveaway) => (
-            <GiveawayCard key={giveaway.id} giveaway={giveaway} />
-          ))}
+        {/* How It Works */}
+        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 mb-12">
+          <h2 className="text-xl font-bold text-white mb-4">How It Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">1️⃣</span>
+              </div>
+              <h3 className="text-white font-medium mb-1">Pick a Slot</h3>
+              <p className="text-slate-500 text-sm">Choose which pack/item you want to win (1-36)</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">2️⃣</span>
+              </div>
+              <h3 className="text-white font-medium mb-1">Pick a Number</h3>
+              <p className="text-slate-500 text-sm">Select 000-999 or use auto-pick for best odds</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">3️⃣</span>
+              </div>
+              <h3 className="text-white font-medium mb-1">Wait for Draw</h3>
+              <p className="text-slate-500 text-sm">Draw uses Ohio Lottery Pick 3 (7:30 PM EST)</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">🏆</span>
+              </div>
+              <h3 className="text-white font-medium mb-1">Win!</h3>
+              <p className="text-slate-500 text-sm">Closest to Pick 3 wins each slot</p>
+            </div>
+          </div>
         </div>
 
-        {/* How It Works */}
-        <section className="mt-20">
-          <h2 className="text-2xl font-bold text-white text-center mb-8">How It Works</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: "📧",
-                title: "Enter Your Email",
-                description: "Simply enter your email address to participate in any giveaway.",
-              },
-              {
-                icon: "🎲",
-                title: "Random Selection",
-                description: "Winners are randomly selected using a verified fair draw system.",
-              },
-              {
-                icon: "🏆",
-                title: "Win & Receive",
-                description: "Winners are notified by email and prizes are shipped worldwide.",
-              },
-            ].map((step, index) => (
-              <div key={index} className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">
-                  {step.icon}
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">{step.title}</h3>
-                <p className="text-slate-400 text-sm">{step.description}</p>
-              </div>
-            ))}
-          </div>
+        {/* Active Giveaways */}
+        <section className="mb-16">
+          <h2 className="text-2xl font-bold text-white mb-6">Active Giveaways</h2>
+          
+          {activeGiveaways.length === 0 ? (
+            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 text-center">
+              <div className="text-6xl mb-4">🎁</div>
+              <h3 className="text-xl font-bold text-white mb-2">No Active Giveaways</h3>
+              <p className="text-slate-400">Check back soon for new giveaways!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {activeGiveaways.map((giveaway) => {
+                const progress = Math.min(
+                  100,
+                  (giveaway.totalPicks / giveaway.minParticipation) * 100
+                );
+
+                return (
+                  <Link
+                    key={giveaway.id}
+                    href={`/giveaways/${giveaway.id}`}
+                    className="group block"
+                  >
+                    <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden hover:border-purple-500/50 transition-all">
+                      {/* Image */}
+                      <div className="aspect-video bg-slate-800 relative">
+                        {giveaway.image ? (
+                          <Image
+                            src={giveaway.image}
+                            alt={giveaway.title}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-6xl">
+                            🎁
+                          </div>
+                        )}
+                        <div className="absolute top-3 right-3">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium border ${
+                              statusColors[giveaway.status]
+                            }`}
+                          >
+                            {statusLabels[giveaway.status]}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="p-5">
+                        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
+                          {giveaway.title}
+                        </h3>
+
+                        <div className="flex items-center gap-4 text-sm text-slate-400 mb-4">
+                          <span>📦 {giveaway.slotCount} slots</span>
+                          <span>🎫 {giveaway._count.picks} picks</span>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="mb-3">
+                          <div className="flex justify-between text-xs text-slate-500 mb-1">
+                            <span>{giveaway.totalPicks.toLocaleString()} picks</span>
+                            <span>{giveaway.minParticipation.toLocaleString()} needed</span>
+                          </div>
+                          <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {giveaway.drawDate && (
+                          <div className="text-sm text-amber-400">
+                            🗓️ Draw: {new Date(giveaway.drawDate).toLocaleDateString()} at 7:30 PM EST
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </section>
 
-        {/* Past Winners */}
-        <section className="mt-20 bg-slate-900/50 rounded-3xl border border-slate-800 p-8">
-          <h2 className="text-2xl font-bold text-white text-center mb-8">Recent Winners 🏆</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { name: "J***n M.", prize: "Charizard VMAX", date: "Nov 2024" },
-              { name: "S***a K.", prize: "Black Lotus Proxy", date: "Nov 2024" },
-              { name: "M***e T.", prize: "Pikachu Collection", date: "Oct 2024" },
-              { name: "A***x R.", prize: "Yu-Gi-Oh! Bundle", date: "Oct 2024" },
-            ].map((winner, index) => (
-              <div key={index} className="bg-slate-800/50 rounded-xl p-4 text-center">
-                <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-amber-500 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
-                  🏅
-                </div>
-                <p className="text-white font-medium">{winner.name}</p>
-                <p className="text-purple-400 text-sm">{winner.prize}</p>
-                <p className="text-slate-500 text-xs mt-1">{winner.date}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* Completed Giveaways */}
+        {completedGiveaways.length > 0 && (
+          <section>
+            <h2 className="text-2xl font-bold text-white mb-6">Recent Winners</h2>
+            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-slate-800/50">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
+                      Giveaway
+                    </th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
+                      Picks
+                    </th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
+                      Winners
+                    </th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
+                      Pick 3
+                    </th>
+                    <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
+                      Date
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {completedGiveaways.map((giveaway) => (
+                    <tr key={giveaway.id} className="hover:bg-slate-800/30">
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/giveaways/${giveaway.id}`}
+                          className="text-white hover:text-purple-400"
+                        >
+                          {giveaway.title}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">
+                        {giveaway._count.picks.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3 text-green-400">
+                        {giveaway._count.winners} winners
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-purple-400">
+                          {giveaway.pick3Result || "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-500">
+                        {giveaway.pick3Date
+                          ? new Date(giveaway.pick3Date).toLocaleDateString()
+                          : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

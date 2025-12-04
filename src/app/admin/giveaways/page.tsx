@@ -3,11 +3,21 @@ import Link from "next/link";
 
 export default async function AdminGiveaways() {
   const giveaways = await prisma.giveaway.findMany({
-    include: {
-      _count: { select: { entries: true } },
-    },
     orderBy: { createdAt: "desc" },
+    include: {
+      _count: {
+        select: { picks: true, winners: true },
+      },
+    },
   });
+
+  const statusColors: Record<string, string> = {
+    OPEN: "bg-green-500/20 text-green-400",
+    FILLING: "bg-amber-500/20 text-amber-400",
+    CLOSED: "bg-red-500/20 text-red-400",
+    COMPLETED: "bg-blue-500/20 text-blue-400",
+    CANCELLED: "bg-slate-500/20 text-slate-400",
+  };
 
   return (
     <div>
@@ -17,76 +27,103 @@ export default async function AdminGiveaways() {
           href="/admin/giveaways/new"
           className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors"
         >
-          🎁 Create Giveaway
+          + Create Giveaway
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {giveaways.length === 0 ? (
-          <div className="col-span-full bg-slate-900 border border-slate-800 rounded-xl p-12 text-center">
-            <div className="text-4xl mb-4">🎁</div>
-            <div className="text-slate-400">No giveaways yet</div>
-            <Link
-              href="/admin/giveaways/new"
-              className="inline-block mt-4 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg"
-            >
-              Create your first giveaway
-            </Link>
-          </div>
-        ) : (
-          giveaways.map((giveaway) => {
-            const isActive =
-              giveaway.active && new Date(giveaway.endDate) > new Date();
-            const isEnded = new Date(giveaway.endDate) < new Date();
-
-            return (
-              <div
-                key={giveaway.id}
-                className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden"
-              >
-                <div className="h-32 bg-gradient-to-br from-purple-900/50 to-pink-900/50 flex items-center justify-center">
-                  <span className="text-5xl">🎁</span>
-                </div>
-                <div className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-white">
-                      {giveaway.title}
-                    </h3>
+      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-slate-800/50">
+            <tr>
+              <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
+                Title
+              </th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
+                Slots
+              </th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
+                Picks
+              </th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
+                Min Required
+              </th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
+                Status
+              </th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
+                Draw Date
+              </th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800">
+            {giveaways.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                  No giveaways yet.{" "}
+                  <Link href="/admin/giveaways/new" className="text-purple-400 hover:underline">
+                    Create one
+                  </Link>
+                </td>
+              </tr>
+            ) : (
+              giveaways.map((giveaway) => (
+                <tr key={giveaway.id} className="hover:bg-slate-800/30">
+                  <td className="px-4 py-3">
+                    <div className="text-white font-medium">{giveaway.title}</div>
+                  </td>
+                  <td className="px-4 py-3 text-slate-400">{giveaway.slotCount}</td>
+                  <td className="px-4 py-3">
+                    <span className="text-purple-400">{giveaway._count.picks}</span>
+                    {giveaway._count.winners > 0 && (
+                      <span className="text-green-400 ml-2">
+                        ({giveaway._count.winners} winners)
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-slate-400">
+                    {giveaway.minParticipation.toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3">
                     <span
-                      className={`px-2 py-0.5 rounded text-xs ${
-                        isActive
-                          ? "bg-green-500/20 text-green-400"
-                          : isEnded
-                          ? "bg-slate-700 text-slate-400"
-                          : "bg-yellow-500/20 text-yellow-400"
+                      className={`px-2 py-1 rounded text-xs ${
+                        statusColors[giveaway.status]
                       }`}
                     >
-                      {isActive ? "Active" : isEnded ? "Ended" : "Scheduled"}
+                      {giveaway.status}
                     </span>
-                  </div>
-
-                  <div className="text-slate-400 text-sm mb-3">
-                    {giveaway._count.entries} entries
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="text-slate-500">
-                      Ends: {new Date(giveaway.endDate).toLocaleDateString()}
+                  </td>
+                  <td className="px-4 py-3 text-slate-400">
+                    {giveaway.drawDate
+                      ? new Date(giveaway.drawDate).toLocaleDateString()
+                      : "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/admin/giveaways/${giveaway.id}`}
+                        className="text-purple-400 hover:text-purple-300 text-sm"
+                      >
+                        Edit
+                      </Link>
+                      {giveaway.status === "CLOSED" && (
+                        <Link
+                          href={`/admin/giveaways/${giveaway.id}/draw`}
+                          className="text-green-400 hover:text-green-300 text-sm"
+                        >
+                          Enter Result
+                        </Link>
+                      )}
                     </div>
-                    <Link
-                      href={`/admin/giveaways/${giveaway.id}`}
-                      className="text-purple-400 hover:text-purple-300"
-                    >
-                      Manage
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
-
