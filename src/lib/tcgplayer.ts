@@ -136,33 +136,49 @@ async function fetchDirect(url: string): Promise<string | null> {
  * Extract price from HTML
  */
 function extractPriceFromHTML(html: string): number {
-  // Find dollar amounts with proper price format: $XX.XX (must have cents)
-  const allPrices = html.match(/\$\d{1,3}(?:,\d{3})*\.\d{2}/g);
-
-  if (allPrices && allPrices.length > 0) {
-    console.log("Prices found in HTML:", allPrices.slice(0, 15));
-
-    // Parse all prices and filter reasonable ones ($0.01 - $10000)
-    const validPrices: number[] = [];
-    for (const priceStr of allPrices) {
-      const price = parseFloat(priceStr.replace(/[$,]/g, ""));
-      if (price >= 0.01 && price < 10000) {
-        validPrices.push(price);
+  // First, try to find the market price in the specific TCGPlayer price section
+  // Look for the price-points section which contains the market price
+  const pricePointsMatch = html.match(/price-points__upper__price[^>]*>([^<]+)</i);
+  if (pricePointsMatch) {
+    const priceText = pricePointsMatch[1];
+    const priceMatch = priceText.match(/\$([\d,]+\.?\d*)/);
+    if (priceMatch) {
+      const price = parseFloat(priceMatch[1].replace(/,/g, ""));
+      if (price > 0) {
+        console.log("Found market price in price-points:", price);
+        return price;
       }
     }
+  }
 
-    console.log("Valid prices:", validPrices.slice(0, 10));
-
-    if (validPrices.length > 0) {
+  // Find dollar amounts with proper price format: $XX.XX (must have cents)
+  const allPrices = html.match(/\$\d{1,4}(?:,\d{3})*\.\d{2}/g);
+  
+  if (allPrices && allPrices.length > 0) {
+    console.log("All prices found:", allPrices.slice(0, 20));
+    
+    // Parse all prices and filter card prices ($5 - $10000)
+    // Skip prices under $5 (likely shipping, fees, etc.)
+    const cardPrices: number[] = [];
+    for (const priceStr of allPrices) {
+      const price = parseFloat(priceStr.replace(/[$,]/g, ""));
+      if (price >= 5 && price < 10000) {
+        cardPrices.push(price);
+      }
+    }
+    
+    console.log("Card prices (>=$5):", cardPrices.slice(0, 15));
+    
+    if (cardPrices.length > 0) {
       // Count occurrences of each price
       const priceCounts = new Map<number, number>();
-      for (const price of validPrices) {
+      for (const price of cardPrices) {
         const rounded = Math.round(price * 100) / 100;
         priceCounts.set(rounded, (priceCounts.get(rounded) || 0) + 1);
       }
-
-      // Find most common price
-      let mostCommonPrice = validPrices[0];
+      
+      // Find most common price among card prices
+      let mostCommonPrice = cardPrices[0];
       let maxCount = 1;
       for (const [price, count] of priceCounts.entries()) {
         if (count > maxCount) {
@@ -170,16 +186,15 @@ function extractPriceFromHTML(html: string): number {
           mostCommonPrice = price;
         }
       }
-
-      // If a price appears multiple times, use it (likely the market price)
+      
       if (maxCount > 1) {
-        console.log("Using most common price:", mostCommonPrice, "appears", maxCount, "times");
+        console.log("Using most common card price:", mostCommonPrice, "appears", maxCount, "times");
         return mostCommonPrice;
       }
-
-      // Otherwise use the first valid price
-      console.log("Using first valid price:", validPrices[0]);
-      return validPrices[0];
+      
+      // Use first card price
+      console.log("Using first card price:", cardPrices[0]);
+      return cardPrices[0];
     }
   }
 
@@ -194,7 +209,7 @@ function extractPriceFromHTML(html: string): number {
     const match = html.match(pattern);
     if (match && match[1]) {
       const price = parseFloat(match[1]);
-      if (price > 0) {
+      if (price >= 5) {
         console.log("Found price via JSON pattern:", price);
         return price;
       }
