@@ -1,6 +1,14 @@
 import Link from "next/link";
+import Image from "next/image";
 
-export function Hero() {
+interface HeroProps {
+  cardImages?: string[];
+}
+
+export function Hero({ cardImages = [] }: HeroProps) {
+  // Fallback emojis if no images
+  const fallbackIcons = ["🃏", "⚡", "🧙‍♂️", "🎴", "👁️", "🏀"];
+
   return (
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
       {/* Animated Background */}
@@ -15,7 +23,7 @@ export function Hero() {
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-32 h-44 bg-gradient-to-br from-slate-800/50 to-slate-700/30 rounded-xl border border-slate-600/30 shadow-2xl"
+              className="absolute w-32 h-44 rounded-xl border border-slate-600/30 shadow-2xl overflow-hidden"
               style={{
                 left: `${15 + i * 15}%`,
                 top: `${20 + (i % 3) * 25}%`,
@@ -24,9 +32,21 @@ export function Hero() {
                 animationDelay: `${i * 0.3}s`,
               }}
             >
-              <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">
-                {["🃏", "⚡", "🧙‍♂️", "🎴", "👁️", "🏀"][i]}
-              </div>
+              {cardImages[i] ? (
+                <Image
+                  src={cardImages[i]}
+                  alt="Trading card"
+                  fill
+                  className="object-cover"
+                  sizes="128px"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-800/50 to-slate-700/30 flex items-center justify-center text-4xl opacity-30">
+                  {fallbackIcons[i]}
+                </div>
+              )}
+              {/* Shine effect overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none" />
             </div>
           ))}
         </div>

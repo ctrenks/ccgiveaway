@@ -1,130 +1,221 @@
 import { Hero } from "@/components/Hero";
-import { CategoryCard } from "@/components/CategoryCard";
-import { CardGrid } from "@/components/CardGrid";
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import Image from "next/image";
+import { unstable_cache } from "next/cache";
+import AddToCartButton from "@/components/AddToCartButton";
 
-// Sample data - in production, this would come from the database
-const featuredCategories = [
-  {
-    name: "Magic: The Gathering",
-    slug: "magic-the-gathering",
-    description: "From Alpha to the latest sets. Find your next powerful planeswalker.",
-    cardCount: 2500,
+// Cache for 2 hours (7200 seconds)
+const getHeroCardImages = unstable_cache(
+  async () => {
+    const products = await prisma.product.findMany({
+      where: {
+        active: true,
+        image: { not: null },
+      },
+      select: { image: true },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+    });
+    return products.map((p) => p.image).filter((img): img is string => img !== null);
   },
-  {
-    name: "Pokémon",
-    slug: "pokemon",
-    description: "Gotta catch 'em all! Rare holos, vintage cards, and modern hits.",
-    cardCount: 1800,
-  },
-  {
-    name: "Yu-Gi-Oh!",
-    slug: "yu-gi-oh",
-    description: "It's time to duel! Legendary dragons and powerful spell cards.",
-    cardCount: 1200,
-  },
-  {
-    name: "Sports Cards",
-    slug: "sports",
-    description: "Basketball, football, baseball rookies and legendary players.",
-    cardCount: 3000,
-  },
-];
+  ["hero-card-images"],
+  { revalidate: 7200 }
+);
 
-const featuredCards = [
-  {
-    id: "1",
-    name: "Black Lotus",
-    slug: "black-lotus-alpha",
-    price: "25000.00",
-    rarity: "MYTHIC_RARE",
-    condition: "NEAR_MINT",
-    category: { name: "MTG", slug: "magic-the-gathering" },
-    set: "Alpha",
+// Cache for 2 hours
+const getSubTypesWithCounts = unstable_cache(
+  async () => {
+    const subTypes = await prisma.subType.findMany({
+      where: {
+        products: {
+          some: { active: true },
+        },
+      },
+      include: {
+        _count: {
+          select: { products: { where: { active: true } } },
+        },
+      },
+      orderBy: { name: "asc" },
+      take: 4,
+    });
+    return subTypes;
   },
-  {
-    id: "2",
-    name: "Charizard 1st Edition",
-    slug: "charizard-1st-edition-base",
-    price: "15000.00",
-    rarity: "ULTRA_RARE",
-    condition: "MINT",
-    category: { name: "Pokémon", slug: "pokemon" },
-    set: "Base Set",
-  },
-  {
-    id: "3",
-    name: "Blue-Eyes White Dragon",
-    slug: "blue-eyes-white-dragon-lob",
-    price: "850.00",
-    rarity: "ULTRA_RARE",
-    condition: "NEAR_MINT",
-    category: { name: "Yu-Gi-Oh!", slug: "yu-gi-oh" },
-    set: "Legend of Blue Eyes",
-  },
-  {
-    id: "4",
-    name: "Pikachu Illustrator",
-    slug: "pikachu-illustrator-promo",
-    price: "50000.00",
-    rarity: "LEGENDARY",
-    condition: "MINT",
-    category: { name: "Pokémon", slug: "pokemon" },
-    set: "Promo",
-  },
-];
+  ["homepage-subtypes"],
+  { revalidate: 7200 }
+);
 
-export default function HomePage() {
+// Cache for 1 hour
+const getFeaturedProducts = unstable_cache(
+  async () => {
+    const products = await prisma.product.findMany({
+      where: {
+        active: true,
+        quantity: { gt: 0 },
+      },
+      include: {
+        category: true,
+        subType: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+    });
+    return products;
+  },
+  ["homepage-featured"],
+  { revalidate: 3600 }
+);
+
+const gameIcons: Record<string, string> = {
+  "magic the gathering": "🧙‍♂️",
+  "pokemon": "⚡",
+  "pokémon": "⚡",
+  "yu-gi-oh": "👁️",
+  "yu-gi-oh!": "👁️",
+  "sports": "🏀",
+  "sports cards": "🏀",
+};
+
+function getIcon(name: string): string {
+  return gameIcons[name.toLowerCase()] || "🎴";
+}
+
+export default async function HomePage() {
+  const [cardImages, subTypes, featuredProducts] = await Promise.all([
+    getHeroCardImages(),
+    getSubTypesWithCounts(),
+    getFeaturedProducts(),
+  ]);
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <Hero />
+      <Hero cardImages={cardImages} />
 
       {/* Categories Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-white mb-2">Browse Categories</h2>
-            <p className="text-slate-400">Explore our collection by card type</p>
-          </div>
-          <Link
-            href="/categories"
-            className="hidden sm:flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors font-medium"
-          >
-            View All
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredCategories.map((category) => (
-            <CategoryCard key={category.slug} {...category} />
-          ))}
-        </div>
-      </section>
-
-      {/* Featured Cards Section */}
-      <section className="bg-gradient-to-b from-transparent via-purple-950/20 to-transparent py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {subTypes.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-bold text-white mb-2">Featured Cards</h2>
-              <p className="text-slate-400">Hand-picked rare finds from our collection</p>
+              <h2 className="text-3xl font-bold text-white mb-2">Browse Categories</h2>
+              <p className="text-slate-400">Explore our collection by card type</p>
             </div>
             <Link
-              href="/store"
+              href="/categories"
               className="hidden sm:flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors font-medium"
             >
-              View Store
+              View All
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>
           </div>
-          <CardGrid cards={featuredCards} />
-        </div>
-      </section>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {subTypes.map((subType) => (
+              <Link
+                key={subType.id}
+                href={`/store?subtype=${subType.id}`}
+                className="group block"
+              >
+                <div className="relative h-48 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl overflow-hidden border border-slate-700/50 hover:border-purple-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-900/30 to-pink-900/30" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent" />
+                  <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                    <div className="text-4xl mb-2">{getIcon(subType.name)}</div>
+                    <h3 className="text-xl font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">
+                      {subType.name}
+                    </h3>
+                    <p className="text-sm text-purple-400 font-medium">
+                      {subType._count.products} cards available
+                    </p>
+                  </div>
+                  <div className="absolute top-4 right-4 w-10 h-10 bg-white/10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Featured Cards Section */}
+      {featuredProducts.length > 0 && (
+        <section className="bg-gradient-to-b from-transparent via-purple-950/20 to-transparent py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-white mb-2">Featured Cards</h2>
+                <p className="text-slate-400">Fresh additions to our collection</p>
+              </div>
+              <Link
+                href="/store"
+                className="hidden sm:flex items-center gap-2 text-purple-400 hover:text-purple-300 transition-colors font-medium"
+              >
+                View Store
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden group hover:border-purple-500/30 transition-all"
+                >
+                  <div className="aspect-[3/4] bg-slate-800 relative overflow-hidden">
+                    {product.image ? (
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-6xl">
+                        🃏
+                      </div>
+                    )}
+                    {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
+                      <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                        {Math.round((1 - Number(product.price) / Number(product.originalPrice)) * 100)}% OFF
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-white font-medium line-clamp-2 mb-1">{product.name}</h3>
+                    {product.setName && (
+                      <p className="text-slate-500 text-sm mb-2">{product.setName}</p>
+                    )}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xl font-bold text-white">
+                        ${Number(product.price).toFixed(2)}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {product.quantity} left
+                      </span>
+                    </div>
+                    <AddToCartButton
+                      product={{
+                        id: product.id,
+                        name: product.name,
+                        price: Number(product.price),
+                        image: product.image,
+                        quantity: product.quantity,
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Giveaway CTA Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
