@@ -25,7 +25,7 @@ export function parseTCGPlayerUrl(url: string): { productId: string; game: strin
   try {
     const urlObj = new URL(url);
     const pathParts = urlObj.pathname.split("/").filter(Boolean);
-    
+
     if (pathParts[0] !== "product" || pathParts.length < 3) {
       return null;
     }
@@ -48,7 +48,7 @@ async function fetchPriceFromAPI(productId: string): Promise<{ marketPrice: numb
   const endpoints = [
     // Main marketplace API
     `https://mp-search-api.tcgplayer.com/v1/product/${productId}/pricepoints`,
-    // Alternate API  
+    // Alternate API
     `https://mpapi.tcgplayer.com/v2/product/${productId}/pricepoints`,
     // Product details API
     `https://mpapi.tcgplayer.com/v2/product/${productId}/details`,
@@ -59,7 +59,7 @@ async function fetchPriceFromAPI(productId: string): Promise<{ marketPrice: numb
   for (const apiUrl of endpoints) {
     try {
       console.log("Trying price API:", apiUrl);
-      
+
       const response = await fetch(apiUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
@@ -76,10 +76,10 @@ async function fetchPriceFromAPI(productId: string): Promise<{ marketPrice: numb
       if (response.ok) {
         const text = await response.text();
         console.log("API response:", text.substring(0, 500));
-        
+
         try {
           const data = JSON.parse(text);
-          
+
           // Try to extract price from various response formats
           if (Array.isArray(data)) {
             for (const item of data) {
@@ -254,7 +254,7 @@ function extractRarity(html: string): string | undefined {
     "Mythic Rare", "Secret Rare", "Ultra Rare", "Illustration Rare",
     "Special Art Rare", "Holo Rare", "Rare", "Uncommon", "Common"
   ];
-  
+
   const lowerHtml = html.toLowerCase();
   for (const rarity of rarities) {
     if (lowerHtml.includes(rarity.toLowerCase())) {
