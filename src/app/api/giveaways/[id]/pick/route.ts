@@ -7,11 +7,11 @@ import { ROLES } from "@/lib/constants";
 // Draw: 7:30 PM EST, Entry Cutoff: 5:00 PM EST same day
 function getDrawSchedule(): { drawDate: Date; entryCutoff: Date } {
   const now = new Date();
-  
+
   // Find next business day
   const drawDay = new Date(now);
   drawDay.setDate(drawDay.getDate() + 1);
-  
+
   // Skip weekends (0 = Sunday, 6 = Saturday)
   while (drawDay.getDay() === 0 || drawDay.getDay() === 6) {
     drawDay.setDate(drawDay.getDate() + 1);
@@ -23,7 +23,7 @@ function getDrawSchedule(): { drawDate: Date; entryCutoff: Date } {
   const drawDate = new Date(drawDay);
   drawDate.setUTCHours(0, 30, 0, 0); // This puts us at 00:30 UTC = 7:30 PM EST previous calendar day
   drawDate.setUTCDate(drawDate.getUTCDate() + 1); // Move to correct day
-  
+
   // Create entry cutoff at 5:00 PM EST same day as draw
   // 5:00 PM EST = 22:00 UTC
   const entryCutoff = new Date(drawDay);
