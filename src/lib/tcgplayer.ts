@@ -118,6 +118,42 @@ async function fetchPriceFromAPI(productId: string): Promise<{ marketPrice: numb
 }
 
 /**
+ * Extract price from HTML
+ */
+function extractPriceFromHTML(html: string): number {
+  // Look for the specific price-points span class the user found
+  const patterns = [
+    // Main price display: <span class="price-points__upper__price">$0.20</span>
+    /class=["']price-points__upper__price["'][^>]*>\s*\$?([\d,.]+)/i,
+    /price-points__upper__price[^>]*>\s*\$?([\d,.]+)/i,
+    // Market price patterns
+    /class=["']market-price[^"']*["'][^>]*>\s*\$?([\d,.]+)/i,
+    /market-price[^>]*>\s*\$?([\d,.]+)/i,
+    // Data attribute patterns
+    /data-price=["']([\d,.]+)["']/i,
+    /data-market-price=["']([\d,.]+)["']/i,
+    // JSON patterns in script tags
+    /"marketPrice"\s*:\s*([\d.]+)/i,
+    /"price"\s*:\s*([\d.]+)/i,
+    // Generic price patterns
+    />\s*\$\s*([\d]+\.[\d]{2})\s*</,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      const price = parseFloat(match[1].replace(/,/g, ""));
+      if (price > 0) {
+        console.log("Found price in HTML:", price, "using pattern:", pattern.toString().substring(0, 50));
+        return price;
+      }
+    }
+  }
+
+  return 0;
+}
+
+/**
  * Fetch product data from TCGPlayer
  */
 export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProduct | null> {
@@ -129,11 +165,7 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
 
     console.log("Fetching TCGPlayer product:", parsed.productId);
 
-    // Try to get price from API first
-    const priceData = await fetchPriceFromAPI(parsed.productId);
-    console.log("Price data from API:", priceData);
-
-    // Fetch the product page for other data
+    // Fetch the product page
     const response = await fetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
@@ -151,12 +183,23 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
     const html = await response.text();
     console.log("HTML length:", html.length);
 
-    // Extract data from HTML
+    // Extract price from HTML first (most reliable since user confirmed it's there)
+    let marketPrice = extractPriceFromHTML(html);
+    console.log("Price from HTML:", marketPrice);
+
+    // If no price in HTML, try API as fallback
+    if (marketPrice === 0) {
+      const priceData = await fetchPriceFromAPI(parsed.productId);
+      console.log("Price data from API:", priceData);
+      marketPrice = priceData?.marketPrice || 0;
+    }
+
+    // Extract other data from HTML
     const name = extractName(html, parsed.slug);
     const imageUrl = extractImage(html);
     const setName = extractSetName(html, parsed.slug);
 
-    console.log("Extracted:", { name, imageUrl: imageUrl?.substring(0, 50), setName });
+    console.log("Extracted:", { name, imageUrl: imageUrl?.substring(0, 50), setName, marketPrice });
 
     const product: TCGPlayerProduct = {
       productId: parsed.productId,
@@ -167,8 +210,8 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
       cardNumber: extractCardNumber(html),
       rarity: extractRarity(html),
       imageUrl,
-      marketPrice: priceData?.marketPrice || 0,
-      listedPrice: priceData?.lowPrice || 0,
+      marketPrice,
+      listedPrice: marketPrice,
     };
 
     return product;
