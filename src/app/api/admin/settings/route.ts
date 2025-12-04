@@ -36,6 +36,8 @@ export async function POST(request: NextRequest) {
       syncIntervalDays,
       giveawayCreditsPerDollar,
       giveawayCreditsEnabled,
+      freeShippingThreshold,
+      flatShippingRate,
     } = body;
 
     const settings = await prisma.settings.upsert({
@@ -47,6 +49,8 @@ export async function POST(request: NextRequest) {
         syncIntervalDays,
         giveawayCreditsPerDollar,
         giveawayCreditsEnabled,
+        freeShippingThreshold,
+        flatShippingRate,
       },
       create: {
         id: "default",
@@ -56,6 +60,8 @@ export async function POST(request: NextRequest) {
         syncIntervalDays,
         giveawayCreditsPerDollar,
         giveawayCreditsEnabled,
+        freeShippingThreshold,
+        flatShippingRate,
       },
     });
 

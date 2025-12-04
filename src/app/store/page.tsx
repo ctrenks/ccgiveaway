@@ -7,9 +7,15 @@ import AddToCartButton from "@/components/AddToCartButton";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-async function getProducts() {
+async function getProducts(categorySlug?: string) {
+  const where: { active: boolean; category?: { slug: string } } = { active: true };
+  
+  if (categorySlug) {
+    where.category = { slug: categorySlug };
+  }
+  
   const products = await prisma.product.findMany({
-    where: { active: true },
+    where,
     include: { category: true, subType: true },
     orderBy: { createdAt: "desc" },
   });
@@ -45,9 +51,16 @@ function getCreditsForProduct(
   return Math.floor(Number(product.price) * creditsPerDollar);
 }
 
-export default async function StorePage() {
+interface PageProps {
+  searchParams: Promise<{ category?: string }>;
+}
+
+export default async function StorePage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const categorySlug = params.category;
+
   const [products, categories, settings] = await Promise.all([
-    getProducts(),
+    getProducts(categorySlug),
     getCategories(),
     getSettings(),
   ]);
@@ -57,6 +70,11 @@ export default async function StorePage() {
     : 0.1;
   const creditsEnabled = settings?.giveawayCreditsEnabled ?? true;
 
+  // Find current category name for display
+  const currentCategory = categorySlug
+    ? categories.find((c) => c.slug === categorySlug)
+    : null;
+
   return (
     <div className="min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -65,12 +83,21 @@ export default async function StorePage() {
           <nav className="flex items-center gap-2 text-sm text-slate-500 mb-4">
             <Link href="/" className="hover:text-purple-400 transition-colors">Home</Link>
             <span>/</span>
-            <span className="text-white">Store</span>
+            <Link href="/store" className="hover:text-purple-400 transition-colors">Store</Link>
+            {currentCategory && (
+              <>
+                <span>/</span>
+                <span className="text-white">{currentCategory.name}</span>
+              </>
+            )}
           </nav>
-          <h1 className="text-4xl font-bold text-white mb-4">Card Store</h1>
+          <h1 className="text-4xl font-bold text-white mb-4">
+            {currentCategory ? currentCategory.name : "Card Store"}
+          </h1>
           <p className="text-slate-400 max-w-2xl">
-            Browse our collection of rare and collectible trading cards.
-            Find your next treasure from Magic: The Gathering, Pokémon, Yu-Gi-Oh!, and more.
+            {currentCategory
+              ? `Browse our ${currentCategory.name.toLowerCase()} collection.`
+              : "Browse our collection of rare and collectible trading cards. Find your next treasure from Magic: The Gathering, Pokémon, Yu-Gi-Oh!, and more."}
           </p>
         </div>
 
@@ -78,28 +105,32 @@ export default async function StorePage() {
           {/* Filters Sidebar */}
           <aside className="lg:w-64 shrink-0">
             <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-6 sticky top-24">
-              <h3 className="text-lg font-semibold text-white mb-4">Filters</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">Categories</h3>
 
-              {/* Category Filter */}
-              <div className="mb-6">
-                <h4 className="text-sm font-medium text-slate-400 mb-3">Category</h4>
-                <div className="space-y-2">
+              <div className="space-y-2">
+                <Link
+                  href="/store"
+                  className={`flex items-center gap-3 transition-colors text-sm ${
+                    !categorySlug
+                      ? "text-purple-400 font-medium"
+                      : "text-slate-300 hover:text-white"
+                  }`}
+                >
+                  All Categories
+                </Link>
+                {categories.map((cat) => (
                   <Link
-                    href="/store"
-                    className="flex items-center gap-3 text-slate-300 hover:text-white transition-colors text-sm"
+                    key={cat.id}
+                    href={`/store?category=${cat.slug}`}
+                    className={`flex items-center gap-3 transition-colors text-sm ${
+                      categorySlug === cat.slug
+                        ? "text-purple-400 font-medium"
+                        : "text-slate-300 hover:text-white"
+                    }`}
                   >
-                    All Categories
+                    {cat.name}
                   </Link>
-                  {categories.map((cat) => (
-                    <Link
-                      key={cat.id}
-                      href={`/store?category=${cat.slug}`}
-                      className="flex items-center gap-3 text-slate-300 hover:text-white transition-colors text-sm"
-                    >
-                      {cat.name}
-                    </Link>
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
           </aside>
@@ -110,15 +141,36 @@ export default async function StorePage() {
             <div className="flex items-center justify-between mb-6">
               <p className="text-slate-400">
                 Showing <span className="text-white font-medium">{products.length}</span> products
+                {currentCategory && (
+                  <span> in {currentCategory.name}</span>
+                )}
               </p>
+              {categorySlug && (
+                <Link
+                  href="/store"
+                  className="text-sm text-purple-400 hover:text-purple-300"
+                >
+                  Clear filter ×
+                </Link>
+              )}
             </div>
 
             {/* Product Grid */}
             {products.length === 0 ? (
               <div className="text-center py-20">
                 <div className="text-5xl mb-4">🃏</div>
-                <h2 className="text-2xl font-bold text-white mb-2">No products yet</h2>
-                <p className="text-slate-400">Check back soon for new cards!</p>
+                <h2 className="text-2xl font-bold text-white mb-2">
+                  {categorySlug ? "No products in this category" : "No products yet"}
+                </h2>
+                <p className="text-slate-400">
+                  {categorySlug ? (
+                    <Link href="/store" className="text-purple-400 hover:underline">
+                      View all products
+                    </Link>
+                  ) : (
+                    "Check back soon for new cards!"
+                  )}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

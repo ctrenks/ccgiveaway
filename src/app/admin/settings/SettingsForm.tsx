@@ -10,6 +10,8 @@ interface SettingsFormProps {
     syncIntervalDays: number;
     giveawayCreditsPerDollar: number;
     giveawayCreditsEnabled: boolean;
+    freeShippingThreshold: number;
+    flatShippingRate: number;
   };
 }
 
@@ -210,6 +212,77 @@ export function SettingsForm({ initialSettings }: SettingsFormProps) {
                 : "Credits disabled"}
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Shipping Settings */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-white mb-4">
+          📦 Shipping
+        </h2>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Free Shipping Threshold
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-2.5 text-slate-500">$</span>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={settings.freeShippingThreshold}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    freeShippingThreshold: parseFloat(e.target.value) || 0,
+                  })
+                }
+                className="w-full pl-8 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
+              />
+            </div>
+            <p className="text-slate-500 text-xs mt-1">
+              Free shipping on orders over this amount
+            </p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Flat Rate (under threshold)
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-2.5 text-slate-500">$</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={settings.flatShippingRate}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    flatShippingRate: parseFloat(e.target.value) || 0,
+                  })
+                }
+                className="w-full pl-8 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
+              />
+            </div>
+            <p className="text-slate-500 text-xs mt-1">
+              Shipping cost when under free threshold
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 p-3 bg-slate-800/50 rounded-lg">
+          <p className="text-slate-400 text-sm">
+            {settings.freeShippingThreshold > 0 ? (
+              <>
+                <span className="text-green-400">Free shipping</span> on orders over ${settings.freeShippingThreshold}.
+                Orders under ${settings.freeShippingThreshold} pay <span className="text-white">${settings.flatShippingRate}</span> flat rate.
+              </>
+            ) : (
+              <span className="text-green-400">Free shipping on all orders</span>
+            )}
+          </p>
         </div>
       </div>
 

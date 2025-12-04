@@ -17,6 +17,12 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
 
+  // Shipping settings
+  const [shippingSettings, setShippingSettings] = useState({
+    freeShippingThreshold: 100,
+    flatShippingRate: 5,
+  });
+
   // Shipping form
   const [shipping, setShipping] = useState({
     name: "",
@@ -26,6 +32,21 @@ export default function CheckoutPage() {
     zip: "",
     country: "US",
   });
+
+  // Load shipping settings
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.settings) {
+          setShippingSettings({
+            freeShippingThreshold: Number(data.settings.freeShippingThreshold) || 100,
+            flatShippingRate: Number(data.settings.flatShippingRate) || 5,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Load saved shipping info
   useEffect(() => {
@@ -48,6 +69,10 @@ export default function CheckoutPage() {
         .catch(() => {});
     }
   }, [session?.user?.id]);
+
+  // Calculate shipping cost
+  const shippingCost = total >= shippingSettings.freeShippingThreshold ? 0 : shippingSettings.flatShippingRate;
+  const orderTotal = total + shippingCost;
 
   // Redirect if not logged in
   useEffect(() => {
@@ -246,7 +271,7 @@ export default function CheckoutPage() {
                   ? "Complete Shipping Info"
                   : !paymentMethod
                   ? "Select Payment Method"
-                  : `Pay $${total.toFixed(2)}`}
+                  : `Pay $${orderTotal.toFixed(2)}`}
               </button>
             </div>
           </div>
@@ -292,11 +317,20 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex justify-between text-slate-400">
                   <span>Shipping</span>
-                  <span className="text-green-400">Free</span>
+                  {shippingCost === 0 ? (
+                    <span className="text-green-400">Free</span>
+                  ) : (
+                    <span>${shippingCost.toFixed(2)}</span>
+                  )}
                 </div>
+                {shippingCost > 0 && total < shippingSettings.freeShippingThreshold && (
+                  <p className="text-xs text-slate-500">
+                    Add ${(shippingSettings.freeShippingThreshold - total).toFixed(2)} more for free shipping!
+                  </p>
+                )}
                 <div className="flex justify-between text-white font-bold text-lg pt-2 border-t border-slate-800">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>${orderTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>

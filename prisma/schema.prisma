@@ -108,6 +108,10 @@ model Settings {
   giveawayCreditsPerDollar Decimal @default(0.1) @db.Decimal(5, 2) // 0.1 = 1 credit per $10 spent
   giveawayCreditsEnabled   Boolean @default(true)
 
+  // Shipping settings
+  freeShippingThreshold Decimal @default(100) @db.Decimal(10, 2) // Free shipping over this amount
+  flatShippingRate      Decimal @default(5) @db.Decimal(10, 2)   // Flat rate when under threshold
+
   updatedAt       DateTime @updatedAt
 }
 

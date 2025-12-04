@@ -31,6 +31,12 @@ export default async function AdminSettings() {
               ? Number(settings.giveawayCreditsPerDollar)
               : 0.1,
             giveawayCreditsEnabled: settings?.giveawayCreditsEnabled ?? true,
+            freeShippingThreshold: settings?.freeShippingThreshold
+              ? Number(settings.freeShippingThreshold)
+              : 100,
+            flatShippingRate: settings?.flatShippingRate
+              ? Number(settings.flatShippingRate)
+              : 5,
           }}
         />
       </div>
