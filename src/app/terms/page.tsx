@@ -26,8 +26,8 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">1. Acceptance of Terms</h2>
               <p>
-                By accessing or using Collector Card Giveaway (&quot;the Service&quot;), you agree to be 
-                bound by these Terms of Service. If you do not agree to these terms, please do 
+                By accessing or using Collector Card Giveaway (&quot;the Service&quot;), you agree to be
+                bound by these Terms of Service. If you do not agree to these terms, please do
                 not use our Service.
               </p>
             </section>
@@ -48,7 +48,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">3. Account Registration</h2>
               <p>
-                You are responsible for maintaining the confidentiality of your account and for 
+                You are responsible for maintaining the confidentiality of your account and for
                 all activities that occur under your account. You agree to:
               </p>
               <ul className="list-disc list-inside space-y-2 mt-4">
@@ -110,8 +110,8 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">7. Intellectual Property</h2>
               <p>
-                All content on this Service, including text, graphics, logos, and software, is 
-                the property of Collector Card Giveaway or its licensors. Trading card game names, 
+                All content on this Service, including text, graphics, logos, and software, is
+                the property of Collector Card Giveaway or its licensors. Trading card game names,
                 logos, and related marks are trademarks of their respective owners.
               </p>
             </section>
@@ -119,7 +119,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">8. Disclaimer of Warranties</h2>
               <p>
-                THE SERVICE IS PROVIDED &quot;AS IS&quot; WITHOUT WARRANTIES OF ANY KIND. WE DO NOT 
+                THE SERVICE IS PROVIDED &quot;AS IS&quot; WITHOUT WARRANTIES OF ANY KIND. WE DO NOT
                 GUARANTEE THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE.
               </p>
             </section>
@@ -127,8 +127,8 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">9. Limitation of Liability</h2>
               <p>
-                TO THE MAXIMUM EXTENT PERMITTED BY LAW, COLLECTOR CARD GIVEAWAY SHALL NOT BE 
-                LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES 
+                TO THE MAXIMUM EXTENT PERMITTED BY LAW, COLLECTOR CARD GIVEAWAY SHALL NOT BE
+                LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES
                 ARISING FROM YOUR USE OF THE SERVICE.
               </p>
             </section>
@@ -136,7 +136,7 @@ export default function TermsPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">10. Changes to Terms</h2>
               <p>
-                We reserve the right to modify these terms at any time. Continued use of the 
+                We reserve the right to modify these terms at any time. Continued use of the
                 Service after changes constitutes acceptance of the new terms.
               </p>
             </section>
@@ -156,4 +156,3 @@ export default function TermsPage() {
     </div>
   );
 }
-

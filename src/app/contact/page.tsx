@@ -17,7 +17,7 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // If honeypot is filled, silently "succeed" without sending
     if (formData.website) {
       setSuccess(true);
@@ -69,7 +69,7 @@ export default function ContactPage() {
         <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 md:p-12">
           <h1 className="text-4xl font-bold text-white mb-4">Contact Us</h1>
           <p className="text-slate-400 mb-8">
-            Have a question, suggestion, or need help? We&apos;d love to hear from you! 
+            Have a question, suggestion, or need help? We&apos;d love to hear from you!
             Fill out the form below and we&apos;ll get back to you as soon as possible.
           </p>
 
@@ -218,4 +218,3 @@ export default function ContactPage() {
     </div>
   );
 }
-

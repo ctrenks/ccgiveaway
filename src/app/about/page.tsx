@@ -25,9 +25,9 @@ export default function AboutPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">Who We Are</h2>
               <p>
-                Welcome to Collector Card Giveaway! We&apos;re passionate collectors and traders who 
-                love bringing the excitement of trading card games to our community. Whether you&apos;re 
-                into Magic: The Gathering, Pokémon, Yu-Gi-Oh!, or other collectible card games, 
+                Welcome to Collector Card Giveaway! We&apos;re passionate collectors and traders who
+                love bringing the excitement of trading card games to our community. Whether you&apos;re
+                into Magic: The Gathering, Pokémon, Yu-Gi-Oh!, or other collectible card games,
                 we&apos;ve got something for you.
               </p>
             </section>
@@ -39,12 +39,12 @@ export default function AboutPage() {
               </p>
               <ul className="list-disc list-inside space-y-2 mt-4">
                 <li>
-                  <strong className="text-purple-400">Card Store:</strong> Browse our curated selection 
+                  <strong className="text-purple-400">Card Store:</strong> Browse our curated selection
                   of singles, sealed products, and accessories at competitive prices.
                 </li>
                 <li>
-                  <strong className="text-purple-400">Giveaways:</strong> Participate in our unique 
-                  lottery-style giveaways where you can win booster packs, boxes, and rare cards. 
+                  <strong className="text-purple-400">Giveaways:</strong> Participate in our unique
+                  lottery-style giveaways where you can win booster packs, boxes, and rare cards.
                   Every giveaway includes free entries - no purchase necessary!
                 </li>
               </ul>
@@ -53,7 +53,7 @@ export default function AboutPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">Our Giveaway System</h2>
               <p>
-                What makes us different? Our giveaways are based on the Ohio Lottery Pick 3 numbers, 
+                What makes us different? Our giveaways are based on the Ohio Lottery Pick 3 numbers,
                 ensuring completely fair and transparent results. Here&apos;s how it works:
               </p>
               <ol className="list-decimal list-inside space-y-2 mt-4">
@@ -64,7 +64,7 @@ export default function AboutPage() {
                 <li>Closest number to the Pick 3 wins each slot!</li>
               </ol>
               <p className="mt-4">
-                Everyone gets free entries to every giveaway. Want more chances? Earn Giveaway Credits 
+                Everyone gets free entries to every giveaway. Want more chances? Earn Giveaway Credits
                 by shopping in our store!
               </p>
             </section>
@@ -95,4 +95,3 @@ export default function AboutPage() {
     </div>
   );
 }
-

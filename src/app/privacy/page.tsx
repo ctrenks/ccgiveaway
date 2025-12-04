@@ -26,15 +26,15 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">1. Introduction</h2>
               <p>
-                Collector Card Giveaway (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your 
-                privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard 
+                Collector Card Giveaway (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your
+                privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard
                 your information when you use our website and services.
               </p>
             </section>
 
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">2. Information We Collect</h2>
-              
+
               <h3 className="text-xl font-semibold text-white mb-3">Personal Information</h3>
               <p>We collect information you provide directly to us, including:</p>
               <ul className="list-disc list-inside space-y-2 mt-4">
@@ -72,8 +72,8 @@ export default function PrivacyPage() {
               <h2 className="text-2xl font-bold text-white mb-4">4. Data Retention</h2>
               <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl mb-4">
                 <p className="text-amber-200">
-                  <strong>Important:</strong> We retain your shipping address information to 
-                  facilitate future orders and prize shipments. This information is stored 
+                  <strong>Important:</strong> We retain your shipping address information to
+                  facilitate future orders and prize shipments. This information is stored
                   securely and can be deleted upon request.
                 </p>
               </div>
@@ -85,8 +85,8 @@ export default function PrivacyPage() {
                 <li>Necessary to resolve disputes or enforce agreements</li>
               </ul>
               <p className="mt-4">
-                You may request deletion of your account and personal data by contacting us. 
-                Some information may be retained as required by law or for legitimate business 
+                You may request deletion of your account and personal data by contacting us.
+                Some information may be retained as required by law or for legitimate business
                 purposes.
               </p>
             </section>
@@ -114,7 +114,7 @@ export default function PrivacyPage() {
                 <li>Improve user experience</li>
               </ul>
               <p className="mt-4">
-                You can control cookies through your browser settings. Disabling cookies may 
+                You can control cookies through your browser settings. Disabling cookies may
                 affect your ability to use certain features.
               </p>
             </section>
@@ -122,8 +122,8 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">7. Data Security</h2>
               <p>
-                We implement appropriate technical and organizational measures to protect your 
-                personal information against unauthorized access, alteration, disclosure, or 
+                We implement appropriate technical and organizational measures to protect your
+                personal information against unauthorized access, alteration, disclosure, or
                 destruction. However, no method of transmission over the Internet is 100% secure.
               </p>
             </section>
@@ -150,8 +150,8 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">9. Children&apos;s Privacy</h2>
               <p>
-                Our Service is not intended for children under 18 years of age. We do not 
-                knowingly collect personal information from children. If we learn we have 
+                Our Service is not intended for children under 18 years of age. We do not
+                knowingly collect personal information from children. If we learn we have
                 collected information from a child, we will delete it promptly.
               </p>
             </section>
@@ -159,8 +159,8 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">10. Third-Party Links</h2>
               <p>
-                Our Service may contain links to third-party websites. We are not responsible 
-                for the privacy practices of these sites. We encourage you to read their 
+                Our Service may contain links to third-party websites. We are not responsible
+                for the privacy practices of these sites. We encourage you to read their
                 privacy policies.
               </p>
             </section>
@@ -168,8 +168,8 @@ export default function PrivacyPage() {
             <section>
               <h2 className="text-2xl font-bold text-white mb-4">11. Changes to This Policy</h2>
               <p>
-                We may update this Privacy Policy from time to time. We will notify you of 
-                significant changes by posting the new policy on this page and updating the 
+                We may update this Privacy Policy from time to time. We will notify you of
+                significant changes by posting the new policy on this page and updating the
                 &quot;Last updated&quot; date.
               </p>
             </section>
@@ -189,4 +189,3 @@ export default function PrivacyPage() {
     </div>
   );
 }
-

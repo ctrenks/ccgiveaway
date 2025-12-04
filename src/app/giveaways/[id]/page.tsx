@@ -326,8 +326,13 @@ export default function GiveawayPage({
                   <div className="mt-4 space-y-3">
                     {giveaway.entryCutoff && canPick && (
                       <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
-                        <div className="flex items-center justify-between">
-                          <span className="text-amber-400">⏱️ Entries close at 5 PM EST:</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div>
+                            <span className="text-amber-400">⏱️ Entries close:</span>
+                            <span className="text-white ml-2 font-medium">
+                              5 PM EST on {new Date(giveaway.entryCutoff).toLocaleDateString("en-US", { month: "numeric", day: "numeric" })}
+                            </span>
+                          </div>
                           <span className="text-2xl font-bold text-white font-mono">
                             {countdown}
                           </span>
@@ -335,8 +340,13 @@ export default function GiveawayPage({
                       </div>
                     )}
                     <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
-                      <div className="flex items-center justify-between">
-                        <span className="text-purple-400">🎲 Draw at 7:30 PM EST:</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div>
+                          <span className="text-purple-400">🎲 Draw:</span>
+                          <span className="text-white ml-2 font-medium">
+                            7:30 PM EST on {new Date(giveaway.drawDate).toLocaleDateString("en-US", { month: "numeric", day: "numeric" })}
+                          </span>
+                        </div>
                         <span className="text-2xl font-bold text-white font-mono">
                           {drawCountdown}
                         </span>

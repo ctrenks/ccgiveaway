@@ -11,18 +11,18 @@ const MAX_REQUESTS = 5; // Max 5 requests per hour per IP
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
   const requests = rateLimitMap.get(ip) || [];
-  
+
   // Filter out old requests
   const recentRequests = requests.filter(time => now - time < RATE_LIMIT_WINDOW);
-  
+
   if (recentRequests.length >= MAX_REQUESTS) {
     return true;
   }
-  
+
   // Add current request
   recentRequests.push(now);
   rateLimitMap.set(ip, recentRequests);
-  
+
   return false;
 }
 
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     // Get IP for rate limiting
     const forwardedFor = request.headers.get("x-forwarded-for");
     const ip = forwardedFor?.split(",")[0] || "unknown";
-    
+
     if (isRateLimited(ip)) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
@@ -83,18 +83,18 @@ export async function POST(request: Request) {
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #8B5CF6;">New Contact Form Submission</h2>
-          
+
           <div style="background-color: #1E293B; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <p style="margin: 0 0 10px 0; color: #94A3B8;"><strong style="color: #E2E8F0;">From:</strong> ${escapeHtml(name)}</p>
             <p style="margin: 0 0 10px 0; color: #94A3B8;"><strong style="color: #E2E8F0;">Email:</strong> <a href="mailto:${escapeHtml(email)}" style="color: #8B5CF6;">${escapeHtml(email)}</a></p>
             <p style="margin: 0; color: #94A3B8;"><strong style="color: #E2E8F0;">Subject:</strong> ${escapeHtml(subject)}</p>
           </div>
-          
+
           <div style="background-color: #0F172A; padding: 20px; border-radius: 8px; border: 1px solid #334155;">
             <h3 style="color: #E2E8F0; margin-top: 0;">Message:</h3>
             <p style="color: #CBD5E1; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(message)}</p>
           </div>
-          
+
           <p style="color: #64748B; font-size: 12px; margin-top: 20px;">
             This message was sent from the contact form on collectorcardgiveaway.com
           </p>
@@ -118,22 +118,22 @@ export async function POST(request: Request) {
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #8B5CF6;">Thanks for contacting us, ${escapeHtml(name)}!</h2>
-          
+
           <p style="color: #CBD5E1; line-height: 1.6;">
             We've received your message and will get back to you within 24-48 hours.
           </p>
-          
+
           <div style="background-color: #1E293B; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <p style="margin: 0 0 10px 0; color: #94A3B8;"><strong style="color: #E2E8F0;">Subject:</strong> ${escapeHtml(subject)}</p>
             <p style="margin: 0; color: #94A3B8;"><strong style="color: #E2E8F0;">Your message:</strong></p>
             <p style="color: #CBD5E1; white-space: pre-wrap; margin-top: 10px;">${escapeHtml(message)}</p>
           </div>
-          
+
           <p style="color: #CBD5E1; line-height: 1.6;">
-            In the meantime, feel free to browse our <a href="https://collectorcardgiveaway.com/store" style="color: #8B5CF6;">store</a> 
+            In the meantime, feel free to browse our <a href="https://collectorcardgiveaway.com/store" style="color: #8B5CF6;">store</a>
             or check out our <a href="https://collectorcardgiveaway.com/giveaways" style="color: #8B5CF6;">giveaways</a>!
           </p>
-          
+
           <p style="color: #64748B; font-size: 12px; margin-top: 30px;">
             This is an automated confirmation. Please do not reply to this email.
           </p>
@@ -162,4 +162,3 @@ function escapeHtml(text: string): string {
   };
   return text.replace(/[&<>"']/g, (m) => map[m]);
 }
-
