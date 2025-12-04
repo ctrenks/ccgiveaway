@@ -103,23 +103,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (provider === "coinbase") {
-      // Coinbase webhooks handle confirmation, but we can mark as processing
-      const order = await prisma.order.findFirst({
-        where: {
-          userId: session.user.id,
-          paymentProvider: "coinbase",
-          status: "PENDING",
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      if (order) {
-        // Note: Actual confirmation comes via webhook
-        return NextResponse.json({ success: true, orderId: order.id });
-      }
-    }
-
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Confirm payment error:", error);

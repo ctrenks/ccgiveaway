@@ -7,7 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/lib/cart";
 
-type PaymentMethod = "paypal" | "crypto" | null;
+type PaymentMethod = "paypal" | null;
 
 export default function CheckoutPage() {
   const { data: session, status } = useSession();
@@ -89,39 +89,6 @@ export default function CheckoutPage() {
       // Redirect to PayPal
       if (data.approvalUrl) {
         window.location.href = data.approvalUrl;
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Payment failed");
-      setIsProcessing(false);
-    }
-  };
-
-  const handleCrypto = async () => {
-    setIsProcessing(true);
-    setError("");
-
-    try {
-      const res = await fetch("/api/checkout/crypto", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: items.map((item) => ({
-            id: item.id,
-            quantity: item.quantity,
-          })),
-          shipping,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to create crypto payment");
-      }
-
-      // Redirect to Coinbase Commerce
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Payment failed");
@@ -265,29 +232,11 @@ export default function CheckoutPage() {
                     <p className="text-slate-400 text-sm">Pay with PayPal or credit card</p>
                   </div>
                 </button>
-
-                {/* Crypto */}
-                <button
-                  onClick={() => setPaymentMethod("crypto")}
-                  className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
-                    paymentMethod === "crypto"
-                      ? "border-orange-500 bg-orange-500/10"
-                      : "border-slate-700 hover:border-slate-600"
-                  }`}
-                >
-                  <div className="w-12 h-8 bg-gradient-to-r from-orange-500 to-yellow-500 rounded flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">₿</span>
-                  </div>
-                  <div className="text-left">
-                    <p className="text-white font-medium">Cryptocurrency</p>
-                    <p className="text-slate-400 text-sm">BTC, ETH, USDC, and more</p>
-                  </div>
-                </button>
               </div>
 
               {/* Pay Button */}
               <button
-                onClick={paymentMethod === "paypal" ? handlePayPal : handleCrypto}
+                onClick={handlePayPal}
                 disabled={!paymentMethod || !isShippingComplete || isProcessing}
                 className="w-full mt-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-slate-700 disabled:to-slate-700 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all"
               >
