@@ -383,64 +383,78 @@ export default function GiveawayPage({
             </div>
 
             {/* Taken Numbers Visualization */}
-            {selectedSlot && slotData && slotData.takenNumbers.length > 0 && (
+            {selectedSlot && slotData && (
               <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
                 <h2 className="text-xl font-bold text-white mb-4">
-                  Slot {selectedSlot} - Number Map
+                  Slot {selectedSlot === 0 ? "Box Topper" : selectedSlot} - Number Map
                 </h2>
                 <p className="text-slate-400 text-sm mb-4">
-                  {slotData.totalTaken} numbers taken, {slotData.totalAvailable} available.
-                  <span className="text-red-400 ml-2">■</span> = Taken
+                  {slotData.totalTaken} taken, {slotData.totalAvailable} available.
+                  <span className="text-red-500 ml-2">■</span> = Taken
                   <span className="text-slate-700 ml-2">■</span> = Available
+                  <span className="text-slate-500 ml-2">(Hover for number)</span>
                 </p>
 
-                {/* Visual grid of number ranges */}
-                <div className="space-y-2">
+                {/* Visual grid showing exact positions */}
+                <div className="space-y-1">
                   {[0, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((rangeStart) => {
-                    const rangeEnd = rangeStart + 99;
+                    const takenSet = new Set(slotData.takenNumbers.map((n) => parseInt(n)));
                     const takenInRange = slotData.takenNumbers.filter((n) => {
                       const num = parseInt(n);
-                      return num >= rangeStart && num <= rangeEnd;
+                      return num >= rangeStart && num < rangeStart + 100;
                     });
-                    const takenPercent = (takenInRange.length / 100) * 100;
 
                     return (
                       <div key={rangeStart} className="flex items-center gap-2">
-                        <span className="text-xs text-slate-500 w-16 font-mono">
-                          {String(rangeStart).padStart(3, "0")}-{String(rangeEnd).padStart(3, "0")}
+                        <span className="text-[10px] text-slate-500 w-14 font-mono shrink-0">
+                          {String(rangeStart).padStart(3, "0")}-{String(rangeStart + 99).padStart(3, "0")}
                         </span>
-                        <div className="flex-1 h-4 bg-slate-800 rounded overflow-hidden relative">
-                          <div
-                            className="h-full bg-red-500/50 transition-all"
-                            style={{ width: `${takenPercent}%` }}
-                          />
-                          <span className="absolute inset-0 flex items-center justify-center text-[10px] text-white">
-                            {takenInRange.length}/100
-                          </span>
+                        <div className="flex-1 flex h-5 bg-slate-800/50 rounded overflow-hidden">
+                          {Array.from({ length: 100 }, (_, i) => {
+                            const num = rangeStart + i;
+                            const isTaken = takenSet.has(num);
+                            return (
+                              <div
+                                key={num}
+                                className={`flex-1 border-r border-slate-900/20 last:border-r-0 cursor-pointer transition-all ${
+                                  isTaken
+                                    ? "bg-red-500 hover:bg-red-400"
+                                    : "bg-slate-700/30 hover:bg-green-500/50"
+                                }`}
+                                title={`${String(num).padStart(3, "0")}${isTaken ? " (TAKEN)" : " (Available)"}`}
+                                onClick={() => !isTaken && setPickNumber(String(num).padStart(3, "0"))}
+                              />
+                            );
+                          })}
                         </div>
+                        <span className="text-[10px] text-slate-500 w-8 text-right font-mono shrink-0">
+                          {takenInRange.length}
+                        </span>
                       </div>
                     );
                   })}
                 </div>
 
-                {/* Expandable list of all taken numbers */}
-                <details className="mt-4">
-                  <summary className="text-sm text-purple-400 cursor-pointer hover:text-purple-300">
-                    View all {slotData.totalTaken} taken numbers
-                  </summary>
-                  <div className="mt-2 max-h-40 overflow-y-auto bg-slate-800/50 rounded-lg p-3">
-                    <div className="flex flex-wrap gap-1">
-                      {slotData.takenNumbers.map((num) => (
-                        <span
-                          key={num}
-                          className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-xs font-mono rounded"
-                        >
-                          {num}
-                        </span>
-                      ))}
+                {/* Quick reference for taken numbers */}
+                {slotData.totalTaken > 0 && (
+                  <details className="mt-4">
+                    <summary className="text-sm text-purple-400 cursor-pointer hover:text-purple-300">
+                      List all {slotData.totalTaken} taken numbers
+                    </summary>
+                    <div className="mt-2 max-h-32 overflow-y-auto bg-slate-800/50 rounded-lg p-3">
+                      <div className="flex flex-wrap gap-1">
+                        {slotData.takenNumbers.map((num) => (
+                          <span
+                            key={num}
+                            className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-xs font-mono rounded"
+                          >
+                            {num}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </details>
+                  </details>
+                )}
               </div>
             )}
 
