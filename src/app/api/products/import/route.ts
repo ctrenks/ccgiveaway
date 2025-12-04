@@ -237,14 +237,18 @@ export async function GET(request: NextRequest) {
       discountValue: settings?.discountValue ? Number(settings.discountValue) : 10,
     };
 
+    // Calculate discounted price if we got a price
+    const tcgPrice = tcgProduct.marketPrice || 0;
+    const ourPrice = tcgPrice > 0 ? calculateDiscountedPrice(tcgPrice, discountSettings) : 0;
+
     return NextResponse.json({
       preview: true,
       product: tcgProduct,
       priceInfo: {
-        tcgPlayerPrice: 0, // Price requires manual entry
-        ourPrice: 0,
+        tcgPlayerPrice: tcgPrice,
+        ourPrice: ourPrice,
         discount: discountSettings,
-        savings: 0,
+        savings: tcgPrice - ourPrice,
       },
     });
   } catch (error) {
