@@ -29,7 +29,7 @@ async function copyImageToBlob(imageUrl: string, productName: string): Promise<s
 
   try {
     console.log("Copying image to Blob:", imageUrl);
-    
+
     const response = await fetch(imageUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -42,16 +42,16 @@ async function copyImageToBlob(imageUrl: string, productName: string): Promise<s
     }
 
     const contentType = response.headers.get("content-type") || "image/jpeg";
-    const extension = contentType.includes("png") ? "png" : 
-                      contentType.includes("webp") ? "webp" : 
+    const extension = contentType.includes("png") ? "png" :
+                      contentType.includes("webp") ? "webp" :
                       contentType.includes("gif") ? "gif" : "jpg";
-    
+
     const imageBuffer = await response.arrayBuffer();
     const filename = `products/${slugify(productName)}-${Date.now()}.${extension}`;
 
     // Dynamic import to avoid issues if blob is not configured
     const { put } = await import("@vercel/blob");
-    
+
     const blob = await put(filename, imageBuffer, {
       access: "public",
       contentType,
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     // Fetch product data from TCGPlayer
     const tcgProduct = await fetchTCGPlayerProduct(url);
     console.log("TCGPlayer product:", tcgProduct);
-    
+
     if (!tcgProduct) {
       return NextResponse.json(
         { error: "Failed to fetch product data from TCGPlayer. Check the URL and try again." },
@@ -222,7 +222,7 @@ export async function GET(request: NextRequest) {
 
     const tcgProduct = await fetchTCGPlayerProduct(url);
     console.log("Preview product:", tcgProduct);
-    
+
     if (!tcgProduct) {
       return NextResponse.json(
         { error: "Failed to fetch product data. Check the URL and try again." },
