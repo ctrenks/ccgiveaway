@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 
 export default async function AdminOrders() {
   const orders = await prisma.order.findMany({
@@ -20,9 +21,49 @@ export default async function AdminOrders() {
     REFUNDED: "bg-slate-500/20 text-slate-400",
   };
 
+  // Count orders by status for export buttons
+  const paidCount = orders.filter((o) => o.status === "PAID").length;
+  const processingCount = orders.filter((o) => o.status === "PROCESSING").length;
+
   return (
     <div>
-      <h1 className="text-3xl font-bold text-white mb-8">Orders</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold text-white">Orders</h1>
+        
+        {/* Export Buttons */}
+        <div className="flex gap-3">
+          <Link
+            href="/api/admin/orders/export?status=PAID"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm"
+          >
+            <span>📥</span>
+            Export Paid ({paidCount})
+          </Link>
+          <Link
+            href="/api/admin/orders/export?status=PROCESSING"
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors text-sm"
+          >
+            <span>📥</span>
+            Export Processing ({processingCount})
+          </Link>
+        </div>
+      </div>
+
+      <div className="bg-slate-800/30 border border-slate-700 rounded-lg p-4 mb-6">
+        <h3 className="text-white font-medium mb-2">🚢 Pirate Ship Import</h3>
+        <p className="text-slate-400 text-sm">
+          Export orders as CSV, then import into{" "}
+          <a
+            href="https://ship.pirateship.com/ship"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-purple-400 hover:underline"
+          >
+            Pirate Ship
+          </a>{" "}
+          using their <strong>Import Spreadsheet</strong> feature. After shipping, update order status below.
+        </p>
+      </div>
 
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
         <table className="w-full">
@@ -49,12 +90,15 @@ export default async function AdminOrders() {
               <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
                 Date
               </th>
+              <th className="text-left px-4 py-3 text-sm font-medium text-slate-400">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
             {orders.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                <td colSpan={8} className="px-4 py-12 text-center text-slate-500">
                   No orders yet
                 </td>
               </tr>
@@ -89,6 +133,14 @@ export default async function AdminOrders() {
                   <td className="px-4 py-3 text-slate-400 text-sm">
                     {new Date(order.createdAt).toLocaleDateString()}
                   </td>
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/admin/orders/${order.id}`}
+                      className="text-purple-400 hover:text-purple-300 text-sm"
+                    >
+                      View
+                    </Link>
+                  </td>
                 </tr>
               ))
             )}
@@ -98,4 +150,3 @@ export default async function AdminOrders() {
     </div>
   );
 }
-
