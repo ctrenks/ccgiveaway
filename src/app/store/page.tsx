@@ -7,11 +7,15 @@ import AddToCartButton from "@/components/AddToCartButton";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-async function getProducts(categorySlug?: string) {
-  const where: { active: boolean; category?: { slug: string } } = { active: true };
+async function getProducts(categorySlug?: string, subTypeId?: string) {
+  const where: { active: boolean; category?: { slug: string }; subTypeId?: string } = { active: true };
 
   if (categorySlug) {
     where.category = { slug: categorySlug };
+  }
+
+  if (subTypeId) {
+    where.subTypeId = subTypeId;
   }
 
   const products = await prisma.product.findMany({
@@ -37,6 +41,26 @@ async function getCategories() {
   return categories;
 }
 
+async function getSubTypes() {
+  // Only get subtypes that have at least one active product
+  const subTypes = await prisma.subType.findMany({
+    where: {
+      products: {
+        some: {
+          active: true,
+        },
+      },
+    },
+    include: {
+      _count: {
+        select: { products: { where: { active: true } } },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+  return subTypes;
+}
+
 async function getSettings() {
   const settings = await prisma.settings.findUnique({
     where: { id: "default" },
@@ -60,16 +84,18 @@ function getCreditsForProduct(
 }
 
 interface PageProps {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{ category?: string; subtype?: string }>;
 }
 
 export default async function StorePage({ searchParams }: PageProps) {
   const params = await searchParams;
   const categorySlug = params.category;
+  const subTypeId = params.subtype;
 
-  const [products, categories, settings] = await Promise.all([
-    getProducts(categorySlug),
+  const [products, categories, subTypes, settings] = await Promise.all([
+    getProducts(categorySlug, subTypeId),
     getCategories(),
+    getSubTypes(),
     getSettings(),
   ]);
 
@@ -81,6 +107,11 @@ export default async function StorePage({ searchParams }: PageProps) {
   // Find current category name for display
   const currentCategory = categorySlug
     ? categories.find((c) => c.slug === categorySlug)
+    : null;
+
+  // Find current subtype for display
+  const currentSubType = subTypeId
+    ? subTypes.find((s) => s.id === subTypeId)
     : null;
 
   return (
@@ -95,17 +126,31 @@ export default async function StorePage({ searchParams }: PageProps) {
             {currentCategory && (
               <>
                 <span>/</span>
-                <span className="text-white">{currentCategory.name}</span>
+                {currentSubType ? (
+                  <Link href={`/store?category=${currentCategory.slug}`} className="hover:text-purple-400 transition-colors">
+                    {currentCategory.name}
+                  </Link>
+                ) : (
+                  <span className="text-white">{currentCategory.name}</span>
+                )}
+              </>
+            )}
+            {currentSubType && (
+              <>
+                <span>/</span>
+                <span className="text-white">{currentSubType.name}</span>
               </>
             )}
           </nav>
           <h1 className="text-4xl font-bold text-white mb-4">
-            {currentCategory ? currentCategory.name : "Card Store"}
+            {currentSubType ? currentSubType.name : currentCategory ? currentCategory.name : "Card Store"}
           </h1>
           <p className="text-slate-400 max-w-2xl">
-            {currentCategory
-              ? `Browse our ${currentCategory.name.toLowerCase()} collection.`
-              : "Browse our collection of rare and collectible trading cards. Find your next treasure from Magic: The Gathering, Pokémon, Yu-Gi-Oh!, and more."}
+            {currentSubType
+              ? `Browse our ${currentSubType.name} collection.`
+              : currentCategory
+                ? `Browse our ${currentCategory.name.toLowerCase()} collection.`
+                : "Browse our collection of rare and collectible trading cards. Find your next treasure from Magic: The Gathering, Pokémon, Yu-Gi-Oh!, and more."}
           </p>
         </div>
 
@@ -115,11 +160,11 @@ export default async function StorePage({ searchParams }: PageProps) {
             <div className="bg-slate-900/50 rounded-2xl border border-slate-800 p-6 sticky top-24">
               <h3 className="text-lg font-semibold text-white mb-4">Categories</h3>
 
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Link
                   href="/store"
-                  className={`flex items-center gap-3 transition-colors text-sm ${
-                    !categorySlug
+                  className={`flex items-center gap-3 transition-colors text-sm py-1 ${
+                    !categorySlug && !subTypeId
                       ? "text-purple-400 font-medium"
                       : "text-slate-300 hover:text-white"
                   }`}
@@ -127,17 +172,37 @@ export default async function StorePage({ searchParams }: PageProps) {
                   All Categories
                 </Link>
                 {categories.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    href={`/store?category=${cat.slug}`}
-                    className={`flex items-center gap-3 transition-colors text-sm ${
-                      categorySlug === cat.slug
-                        ? "text-purple-400 font-medium"
-                        : "text-slate-300 hover:text-white"
-                    }`}
-                  >
-                    {cat.name}
-                  </Link>
+                  <div key={cat.id}>
+                    <Link
+                      href={`/store?category=${cat.slug}`}
+                      className={`flex items-center gap-3 transition-colors text-sm py-1 ${
+                        categorySlug === cat.slug && !subTypeId
+                          ? "text-purple-400 font-medium"
+                          : "text-slate-300 hover:text-white"
+                      }`}
+                    >
+                      {cat.name}
+                    </Link>
+                    {/* Show subtypes under the selected category */}
+                    {subTypes.length > 0 && (
+                      <div className="ml-4 space-y-1 mt-1">
+                        {subTypes.map((sub) => (
+                          <Link
+                            key={sub.id}
+                            href={`/store?category=${cat.slug}&subtype=${sub.id}`}
+                            className={`flex items-center justify-between gap-2 transition-colors text-xs py-1 ${
+                              subTypeId === sub.id
+                                ? "text-purple-400 font-medium"
+                                : "text-slate-400 hover:text-white"
+                            }`}
+                          >
+                            <span>{sub.name}</span>
+                            <span className="text-slate-600">({sub._count.products})</span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -149,11 +214,14 @@ export default async function StorePage({ searchParams }: PageProps) {
             <div className="flex items-center justify-between mb-6">
               <p className="text-slate-400">
                 Showing <span className="text-white font-medium">{products.length}</span> products
-                {currentCategory && (
+                {currentSubType && (
+                  <span> in {currentSubType.name}</span>
+                )}
+                {currentCategory && !currentSubType && (
                   <span> in {currentCategory.name}</span>
                 )}
               </p>
-              {categorySlug && (
+              {(categorySlug || subTypeId) && (
                 <Link
                   href="/store"
                   className="text-sm text-purple-400 hover:text-purple-300"
@@ -168,10 +236,10 @@ export default async function StorePage({ searchParams }: PageProps) {
               <div className="text-center py-20">
                 <div className="text-5xl mb-4">🃏</div>
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  {categorySlug ? "No products in this category" : "No products yet"}
+                  {categorySlug || subTypeId ? "No products in this category" : "No products yet"}
                 </h2>
                 <p className="text-slate-400">
-                  {categorySlug ? (
+                  {categorySlug || subTypeId ? (
                     <Link href="/store" className="text-purple-400 hover:underline">
                       View all products
                     </Link>

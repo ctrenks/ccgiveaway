@@ -1,11 +1,35 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/lib/cart";
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, total, itemCount } = useCart();
+  const [shippingSettings, setShippingSettings] = useState({
+    freeShippingThreshold: 100,
+    flatShippingRate: 5,
+  });
+
+  // Load shipping settings
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.settings) {
+          setShippingSettings({
+            freeShippingThreshold: Number(data.settings.freeShippingThreshold) || 100,
+            flatShippingRate: Number(data.settings.flatShippingRate) || 5,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const shippingCost = total >= shippingSettings.freeShippingThreshold ? 0 : shippingSettings.flatShippingRate;
+  const orderTotal = total + shippingCost;
+  const amountToFreeShipping = shippingSettings.freeShippingThreshold - total;
 
   if (items.length === 0) {
     return (
@@ -116,11 +140,20 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between text-slate-400">
                   <span>Shipping</span>
-                  <span className="text-green-400">Calculated at checkout</span>
+                  {shippingCost === 0 ? (
+                    <span className="text-green-400">Free</span>
+                  ) : (
+                    <span>${shippingCost.toFixed(2)}</span>
+                  )}
                 </div>
+                {shippingCost > 0 && amountToFreeShipping > 0 && (
+                  <p className="text-xs text-amber-400 bg-amber-500/10 px-3 py-2 rounded-lg">
+                    🚚 Add ${amountToFreeShipping.toFixed(2)} more for FREE shipping!
+                  </p>
+                )}
                 <div className="border-t border-slate-800 pt-3 flex justify-between text-white font-bold text-lg">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>${orderTotal.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -144,4 +177,3 @@ export default function CartPage() {
     </div>
   );
 }
-
