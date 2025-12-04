@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 interface PreviewData {
@@ -25,10 +25,25 @@ export default function ImportProduct() {
   const [quantity, setQuantity] = useState(1);
   const [condition, setCondition] = useState<"NEW" | "OPENED" | "USED">("NEW");
   const [marketPrice, setMarketPrice] = useState<string>("");
+  const [discountType, setDiscountType] = useState<"percentage" | "fixed">("percentage");
+  const [discountValue, setDiscountValue] = useState<number>(10);
   const [isLoading, setIsLoading] = useState(false);
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Load default settings
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.settings) {
+          setDiscountType(data.settings.discountType || "percentage");
+          setDiscountValue(Number(data.settings.discountValue) || 10);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handlePreview = async () => {
     if (!url) return;
@@ -80,6 +95,8 @@ export default function ImportProduct() {
           quantity,
           condition,
           manualPrice: price,
+          discountType,
+          discountValue,
         }),
       });
       const data = await res.json();
@@ -101,9 +118,10 @@ export default function ImportProduct() {
   };
 
   // Calculate discounted price preview
-  const discountPercent = preview?.priceInfo?.discount?.discountValue || 10;
   const parsedPrice = parseFloat(marketPrice) || 0;
-  const discountedPrice = parsedPrice * (1 - discountPercent / 100);
+  const discountedPrice = discountType === "percentage"
+    ? parsedPrice * (1 - discountValue / 100)
+    : Math.max(0, parsedPrice - discountValue);
 
   return (
     <div>
@@ -200,15 +218,9 @@ export default function ImportProduct() {
               </div>
             </div>
 
-            {/* Price Entry - Always Required */}
+            {/* Price & Discount */}
             <div className="mt-6 pt-6 border-t border-slate-800">
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-4">
-                <p className="text-blue-400 text-sm">
-                  💡 Enter the TCGPlayer Market Price from the product page. Your {discountPercent}% discount will be applied automatically.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
                     TCGPlayer Market Price *
@@ -228,7 +240,7 @@ export default function ImportProduct() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Your Price ({discountPercent}% off)
+                    Your Price
                   </label>
                   <div className="px-4 py-3 bg-green-500/10 border border-green-500/30 rounded-lg">
                     <span className="text-green-400 text-lg font-bold">
@@ -241,6 +253,44 @@ export default function ImportProduct() {
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* Adjustable Discount */}
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-slate-300 text-sm font-medium">Discount for this import:</span>
+                  <Link href="/admin/settings" className="text-purple-400 text-xs hover:underline">
+                    Change default →
+                  </Link>
+                </div>
+                <div className="flex gap-3">
+                  <select
+                    value={discountType}
+                    onChange={(e) => setDiscountType(e.target.value as "percentage" | "fixed")}
+                    className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm"
+                  >
+                    <option value="percentage">Percentage (%)</option>
+                    <option value="fixed">Fixed ($)</option>
+                  </select>
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={discountValue}
+                      onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
+                      className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm"
+                    />
+                    <span className="absolute right-3 top-2 text-slate-500 text-sm">
+                      {discountType === "percentage" ? "%" : "$"}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-slate-500 text-xs mt-2">
+                  {discountType === "percentage"
+                    ? `${discountValue}% off TCGPlayer price`
+                    : `$${discountValue} off TCGPlayer price`}
+                </p>
               </div>
             </div>
 
@@ -292,7 +342,7 @@ export default function ImportProduct() {
             <li>Copy the product URL from TCGPlayer</li>
             <li>Paste it above and click &quot;Fetch&quot;</li>
             <li>Enter the Market Price shown on TCGPlayer</li>
-            <li>Your discount will be applied automatically</li>
+            <li>Adjust discount if needed (default from settings)</li>
             <li>Set quantity and condition, then import</li>
           </ol>
         </div>

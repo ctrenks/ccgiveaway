@@ -11,7 +11,7 @@ export function Header() {
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
-  
+
   const isAdmin = session?.user?.role === ROLES.ADMIN;
   const isMod = session?.user?.role && session.user.role >= ROLES.MODERATOR;
 

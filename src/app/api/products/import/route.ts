@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { url, quantity = 1, condition = "NEW", manualPrice } = body;
+    const { url, quantity = 1, condition = "NEW", manualPrice, discountType, discountValue } = body;
 
-    console.log("Import request:", { url, quantity, condition, manualPrice });
+    console.log("Import request:", { url, quantity, condition, manualPrice, discountType, discountValue });
 
     if (!url) {
       return NextResponse.json({ error: "TCGPlayer URL is required" }, { status: 400 });
@@ -111,12 +111,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get discount settings
+    // Get discount settings - use custom values if provided, otherwise use defaults
     const settings = await prisma.settings.findUnique({ where: { id: "default" } });
     const discountSettings: ImportSettings = {
-      discountType: (settings?.discountType as "percentage" | "fixed") || "percentage",
-      discountValue: settings?.discountValue ? Number(settings.discountValue) : 10,
+      discountType: discountType || (settings?.discountType as "percentage" | "fixed") || "percentage",
+      discountValue: discountValue ?? (settings?.discountValue ? Number(settings.discountValue) : 10),
     };
+
+    console.log("Using discount settings:", discountSettings);
 
     // Use manual price (required since TCGPlayer blocks scraping)
     const originalPrice = manualPrice || 0;
