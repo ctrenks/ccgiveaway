@@ -25,12 +25,12 @@ async function getPayPalAccessToken(): Promise<string> {
   });
 
   const data = await response.json();
-  
+
   if (!data.access_token) {
     console.error("PayPal auth failed:", data);
     throw new Error("Failed to get PayPal access token");
   }
-  
+
   return data.access_token;
 }
 
