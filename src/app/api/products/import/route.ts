@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ROLES } from "@/lib/constants";
+import { put } from "@vercel/blob";
 import {
   fetchTCGPlayerProduct,
   parseTCGPlayerUrl,
@@ -15,6 +16,45 @@ function slugify(text: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+}
+
+/**
+ * Download image from URL and upload to Vercel Blob
+ */
+async function copyImageToBlob(imageUrl: string, productName: string): Promise<string | null> {
+  try {
+    console.log("Copying image to Blob:", imageUrl);
+    
+    const response = await fetch(imageUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      },
+    });
+
+    if (!response.ok) {
+      console.error("Failed to fetch image:", response.status);
+      return null;
+    }
+
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    const extension = contentType.includes("png") ? "png" : 
+                      contentType.includes("webp") ? "webp" : 
+                      contentType.includes("gif") ? "gif" : "jpg";
+    
+    const imageBuffer = await response.arrayBuffer();
+    const filename = `products/${slugify(productName)}-${Date.now()}.${extension}`;
+
+    const blob = await put(filename, imageBuffer, {
+      access: "public",
+      contentType,
+    });
+
+    console.log("Image uploaded to Blob:", blob.url);
+    return blob.url;
+  } catch (error) {
+    console.error("Error copying image to Blob:", error);
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -66,9 +106,15 @@ export async function POST(request: NextRequest) {
       discountValue: settings?.discountValue ? Number(settings.discountValue) : 10,
     };
 
-    // Get or determine price - use manual price if provided, otherwise use scraped price
+    // Get or determine price - use manual price if provided
     const originalPrice = manualPrice || tcgProduct.marketPrice || tcgProduct.listedPrice || 0;
     const ourPrice = originalPrice > 0 ? calculateDiscountedPrice(originalPrice, discountSettings) : 0;
+
+    // Copy image to Vercel Blob
+    let imageUrl = null;
+    if (tcgProduct.imageUrl) {
+      imageUrl = await copyImageToBlob(tcgProduct.imageUrl, tcgProduct.name);
+    }
 
     // Find or create category (default to "Trading Cards")
     let category = await prisma.category.findUnique({
@@ -108,11 +154,11 @@ export async function POST(request: NextRequest) {
         setName: tcgProduct.setName,
         cardNumber: tcgProduct.cardNumber,
         rarity: tcgProduct.rarity,
-        image: tcgProduct.imageUrl,
+        image: imageUrl, // Use Blob URL
         price: ourPrice,
         originalPrice: originalPrice,
         quantity,
-        condition: condition as "NEW" | "USED",
+        condition: condition as "NEW" | "OPENED" | "USED",
         categoryId: category.id,
         subTypeId: subType.id,
         tcgPlayerId: tcgProduct.productId,
@@ -193,4 +239,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
