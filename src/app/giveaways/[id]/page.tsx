@@ -664,12 +664,12 @@ export default function GiveawayPage({
             }
             picksBySlot[pick.slot].push(pick);
           });
-          
+
           // Sort picks within each slot by number
           Object.values(picksBySlot).forEach((picks) => {
             picks.sort((a, b) => parseInt(a.pickNumber) - parseInt(b.pickNumber));
           });
-          
+
           // Get sorted slot numbers (box topper first if exists)
           const sortedSlots = Object.keys(picksBySlot)
             .map(Number)
