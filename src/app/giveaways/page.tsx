@@ -165,7 +165,7 @@ export default async function GiveawaysPage() {
             <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
               <h3 className="text-sm font-semibold text-purple-400 mb-2">🎲 100% Fair & Transparent</h3>
               <p className="text-xs text-slate-400">
-                Winners are determined by the official Ohio Lottery Pick 3 Evening drawing - a publicly verifiable, 
+                Winners are determined by the official Ohio Lottery Pick 3 Evening drawing - a publicly verifiable,
                 independent lottery result. We have no control over the winning numbers, ensuring completely fair results for everyone.
               </p>
             </div>
