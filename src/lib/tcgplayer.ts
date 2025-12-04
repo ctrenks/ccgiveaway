@@ -26,7 +26,7 @@ export function parseTCGPlayerUrl(url: string): { productId: string; game: strin
   try {
     const urlObj = new URL(url);
     const pathParts = urlObj.pathname.split("/").filter(Boolean);
-    
+
     if (pathParts[0] !== "product" || pathParts.length < 3) {
       return null;
     }
@@ -73,7 +73,7 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
 
     const html = await response.text();
     console.log("TCGPlayer HTML length:", html.length);
-    
+
     // Log first 2000 chars for debugging
     console.log("HTML preview:", html.substring(0, 2000));
 
@@ -113,7 +113,7 @@ function extractName(html: string, slug: string): string {
     name = name.split(" | ")[0].split(" - TCG")[0].trim();
     if (name) return name;
   }
-  
+
   // Try alternate og:title format
   const ogMatch2 = html.match(/<meta\s+content=["']([^"']+)["']\s+(?:property|name)=["']og:title["']/i);
   if (ogMatch2) {
@@ -191,7 +191,7 @@ function extractRarity(html: string): string | undefined {
     "Mythic Rare", "Secret Rare", "Ultra Rare", "Illustration Rare",
     "Special Art Rare", "Holo Rare", "Rare", "Uncommon", "Common"
   ];
-  
+
   const lowerHtml = html.toLowerCase();
   for (const rarity of rarities) {
     if (lowerHtml.includes(rarity.toLowerCase())) {

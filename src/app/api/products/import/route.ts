@@ -24,7 +24,7 @@ function slugify(text: string): string {
 async function copyImageToBlob(imageUrl: string, productName: string): Promise<string | null> {
   try {
     console.log("Copying image to Blob:", imageUrl);
-    
+
     const response = await fetch(imageUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -37,10 +37,10 @@ async function copyImageToBlob(imageUrl: string, productName: string): Promise<s
     }
 
     const contentType = response.headers.get("content-type") || "image/jpeg";
-    const extension = contentType.includes("png") ? "png" : 
-                      contentType.includes("webp") ? "webp" : 
+    const extension = contentType.includes("png") ? "png" :
+                      contentType.includes("webp") ? "webp" :
                       contentType.includes("gif") ? "gif" : "jpg";
-    
+
     const imageBuffer = await response.arrayBuffer();
     const filename = `products/${slugify(productName)}-${Date.now()}.${extension}`;
 
