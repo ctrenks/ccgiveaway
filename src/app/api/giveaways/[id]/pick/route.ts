@@ -111,10 +111,15 @@ export async function POST(
     );
   }
 
+  // Box topper (slot 0) costs 3x credits
+  const isBoxTopper = slot === 0;
+  const creditCost = isBoxTopper ? 3 : 1;
+
   // Check free entries vs credits
   let isFreeEntry = false;
 
-  if (useFreeEntry) {
+  if (useFreeEntry && !isBoxTopper) {
+    // Free entries cannot be used for box topper
     const freeEntriesUsed = await prisma.giveawayPick.count({
       where: {
         giveawayId: id,
@@ -131,23 +136,26 @@ export async function POST(
     }
     isFreeEntry = true;
   } else {
-    // Check user has credits
+    // Check user has enough credits
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { giveawayCredits: true },
     });
 
-    if (!user || user.giveawayCredits < 1) {
+    if (!user || user.giveawayCredits < creditCost) {
       return NextResponse.json(
-        { error: "Not enough credits. Use a free entry or purchase more credits." },
+        { error: isBoxTopper 
+            ? `Box topper requires ${creditCost} credits. You have ${user?.giveawayCredits || 0}.`
+            : "Not enough credits. Use a free entry or purchase more credits." 
+        },
         { status: 400 }
       );
     }
 
-    // Deduct credit
+    // Deduct credits
     await prisma.user.update({
       where: { id: session.user.id },
-      data: { giveawayCredits: { decrement: 1 } },
+      data: { giveawayCredits: { decrement: creditCost } },
     });
   }
 

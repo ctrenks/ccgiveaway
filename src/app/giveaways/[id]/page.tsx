@@ -66,6 +66,11 @@ export default function GiveawayPage({
   const [slotData, setSlotData] = useState<SlotData | null>(null);
   const [loadingSlot, setLoadingSlot] = useState(false);
 
+  // Bulk auto-pick state
+  const [bulkCount, setBulkCount] = useState(10);
+  const [bulkInSlot, setBulkInSlot] = useState(false);
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
+
   // Fetch giveaway data
   useEffect(() => {
     fetch(`/api/giveaways/${id}`)
@@ -135,13 +140,53 @@ export default function GiveawayPage({
     try {
       const res = await fetch(`/api/giveaways/${id}/auto-pick`);
       const data = await res.json();
-      if (data.slot && data.pickNumber) {
+      if (data.slot !== undefined && data.pickNumber) {
         setSelectedSlot(data.slot);
         setPickNumber(data.pickNumber);
-        setSuccess(`Auto-pick: Slot ${data.slot}, Number ${data.pickNumber}`);
+        setSuccess(`Auto-pick: Slot ${data.slot === 0 ? "Box Topper" : data.slot}, Number ${data.pickNumber}`);
       }
     } catch {
       setError("Failed to get auto-pick suggestion");
+    }
+  };
+
+  const handleBulkAutoPick = async () => {
+    setBulkSubmitting(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const res = await fetch(`/api/giveaways/${id}/bulk-pick`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          count: bulkCount,
+          targetSlot: bulkInSlot && selectedSlot !== null ? selectedSlot : undefined,
+          useFreeEntries: useFreeEntry,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to create picks");
+      } else {
+        setSuccess(
+          `Created ${data.picksCreated} picks! (${data.freeEntriesUsed} free, ${data.creditsUsed} credits used)`
+        );
+        // Refresh data
+        const refreshRes = await fetch(`/api/giveaways/${id}`);
+        const refreshData = await refreshRes.json();
+        if (refreshData.giveaway) {
+          setGiveaway(refreshData.giveaway);
+          setUserPicks(refreshData.userPicks || []);
+          setFreeEntriesRemaining(refreshData.freeEntriesRemaining || 0);
+        }
+      }
+    } catch {
+      setError("Failed to create picks");
+    } finally {
+      setBulkSubmitting(false);
     }
   };
 
@@ -320,6 +365,9 @@ export default function GiveawayPage({
                       >
                         <span>⭐</span>
                         <span>Box Topper</span>
+                        <span className="bg-red-500/30 text-red-300 text-xs px-2 py-0.5 rounded-full">
+                          3x credits
+                        </span>
                         {pickCount > 0 && (
                           <span className="bg-slate-700 text-xs px-2 py-0.5 rounded-full">
                             {pickCount} picks
@@ -551,6 +599,49 @@ export default function GiveawayPage({
                     🎲 Auto-Pick (Best Odds)
                   </button>
 
+                  {/* Bulk Auto-Pick Section */}
+                  <div className="border-t border-slate-700 pt-4 mt-4">
+                    <div className="text-sm text-slate-400 mb-3">Bulk Auto-Pick</div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={bulkCount}
+                          onChange={(e) => setBulkCount(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
+                          min={1}
+                          max={100}
+                          className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-center text-sm"
+                        />
+                        <span className="text-slate-400 text-sm">picks</span>
+                      </div>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={bulkInSlot}
+                          onChange={(e) => setBulkInSlot(e.target.checked)}
+                          disabled={selectedSlot === null}
+                          className="rounded border-slate-700 bg-slate-800 text-purple-500"
+                        />
+                        <span className="text-slate-400 text-sm">
+                          {selectedSlot !== null 
+                            ? `Only in ${selectedSlot === 0 ? "Box Topper" : `Slot ${selectedSlot}`}`
+                            : "Select a slot first"}
+                        </span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleBulkAutoPick}
+                        disabled={bulkSubmitting}
+                        className="w-full py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:opacity-50 text-white rounded-lg transition-colors text-sm font-medium"
+                      >
+                        {bulkSubmitting ? "Picking..." : `🚀 Auto-Pick ${bulkCount}x`}
+                      </button>
+                      <p className="text-[10px] text-slate-500">
+                        Uses free entries first, then credits. Box topper costs 3x credits.
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Slot Info Panel */}
                   {selectedSlot !== null && slotData && (
                     <div className="bg-slate-800/50 rounded-lg p-3 space-y-3">
@@ -595,33 +686,44 @@ export default function GiveawayPage({
 
                   {/* Entry Type */}
                   <div className="space-y-2">
-                    <label className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg cursor-pointer">
-                      <input
-                        type="radio"
-                        checked={useFreeEntry}
-                        onChange={() => setUseFreeEntry(true)}
-                        disabled={freeEntriesRemaining <= 0}
-                        className="text-purple-500"
-                      />
-                      <div>
-                        <div className="text-white">Free Entry</div>
-                        <div className="text-slate-500 text-sm">
-                          {freeEntriesRemaining} of {giveaway.freeEntriesPerUser} remaining
+                    {selectedSlot === 0 ? (
+                      <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                        <div className="text-amber-400 font-medium">⭐ Box Topper</div>
+                        <div className="text-slate-400 text-sm">
+                          Requires 3 credits (no free entries)
                         </div>
                       </div>
-                    </label>
-                    <label className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg cursor-pointer">
-                      <input
-                        type="radio"
-                        checked={!useFreeEntry}
-                        onChange={() => setUseFreeEntry(false)}
-                        className="text-purple-500"
-                      />
-                      <div>
-                        <div className="text-white">Use Credit</div>
-                        <div className="text-slate-500 text-sm">1 credit per pick</div>
-                      </div>
-                    </label>
+                    ) : (
+                      <>
+                        <label className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg cursor-pointer">
+                          <input
+                            type="radio"
+                            checked={useFreeEntry}
+                            onChange={() => setUseFreeEntry(true)}
+                            disabled={freeEntriesRemaining <= 0}
+                            className="text-purple-500"
+                          />
+                          <div>
+                            <div className="text-white">Free Entry</div>
+                            <div className="text-slate-500 text-sm">
+                              {freeEntriesRemaining} of {giveaway.freeEntriesPerUser} remaining
+                            </div>
+                          </div>
+                        </label>
+                        <label className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg cursor-pointer">
+                          <input
+                            type="radio"
+                            checked={!useFreeEntry}
+                            onChange={() => setUseFreeEntry(false)}
+                            className="text-purple-500"
+                          />
+                          <div>
+                            <div className="text-white">Use Credit</div>
+                            <div className="text-slate-500 text-sm">1 credit per pick</div>
+                          </div>
+                        </label>
+                      </>
+                    )}
                   </div>
 
                   <button
