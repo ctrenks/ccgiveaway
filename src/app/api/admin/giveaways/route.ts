@@ -38,6 +38,7 @@ export async function POST(request: Request) {
     hasBoxTopper,
     minParticipation,
     freeEntriesPerUser,
+    creditCostPerPick,
     prizeValue,
   } = body;
 
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
       hasBoxTopper: hasBoxTopper || false,
       minParticipation: minParticipation || 10000,
       freeEntriesPerUser: freeEntriesPerUser ?? 10,
+      creditCostPerPick: Math.min(100, Math.max(1, creditCostPerPick || 1)),
       prizeValue: prizeValue ? prizeValue : null,
       status: "OPEN",
     },

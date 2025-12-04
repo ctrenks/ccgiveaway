@@ -16,6 +16,7 @@ export default function NewGiveawayPage() {
     hasBoxTopper: false,
     minParticipation: 10000,
     freeEntriesPerUser: 10,
+    creditCostPerPick: 1,
     prizeValue: "",
   });
 
@@ -206,6 +207,30 @@ export default function NewGiveawayPage() {
                 max={100}
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-slate-400 mb-2">
+                Credit Cost Per Pick
+              </label>
+              <input
+                type="number"
+                value={formData.creditCostPerPick}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    creditCostPerPick: Math.min(100, Math.max(1, parseInt(e.target.value) || 1)),
+                  })
+                }
+                min={1}
+                max={100}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Box topper costs 3x this amount
+              </p>
             </div>
 
             <div>

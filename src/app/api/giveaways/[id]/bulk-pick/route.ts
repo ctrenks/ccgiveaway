@@ -19,8 +19,8 @@ function getNextDrawDate(): Date {
 
 // Find best available pick for a slot
 async function findBestPick(
-  giveawayId: string, 
-  slot: number, 
+  giveawayId: string,
+  slot: number,
   userId: string,
   existingUserPicks: Set<string>
 ): Promise<string | null> {
@@ -34,7 +34,7 @@ async function findBestPick(
 
   // Find biggest gap
   const sortedTaken = Array.from(takenNumbers).sort((a, b) => a - b);
-  
+
   let bestNumber: number | null = null;
   let maxGap = 0;
 
@@ -93,7 +93,7 @@ async function findBestPick(
 
 // Find the slot with fewest picks
 async function findBestSlot(
-  giveawayId: string, 
+  giveawayId: string,
   slotCount: number,
   hasBoxTopper: boolean,
   excludeBoxTopper: boolean = true
@@ -106,11 +106,11 @@ async function findBestSlot(
 
   const countMap: Record<number, number> = {};
   const minSlot = hasBoxTopper && !excludeBoxTopper ? 0 : 1;
-  
+
   for (let i = minSlot; i <= slotCount; i++) {
     countMap[i] = 0;
   }
-  
+
   slotCounts.forEach((s) => {
     if (s.slot >= minSlot) {
       countMap[s.slot] = s._count.id;
@@ -119,7 +119,7 @@ async function findBestSlot(
 
   let bestSlot = 1;
   let minPicks = Infinity;
-  
+
   for (let i = minSlot; i <= slotCount; i++) {
     if (countMap[i] < minPicks) {
       minPicks = countMap[i];
@@ -210,9 +210,10 @@ export async function POST(
       slot = await findBestSlot(id, giveaway.slotCount, giveaway.hasBoxTopper, true);
     }
 
-    // Box topper costs 3x
+    // Box topper costs 3x the base credit cost
     const isBoxTopper = slot === 0;
-    const creditCost = isBoxTopper ? 3 : 1;
+    const baseCost = giveaway.creditCostPerPick || 1;
+    const creditCost = isBoxTopper ? baseCost * 3 : baseCost;
 
     // Determine if using free entry or credits
     let isFreeEntry = false;
@@ -230,7 +231,7 @@ export async function POST(
 
     // Find best pick number for this slot
     const pickNumber = await findBestPick(id, slot, session.user.id, existingUserPicks);
-    
+
     if (!pickNumber) {
       // No available numbers in this slot
       if (isFreeEntry) {
@@ -307,4 +308,3 @@ export async function POST(
     picks: results,
   });
 }
-

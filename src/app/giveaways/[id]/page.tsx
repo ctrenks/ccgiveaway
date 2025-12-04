@@ -14,6 +14,7 @@ interface Giveaway {
   hasBoxTopper: boolean;
   minParticipation: number;
   freeEntriesPerUser: number;
+  creditCostPerPick: number;
   status: string;
   totalPicks: number;
   drawDate: string | null;
@@ -366,7 +367,7 @@ export default function GiveawayPage({
                         <span>⭐</span>
                         <span>Box Topper</span>
                         <span className="bg-red-500/30 text-red-300 text-xs px-2 py-0.5 rounded-full">
-                          3x credits
+                          {(giveaway.creditCostPerPick || 1) * 3} credits
                         </span>
                         {pickCount > 0 && (
                           <span className="bg-slate-700 text-xs px-2 py-0.5 rounded-full">
@@ -623,7 +624,7 @@ export default function GiveawayPage({
                           className="rounded border-slate-700 bg-slate-800 text-purple-500"
                         />
                         <span className="text-slate-400 text-sm">
-                          {selectedSlot !== null 
+                          {selectedSlot !== null
                             ? `Only in ${selectedSlot === 0 ? "Box Topper" : `Slot ${selectedSlot}`}`
                             : "Select a slot first"}
                         </span>
@@ -637,7 +638,7 @@ export default function GiveawayPage({
                         {bulkSubmitting ? "Picking..." : `🚀 Auto-Pick ${bulkCount}x`}
                       </button>
                       <p className="text-[10px] text-slate-500">
-                        Uses free entries first, then credits. Box topper costs 3x credits.
+                        Uses free entries first, then {giveaway.creditCostPerPick || 1} credit{(giveaway.creditCostPerPick || 1) > 1 ? "s" : ""}/pick. Box topper: {(giveaway.creditCostPerPick || 1) * 3} credits.
                       </p>
                     </div>
                   </div>
@@ -690,7 +691,7 @@ export default function GiveawayPage({
                       <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
                         <div className="text-amber-400 font-medium">⭐ Box Topper</div>
                         <div className="text-slate-400 text-sm">
-                          Requires 3 credits (no free entries)
+                          Requires {(giveaway.creditCostPerPick || 1) * 3} credits (no free entries)
                         </div>
                       </div>
                     ) : (
@@ -718,8 +719,10 @@ export default function GiveawayPage({
                             className="text-purple-500"
                           />
                           <div>
-                            <div className="text-white">Use Credit</div>
-                            <div className="text-slate-500 text-sm">1 credit per pick</div>
+                            <div className="text-white">Use Credits</div>
+                            <div className="text-slate-500 text-sm">
+                              {giveaway.creditCostPerPick || 1} credit{(giveaway.creditCostPerPick || 1) > 1 ? "s" : ""} per pick
+                            </div>
                           </div>
                         </label>
                       </>

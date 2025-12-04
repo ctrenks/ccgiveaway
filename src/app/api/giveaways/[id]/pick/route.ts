@@ -111,9 +111,10 @@ export async function POST(
     );
   }
 
-  // Box topper (slot 0) costs 3x credits
+  // Box topper (slot 0) costs 3x the base credit cost
   const isBoxTopper = slot === 0;
-  const creditCost = isBoxTopper ? 3 : 1;
+  const baseCost = giveaway.creditCostPerPick || 1;
+  const creditCost = isBoxTopper ? baseCost * 3 : baseCost;
 
   // Check free entries vs credits
   let isFreeEntry = false;
@@ -144,9 +145,9 @@ export async function POST(
 
     if (!user || user.giveawayCredits < creditCost) {
       return NextResponse.json(
-        { error: isBoxTopper 
+        { error: isBoxTopper
             ? `Box topper requires ${creditCost} credits. You have ${user?.giveawayCredits || 0}.`
-            : "Not enough credits. Use a free entry or purchase more credits." 
+            : "Not enough credits. Use a free entry or purchase more credits."
         },
         { status: 400 }
       );

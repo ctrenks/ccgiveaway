@@ -13,6 +13,7 @@ interface Giveaway {
   hasBoxTopper: boolean;
   minParticipation: number;
   freeEntriesPerUser: number;
+  creditCostPerPick: number;
   status: string;
   totalPicks: number;
   prizeValue: string | null;
@@ -42,6 +43,7 @@ export default function EditGiveawayPage({
   const [hasBoxTopper, setHasBoxTopper] = useState(false);
   const [minParticipation, setMinParticipation] = useState(10000);
   const [freeEntriesPerUser, setFreeEntriesPerUser] = useState(10);
+  const [creditCostPerPick, setCreditCostPerPick] = useState(1);
   const [prizeValue, setPrizeValue] = useState("");
 
   useEffect(() => {
@@ -57,6 +59,7 @@ export default function EditGiveawayPage({
           setHasBoxTopper(g.hasBoxTopper || false);
           setMinParticipation(g.minParticipation);
           setFreeEntriesPerUser(g.freeEntriesPerUser);
+          setCreditCostPerPick(g.creditCostPerPick || 1);
           setPrizeValue(g.prizeValue ? String(g.prizeValue) : "");
         }
         setLoading(false);
@@ -80,6 +83,7 @@ export default function EditGiveawayPage({
           hasBoxTopper,
           minParticipation,
           freeEntriesPerUser,
+          creditCostPerPick,
           prizeValue: prizeValue ? parseFloat(prizeValue) : null,
         }),
       });
@@ -237,17 +241,32 @@ export default function EditGiveawayPage({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm text-slate-400 mb-2">Prize Value ($)</label>
-                <input
-                  type="number"
-                  value={prizeValue}
-                  onChange={(e) => setPrizeValue(e.target.value)}
-                  step="0.01"
-                  min={0}
-                  placeholder="Optional"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">Credit Cost Per Pick</label>
+                  <input
+                    type="number"
+                    value={creditCostPerPick}
+                    onChange={(e) => setCreditCostPerPick(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
+                    min={1}
+                    max={100}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Box topper costs 3x this</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-slate-400 mb-2">Prize Value ($)</label>
+                  <input
+                    type="number"
+                    value={prizeValue}
+                    onChange={(e) => setPrizeValue(e.target.value)}
+                    step="0.01"
+                    min={0}
+                    placeholder="Optional"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                  />
+                </div>
               </div>
 
               <button

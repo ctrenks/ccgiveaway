@@ -50,6 +50,7 @@ export async function PUT(
     hasBoxTopper,
     minParticipation,
     freeEntriesPerUser,
+    creditCostPerPick,
     prizeValue,
   } = body;
 
@@ -69,6 +70,7 @@ export async function PUT(
   if (description !== undefined) updateData.description = description;
   if (minParticipation !== undefined) updateData.minParticipation = minParticipation;
   if (freeEntriesPerUser !== undefined) updateData.freeEntriesPerUser = freeEntriesPerUser;
+  if (creditCostPerPick !== undefined) updateData.creditCostPerPick = Math.min(100, Math.max(1, creditCostPerPick));
   if (prizeValue !== undefined) updateData.prizeValue = prizeValue;
 
   // Only allow changing slot count and box topper if no picks yet
