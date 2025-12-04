@@ -59,7 +59,7 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     scrapflyUrl.searchParams.set("render_js", "true");
     scrapflyUrl.searchParams.set("asp", "true"); // Anti-scraping protection bypass
     scrapflyUrl.searchParams.set("country", "us");
-    scrapflyUrl.searchParams.set("rendering_wait", "3000"); // Wait 3s for JS to load prices
+    scrapflyUrl.searchParams.set("rendering_wait", "1000"); // Wait 1s for JS to load prices
     scrapflyUrl.searchParams.set("wait_for_selector", ".price-points__upper__price"); // Wait for price element
 
     console.log("Fetching via Scrapfly:", url);
@@ -138,10 +138,10 @@ async function fetchDirect(url: string): Promise<string | null> {
 function extractPriceFromHTML(html: string): number {
   // First, find ALL dollar amounts in the HTML
   const allPrices = html.match(/\$[\d,]+\.?\d*/g);
-  
+
   if (allPrices && allPrices.length > 0) {
     console.log("Dollar amounts in extractPriceFromHTML:", allPrices.slice(0, 10));
-    
+
     // Parse all prices and filter reasonable ones ($0.01 - $10000)
     const validPrices: number[] = [];
     for (const priceStr of allPrices) {
@@ -150,7 +150,7 @@ function extractPriceFromHTML(html: string): number {
         validPrices.push(price);
       }
     }
-    
+
     if (validPrices.length > 0) {
       // TCGPlayer typically shows Market Price prominently
       // Look for a price that appears multiple times (likely the market price)
@@ -160,7 +160,7 @@ function extractPriceFromHTML(html: string): number {
         const rounded = Math.round(price * 100) / 100;
         priceCounts.set(rounded, (priceCounts.get(rounded) || 0) + 1);
       }
-      
+
       // Find most common price (appears most frequently)
       let mostCommonPrice = validPrices[0];
       let maxCount = 0;
@@ -170,13 +170,13 @@ function extractPriceFromHTML(html: string): number {
           mostCommonPrice = price;
         }
       }
-      
+
       // If a price appears multiple times, use it (likely the market price)
       if (maxCount > 1) {
         console.log("Using most common price:", mostCommonPrice, "appears", maxCount, "times");
         return mostCommonPrice;
       }
-      
+
       // Otherwise use the first valid price
       console.log("Using first valid price:", validPrices[0]);
       return validPrices[0];
