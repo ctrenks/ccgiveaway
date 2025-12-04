@@ -9,7 +9,7 @@ export default async function AdminDashboard() {
       prisma.category.count(),
       prisma.order.count(),
       prisma.user.count(),
-      prisma.giveaway.count({ where: { active: true } }),
+      prisma.giveaway.count({ where: { status: { in: ["OPEN", "FILLING"] } } }),
     ]);
 
   const stats = [
