@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ROLES } from "@/lib/constants";
-import { put } from "@vercel/blob";
 import {
   fetchTCGPlayerProduct,
   parseTCGPlayerUrl,
@@ -19,12 +18,18 @@ function slugify(text: string): string {
 }
 
 /**
- * Download image from URL and upload to Vercel Blob
+ * Try to copy image to Vercel Blob (optional - fails gracefully)
  */
 async function copyImageToBlob(imageUrl: string, productName: string): Promise<string | null> {
+  // Check if Blob token is configured
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    console.log("BLOB_READ_WRITE_TOKEN not set, using original image URL");
+    return imageUrl; // Return original URL as fallback
+  }
+
   try {
     console.log("Copying image to Blob:", imageUrl);
-
+    
     const response = await fetch(imageUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -33,17 +38,20 @@ async function copyImageToBlob(imageUrl: string, productName: string): Promise<s
 
     if (!response.ok) {
       console.error("Failed to fetch image:", response.status);
-      return null;
+      return imageUrl; // Return original URL as fallback
     }
 
     const contentType = response.headers.get("content-type") || "image/jpeg";
-    const extension = contentType.includes("png") ? "png" :
-                      contentType.includes("webp") ? "webp" :
+    const extension = contentType.includes("png") ? "png" : 
+                      contentType.includes("webp") ? "webp" : 
                       contentType.includes("gif") ? "gif" : "jpg";
-
+    
     const imageBuffer = await response.arrayBuffer();
     const filename = `products/${slugify(productName)}-${Date.now()}.${extension}`;
 
+    // Dynamic import to avoid issues if blob is not configured
+    const { put } = await import("@vercel/blob");
+    
     const blob = await put(filename, imageBuffer, {
       access: "public",
       contentType,
@@ -53,20 +61,22 @@ async function copyImageToBlob(imageUrl: string, productName: string): Promise<s
     return blob.url;
   } catch (error) {
     console.error("Error copying image to Blob:", error);
-    return null;
+    return imageUrl; // Return original URL as fallback
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication - must be moderator or admin
+    // Check authentication
     const session = await auth();
     if (!session?.user || session.user.role < ROLES.MODERATOR) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
-    const { url, quantity = 1, condition = "NEW", customDiscount, manualPrice } = body;
+    const { url, quantity = 1, condition = "NEW", manualPrice } = body;
+
+    console.log("Import request:", { url, quantity, condition, manualPrice });
 
     if (!url) {
       return NextResponse.json({ error: "TCGPlayer URL is required" }, { status: 400 });
@@ -92,31 +102,33 @@ export async function POST(request: NextRequest) {
 
     // Fetch product data from TCGPlayer
     const tcgProduct = await fetchTCGPlayerProduct(url);
+    console.log("TCGPlayer product:", tcgProduct);
+    
     if (!tcgProduct) {
       return NextResponse.json(
-        { error: "Failed to fetch product data from TCGPlayer" },
+        { error: "Failed to fetch product data from TCGPlayer. Check the URL and try again." },
         { status: 400 }
       );
     }
 
     // Get discount settings
     const settings = await prisma.settings.findUnique({ where: { id: "default" } });
-    const discountSettings: ImportSettings = customDiscount || {
+    const discountSettings: ImportSettings = {
       discountType: (settings?.discountType as "percentage" | "fixed") || "percentage",
       discountValue: settings?.discountValue ? Number(settings.discountValue) : 10,
     };
 
-    // Get or determine price - use manual price if provided
-    const originalPrice = manualPrice || tcgProduct.marketPrice || tcgProduct.listedPrice || 0;
+    // Use manual price (required since TCGPlayer blocks scraping)
+    const originalPrice = manualPrice || 0;
     const ourPrice = originalPrice > 0 ? calculateDiscountedPrice(originalPrice, discountSettings) : 0;
 
-    // Copy image to Vercel Blob
-    let imageUrl = null;
-    if (tcgProduct.imageUrl) {
-      imageUrl = await copyImageToBlob(tcgProduct.imageUrl, tcgProduct.name);
+    // Try to copy image to Blob (optional)
+    let imageUrl = tcgProduct.imageUrl || null;
+    if (imageUrl) {
+      imageUrl = await copyImageToBlob(imageUrl, tcgProduct.name);
     }
 
-    // Find or create category (default to "Trading Cards")
+    // Find or create category
     let category = await prisma.category.findUnique({
       where: { slug: "trading-cards" },
     });
@@ -126,7 +138,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Find or create subType based on game
+    // Find or create subType
     const subTypeName = mapGameToSubType(tcgProduct.game);
     let subType = await prisma.subType.findUnique({
       where: { name: subTypeName },
@@ -139,6 +151,7 @@ export async function POST(request: NextRequest) {
 
     // Generate unique slug
     let baseSlug = slugify(tcgProduct.name);
+    if (!baseSlug) baseSlug = "product";
     let slug = baseSlug;
     let counter = 1;
     while (await prisma.product.findUnique({ where: { slug } })) {
@@ -149,12 +162,12 @@ export async function POST(request: NextRequest) {
     // Create the product
     const product = await prisma.product.create({
       data: {
-        name: tcgProduct.name,
+        name: tcgProduct.name || "Unnamed Product",
         slug,
-        setName: tcgProduct.setName,
-        cardNumber: tcgProduct.cardNumber,
-        rarity: tcgProduct.rarity,
-        image: imageUrl, // Use Blob URL
+        setName: tcgProduct.setName || null,
+        cardNumber: tcgProduct.cardNumber || null,
+        rarity: tcgProduct.rarity || null,
+        image: imageUrl,
         price: ourPrice,
         originalPrice: originalPrice,
         quantity,
@@ -172,6 +185,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log("Product created:", product.id);
+
     return NextResponse.json({
       success: true,
       product,
@@ -184,7 +199,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Import error:", error);
     return NextResponse.json(
-      { error: "Failed to import product" },
+      { error: `Failed to import product: ${error instanceof Error ? error.message : "Unknown error"}` },
       { status: 500 }
     );
   }
@@ -203,10 +218,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "URL parameter required" }, { status: 400 });
     }
 
+    console.log("Preview request for:", url);
+
     const tcgProduct = await fetchTCGPlayerProduct(url);
+    console.log("Preview product:", tcgProduct);
+    
     if (!tcgProduct) {
       return NextResponse.json(
-        { error: "Failed to fetch product data" },
+        { error: "Failed to fetch product data. Check the URL and try again." },
         { status: 400 }
       );
     }
@@ -218,23 +237,20 @@ export async function GET(request: NextRequest) {
       discountValue: settings?.discountValue ? Number(settings.discountValue) : 10,
     };
 
-    const originalPrice = tcgProduct.marketPrice || tcgProduct.listedPrice || 0;
-    const ourPrice = calculateDiscountedPrice(originalPrice, discountSettings);
-
     return NextResponse.json({
       preview: true,
       product: tcgProduct,
       priceInfo: {
-        tcgPlayerPrice: originalPrice,
-        ourPrice,
+        tcgPlayerPrice: 0, // Price requires manual entry
+        ourPrice: 0,
         discount: discountSettings,
-        savings: originalPrice - ourPrice,
+        savings: 0,
       },
     });
   } catch (error) {
     console.error("Preview error:", error);
     return NextResponse.json(
-      { error: "Failed to preview product" },
+      { error: `Failed to preview: ${error instanceof Error ? error.message : "Unknown error"}` },
       { status: 500 }
     );
   }
