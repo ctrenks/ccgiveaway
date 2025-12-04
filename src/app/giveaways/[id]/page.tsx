@@ -83,7 +83,7 @@ export default function GiveawayPage({
 
   // Fetch slot data when slot is selected
   useEffect(() => {
-    if (!selectedSlot || !giveaway) {
+    if (selectedSlot === null || !giveaway) {
       setSlotData(null);
       return;
     }
@@ -147,7 +147,7 @@ export default function GiveawayPage({
 
   const handleSubmitPick = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSlot || !pickNumber) return;
+    if (selectedSlot === null || !pickNumber) return;
 
     setSubmitting(true);
     setError("");
@@ -383,7 +383,7 @@ export default function GiveawayPage({
             </div>
 
             {/* Taken Numbers Visualization */}
-            {selectedSlot && slotData && (
+            {selectedSlot !== null && slotData && (
               <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
                 <h2 className="text-xl font-bold text-white mb-4">
                   Slot {selectedSlot === 0 ? "Box Topper" : selectedSlot} - Number Map
@@ -513,7 +513,7 @@ export default function GiveawayPage({
                       Selected Slot
                     </label>
                     <div className="text-2xl font-bold text-purple-400">
-                      {selectedSlot ? `Slot ${selectedSlot}` : "Click a slot above"}
+                      {selectedSlot !== null ? (selectedSlot === 0 ? "⭐ Box Topper" : `Slot ${selectedSlot}`) : "Click a slot above"}
                     </div>
                   </div>
 
@@ -552,7 +552,7 @@ export default function GiveawayPage({
                   </button>
 
                   {/* Slot Info Panel */}
-                  {selectedSlot && slotData && (
+                  {selectedSlot !== null && slotData && (
                     <div className="bg-slate-800/50 rounded-lg p-3 space-y-3">
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-400">Numbers taken:</span>
@@ -626,7 +626,7 @@ export default function GiveawayPage({
 
                   <button
                     type="submit"
-                    disabled={!selectedSlot || !pickNumber || pickNumber.length < 1 || submitting}
+                    disabled={selectedSlot === null || !pickNumber || pickNumber.length < 1 || submitting}
                     className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all"
                   >
                     {submitting ? "Submitting..." : "Submit Pick"}
