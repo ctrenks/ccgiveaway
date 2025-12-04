@@ -32,8 +32,12 @@ export async function POST(request: NextRequest) {
     }
 
     if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+      console.error("PayPal credentials missing:", { 
+        hasClientId: !!PAYPAL_CLIENT_ID, 
+        hasSecret: !!PAYPAL_CLIENT_SECRET 
+      });
       return NextResponse.json(
-        { error: "PayPal not configured" },
+        { error: "PayPal not configured. Please add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to environment variables." },
         { status: 500 }
       );
     }
@@ -127,9 +131,12 @@ export async function POST(request: NextRequest) {
     const orderData = await orderResponse.json();
 
     if (!orderResponse.ok) {
-      console.error("PayPal error:", orderData);
+      console.error("PayPal API error:", JSON.stringify(orderData, null, 2));
+      const errorMessage = orderData?.details?.[0]?.description || 
+                          orderData?.message || 
+                          "Failed to create PayPal order";
       return NextResponse.json(
-        { error: "Failed to create PayPal order" },
+        { error: errorMessage },
         { status: 500 }
       );
     }
