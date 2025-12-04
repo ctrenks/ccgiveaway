@@ -142,4 +142,3 @@ export async function GET(
     reason: `Slot ${bestSlot} has the fewest picks (${slotCountMap[bestSlot]}). Number ${bestNumber} has the best gap from existing picks.`,
   });
 }
-

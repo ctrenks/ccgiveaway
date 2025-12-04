@@ -147,4 +147,3 @@ export async function POST(
     pick3Result,
   });
 }
-

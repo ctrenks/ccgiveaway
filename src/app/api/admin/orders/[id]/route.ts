@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ROLES } from "@/lib/constants";
+import { OrderStatus } from "@prisma/client";
 
 export async function GET(
   request: Request,
@@ -64,8 +65,8 @@ export async function PUT(
   }
 
   // Build update data
-  const updateData: { status?: string; notes?: string } = {};
-  if (status) updateData.status = status;
+  const updateData: { status?: OrderStatus; notes?: string } = {};
+  if (status) updateData.status = status as OrderStatus;
   if (notes !== undefined) updateData.notes = notes;
 
   const order = await prisma.order.update({

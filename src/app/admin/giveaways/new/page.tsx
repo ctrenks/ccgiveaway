@@ -228,4 +228,3 @@ export default function NewGiveawayPage() {
     </div>
   );
 }
-

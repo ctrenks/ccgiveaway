@@ -111,7 +111,7 @@ export default async function GiveawaysPage() {
         {/* Active Giveaways */}
         <section className="mb-16">
           <h2 className="text-2xl font-bold text-white mb-6">Active Giveaways</h2>
-          
+
           {activeGiveaways.length === 0 ? (
             <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 text-center">
               <div className="text-6xl mb-4">🎁</div>

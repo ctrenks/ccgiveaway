@@ -205,4 +205,3 @@ export default function DrawPage({ params }: { params: Promise<{ id: string }> }
     </div>
   );
 }
-
