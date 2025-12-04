@@ -4,23 +4,33 @@ import { prisma } from "@/lib/prisma";
 
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
 const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
-const PAYPAL_API_URL = process.env.NODE_ENV === "production"
+
+// Use PAYPAL_MODE env var to switch between sandbox and live
+// Default to sandbox for safety
+const PAYPAL_MODE = process.env.PAYPAL_MODE || "sandbox";
+const PAYPAL_API_URL = PAYPAL_MODE === "live"
   ? "https://api-m.paypal.com"
   : "https://api-m.sandbox.paypal.com";
 
 async function getPayPalAccessToken(): Promise<string> {
-  const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString("base64");
+  const credentials = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString("base64");
 
   const response = await fetch(`${PAYPAL_API_URL}/v1/oauth2/token`, {
     method: "POST",
     headers: {
-      Authorization: `Basic ${auth}`,
+      Authorization: `Basic ${credentials}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: "grant_type=client_credentials",
   });
 
   const data = await response.json();
+  
+  if (!data.access_token) {
+    console.error("PayPal auth failed:", data);
+    throw new Error("Failed to get PayPal access token");
+  }
+  
   return data.access_token;
 }
 
