@@ -3,6 +3,10 @@ import Link from "next/link";
 import Image from "next/image";
 import AddToCartButton from "@/components/AddToCartButton";
 
+// Don't cache this page - always fetch fresh product data
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 async function getProducts() {
   const products = await prisma.product.findMany({
     where: { active: true },
