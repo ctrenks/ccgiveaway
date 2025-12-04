@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ROLES } from "@/lib/constants";
 
 // Helper to get next business day at 7:30 PM EST
 function getNextDrawDate(): Date {
@@ -28,6 +29,14 @@ export async function POST(
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Must be logged in" }, { status: 401 });
+  }
+
+  // Check if user is banned
+  if (session.user.role === ROLES.BANNED) {
+    return NextResponse.json(
+      { error: "Your account has been restricted from participating in giveaways" },
+      { status: 403 }
+    );
   }
 
   const { id } = await params;

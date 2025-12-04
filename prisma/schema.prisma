@@ -46,7 +46,7 @@ model User {
   email           String?   @unique
   emailVerified   DateTime?
   image           String?   // Avatar URL (Vercel Blob)
-  role            Int       @default(0) // 0=user, 5=moderator, 9=admin
+  role            Int       @default(0) // 0=user, 1=banned, 5=moderator, 9=admin
   giveawayCredits Int       @default(0) // Earned credits for giveaway entries
 
   // Shipping address
@@ -60,8 +60,25 @@ model User {
   accounts        Account[]
   sessions        Session[]
   orders          Order[]
+  creditLogs      CreditLog[]  // Log of manual credit adjustments
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+// Log of manual credit adjustments by admin
+model CreditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount      Int      // Positive for add, negative for remove
+  reason      String?  // Admin note for why
+  adminId     String   // Who made the change
+  adminEmail  String?  // Admin email for reference
+  balanceBefore Int    // Credit balance before change
+  balanceAfter  Int    // Credit balance after change
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
 }
 
 model VerificationToken {
