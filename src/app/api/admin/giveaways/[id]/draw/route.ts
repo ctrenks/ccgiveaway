@@ -80,10 +80,11 @@ export async function POST(
     distance: number;
   }> = [];
 
-  for (let slot = 1; slot <= giveaway.slotCount; slot++) {
+  // Helper function to find winner for a slot
+  const findWinnerForSlot = (slot: number) => {
     const slotPicks = picksBySlot[slot];
     if (!slotPicks || slotPicks.length === 0) {
-      continue; // No picks for this slot
+      return null; // No picks for this slot
     }
 
     // Find the closest pick(s)
@@ -115,13 +116,29 @@ export async function POST(
       });
     }
 
-    winners.push({
+    return {
       giveawayId: id,
       userId: winner.userId,
       slot,
       pickNumber: winner.pickNumber,
       distance: minDistance,
-    });
+    };
+  };
+
+  // Handle Box Topper (slot 0) if exists
+  if (giveaway.hasBoxTopper) {
+    const boxTopperWinner = findWinnerForSlot(0);
+    if (boxTopperWinner) {
+      winners.push(boxTopperWinner);
+    }
+  }
+
+  // Handle regular slots (1 to slotCount)
+  for (let slot = 1; slot <= giveaway.slotCount; slot++) {
+    const slotWinner = findWinnerForSlot(slot);
+    if (slotWinner) {
+      winners.push(slotWinner);
+    }
   }
 
   // Create winner records

@@ -9,6 +9,7 @@ interface Giveaway {
   title: string;
   status: string;
   slotCount: number;
+  hasBoxTopper: boolean;
   totalPicks: number;
   drawDate: string | null;
 }
@@ -137,7 +138,15 @@ export default function DrawPage({ params }: { params: Promise<{ id: string }> }
             </div>
             <div>
               <span className="text-slate-500">Slots:</span>
-              <span className="text-white ml-2">{giveaway.slotCount}</span>
+              <span className="text-white ml-2">
+                {giveaway.slotCount}{giveaway.hasBoxTopper ? " + Box Topper" : ""}
+              </span>
+            </div>
+            <div>
+              <span className="text-slate-500">Potential Winners:</span>
+              <span className="text-green-400 ml-2">
+                {giveaway.slotCount + (giveaway.hasBoxTopper ? 1 : 0)}
+              </span>
             </div>
             {giveaway.drawDate && (
               <div>
