@@ -80,7 +80,7 @@ export default function SubscribePage() {
             Collector Card <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">VIP Membership</span>
           </h1>
           <p className="text-slate-400 max-w-2xl mx-auto">
-            Unlock exclusive benefits, earn more credits, and save on every order. 
+            Unlock exclusive benefits, earn more credits, and save on every order.
             Cancel anytime - no commitment required.
           </p>
         </div>
@@ -99,7 +99,7 @@ export default function SubscribePage() {
                   Most Popular
                 </div>
               )}
-              
+
               <div className={`p-6 ${tier.popular ? "pt-10" : ""}`}>
                 <h2 className="text-2xl font-bold text-white mb-2">{tier.name}</h2>
                 <div className="flex items-baseline gap-1 mb-6">
@@ -233,7 +233,7 @@ export default function SubscribePage() {
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
               <h3 className="text-white font-semibold mb-2">How does free shipping work?</h3>
               <p className="text-slate-400 text-sm">
-                You get one free shipping use per month. For Basic tier, this applies to giveaway wins. 
+                You get one free shipping use per month. For Basic tier, this applies to giveaway wins.
                 Plus and Premium can use it on any order.
               </p>
             </div>
@@ -267,4 +267,3 @@ export default function SubscribePage() {
     </div>
   );
 }
-

@@ -89,14 +89,14 @@ model Subscription {
   paypalSubscriptionId String?      @unique
   paymentMethod   String            @default("paypal") // paypal or crypto
   amount          Decimal           @db.Decimal(10, 2)
-  
+
   // Billing cycle
   currentPeriodStart DateTime?
   currentPeriodEnd   DateTime?
-  
+
   // Crypto payments tracked manually
   cryptoNote      String?           // For manual tracking of crypto payments
-  
+
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 }

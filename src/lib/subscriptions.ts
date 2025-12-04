@@ -74,11 +74,10 @@ export function canUseFreeShipping(
   periodStart: Date | null
 ): boolean {
   if (!tier || !periodStart) return false;
-  
+
   // If never used, can use
   if (!lastUsed) return true;
-  
+
   // If used before current period started, can use again
   return lastUsed < periodStart;
 }
-
