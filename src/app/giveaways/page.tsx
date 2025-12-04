@@ -73,8 +73,8 @@ export default async function GiveawaysPage() {
           </p>
         </div>
 
-        {/* How It Works */}
-        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 mb-12">
+        {/* How It Works - Quick Overview */}
+        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 mb-6">
           <h2 className="text-xl font-bold text-white mb-4">How It Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
@@ -107,6 +107,70 @@ export default async function GiveawaysPage() {
             </div>
           </div>
         </div>
+
+        {/* Detailed Rules - Collapsible */}
+        <details className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden group mb-12">
+          <summary className="p-6 cursor-pointer flex items-center justify-between hover:bg-slate-800/30 transition-colors">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <span>📖</span> Complete Rules & Details
+            </h2>
+            <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div className="px-6 pb-6 space-y-6 text-slate-300 border-t border-slate-800 pt-6">
+            {/* Winning */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-white">🏆 How Winners Are Chosen</h3>
+              <ul className="list-disc list-inside space-y-2 text-sm">
+                <li>For each slot, the pick <strong>closest to the Pick 3 number</strong> wins that prize.</li>
+                <li>Example: If Pick 3 is <span className="font-mono text-green-400">472</span>, someone with <span className="font-mono">470</span> (2 away) beats <span className="font-mono">475</span> (3 away).</li>
+                <li>If there&apos;s a tie (same distance), the <strong>lower number wins</strong>. So 470 beats 474 if Pick 3 is 472.</li>
+                <li>Each slot has its own winner - you can win multiple slots if you picked in several!</li>
+              </ul>
+            </div>
+
+            {/* Entries */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-white">🎟️ Free Entries & Credits</h3>
+              <ul className="list-disc list-inside space-y-2 text-sm">
+                <li><strong className="text-green-400">10 Free Entries</strong> per person per giveaway - no purchase necessary!</li>
+                <li>Want more picks? Use <strong className="text-purple-400">Giveaway Credits</strong> earned from store purchases.</li>
+                <li>Credit cost varies by giveaway (shown on each giveaway page).</li>
+                <li><strong className="text-amber-400">Box Topper</strong> slots (when available) cost 3x the normal credit amount and cannot use free entries.</li>
+              </ul>
+            </div>
+
+            {/* Timing */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-white">⏰ Important Timing</h3>
+              <ul className="list-disc list-inside space-y-2 text-sm">
+                <li><strong>Minimum Picks:</strong> Each giveaway requires a minimum number of picks before a draw is scheduled.</li>
+                <li><strong>Draw Scheduling:</strong> Once minimum is reached, the draw is set for the next business day (Mon-Fri).</li>
+                <li><strong>Entry Cutoff:</strong> 5:00 PM EST on draw day - no more picks after this!</li>
+                <li><strong>Draw Time:</strong> 7:30 PM EST - based on the Ohio Pick 3 Evening drawing.</li>
+              </ul>
+            </div>
+
+            {/* Pro Tips */}
+            <div className="p-4 bg-slate-800/50 rounded-xl">
+              <h3 className="text-sm font-semibold text-white mb-2">💡 Pro Tips</h3>
+              <ul className="list-disc list-inside space-y-1 text-xs text-slate-400">
+                <li>Use <strong>Auto-Pick</strong> to find the slot with fewest picks and biggest number gaps.</li>
+                <li>Spread your picks across multiple slots to increase your chances of winning something.</li>
+                <li>Look for big gaps in the number map - the middle of a gap gives you the best odds!</li>
+                <li>Numbers near 000 and 999 can be good choices since people often avoid the edges.</li>
+              </ul>
+            </div>
+
+            {/* Fairness */}
+            <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+              <h3 className="text-sm font-semibold text-purple-400 mb-2">🎲 100% Fair & Transparent</h3>
+              <p className="text-xs text-slate-400">
+                Winners are determined by the official Ohio Lottery Pick 3 Evening drawing - a publicly verifiable, 
+                independent lottery result. We have no control over the winning numbers, ensuring completely fair results for everyone.
+              </p>
+            </div>
+          </div>
+        </details>
 
         {/* Active Giveaways */}
         <section className="mb-16">
