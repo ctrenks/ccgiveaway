@@ -138,10 +138,10 @@ async function fetchDirect(url: string): Promise<string | null> {
 function extractPriceFromHTML(html: string): number {
   // Find dollar amounts with proper price format: $XX.XX (must have cents)
   const allPrices = html.match(/\$\d{1,3}(?:,\d{3})*\.\d{2}/g);
-  
+
   if (allPrices && allPrices.length > 0) {
     console.log("Prices found in HTML:", allPrices.slice(0, 15));
-    
+
     // Parse all prices and filter reasonable ones ($0.01 - $10000)
     const validPrices: number[] = [];
     for (const priceStr of allPrices) {
@@ -150,9 +150,9 @@ function extractPriceFromHTML(html: string): number {
         validPrices.push(price);
       }
     }
-    
+
     console.log("Valid prices:", validPrices.slice(0, 10));
-    
+
     if (validPrices.length > 0) {
       // Count occurrences of each price
       const priceCounts = new Map<number, number>();
@@ -160,7 +160,7 @@ function extractPriceFromHTML(html: string): number {
         const rounded = Math.round(price * 100) / 100;
         priceCounts.set(rounded, (priceCounts.get(rounded) || 0) + 1);
       }
-      
+
       // Find most common price
       let mostCommonPrice = validPrices[0];
       let maxCount = 1;
@@ -170,13 +170,13 @@ function extractPriceFromHTML(html: string): number {
           mostCommonPrice = price;
         }
       }
-      
+
       // If a price appears multiple times, use it (likely the market price)
       if (maxCount > 1) {
         console.log("Using most common price:", mostCommonPrice, "appears", maxCount, "times");
         return mostCommonPrice;
       }
-      
+
       // Otherwise use the first valid price
       console.log("Using first valid price:", validPrices[0]);
       return validPrices[0];
