@@ -23,11 +23,39 @@ async function getCategories() {
   return categories;
 }
 
+async function getSettings() {
+  const settings = await prisma.settings.findUnique({
+    where: { id: "default" },
+  });
+  return settings;
+}
+
+// Calculate giveaway credits for a product
+function getCreditsForProduct(
+  product: { price: unknown; giveawayCredits: number | null },
+  creditsPerDollar: number,
+  creditsEnabled: boolean
+): number {
+  if (!creditsEnabled) return 0;
+  // Use manual override if set
+  if (product.giveawayCredits !== null) {
+    return product.giveawayCredits;
+  }
+  // Otherwise calculate from price
+  return Math.floor(Number(product.price) * creditsPerDollar);
+}
+
 export default async function StorePage() {
-  const [products, categories] = await Promise.all([
+  const [products, categories, settings] = await Promise.all([
     getProducts(),
     getCategories(),
+    getSettings(),
   ]);
+
+  const creditsPerDollar = settings?.giveawayCreditsPerDollar
+    ? Number(settings.giveawayCreditsPerDollar)
+    : 0.1;
+  const creditsEnabled = settings?.giveawayCreditsEnabled ?? true;
 
   return (
     <div className="min-h-screen py-12">
@@ -158,6 +186,16 @@ export default async function StorePage() {
                           {product.quantity} left
                         </span>
                       </div>
+
+                      {/* Giveaway Credits */}
+                      {creditsEnabled && (
+                        <div className="flex items-center gap-1.5 mt-2 text-amber-400">
+                          <span>🎁</span>
+                          <span className="text-sm font-medium">
+                            +{getCreditsForProduct(product, creditsPerDollar, creditsEnabled)} credits
+                          </span>
+                        </div>
+                      )}
 
                       <AddToCartButton
                         product={{
