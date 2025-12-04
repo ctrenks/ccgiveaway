@@ -59,6 +59,8 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     scrapflyUrl.searchParams.set("render_js", "true");
     scrapflyUrl.searchParams.set("asp", "true"); // Anti-scraping protection bypass
     scrapflyUrl.searchParams.set("country", "us");
+    scrapflyUrl.searchParams.set("rendering_wait", "3000"); // Wait 3s for JS to load prices
+    scrapflyUrl.searchParams.set("wait_for_selector", ".price-points__upper__price"); // Wait for price element
 
     console.log("Fetching via Scrapfly:", url);
 
@@ -78,8 +80,22 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     const data = await response.json();
 
     if (data.result?.content) {
-      console.log("Scrapfly returned HTML, length:", data.result.content.length);
-      return data.result.content;
+      const html = data.result.content;
+      console.log("Scrapfly returned HTML, length:", html.length);
+      
+      // Debug: Search for dollar amounts in the response
+      const dollarMatches = html.match(/\$[\d,]+\.?\d*/g);
+      if (dollarMatches) {
+        console.log("Dollar amounts found in HTML:", dollarMatches.slice(0, 10));
+      }
+      
+      // Debug: Look for price-related content
+      const priceSection = html.match(/.{0,100}price-points.{0,200}/i);
+      if (priceSection) {
+        console.log("Price section found:", priceSection[0]);
+      }
+      
+      return html;
     }
 
     console.error("No content in Scrapfly response");
@@ -122,20 +138,28 @@ async function fetchDirect(url: string): Promise<string | null> {
 function extractPriceFromHTML(html: string): number {
   // Look for the specific price-points span class the user found
   const patterns = [
-    // Main price display: <span class="price-points__upper__price">$0.20</span>
-    /class=["']price-points__upper__price["'][^>]*>\s*\$?([\d,.]+)/i,
-    /price-points__upper__price[^>]*>\s*\$?([\d,.]+)/i,
+    // Main price display: <span class="price-points__upper__price">$38.39</span>
+    /price-points__upper__price[^>]*>\s*\$([\d,]+\.?\d*)/i,
+    /class=["'][^"']*price-points__upper__price[^"']*["'][^>]*>\s*\$([\d,]+\.?\d*)/i,
+    // With potential nested spans
+    /price-points__upper__price[^>]*>[^<]*\$([\d,]+\.?\d*)/i,
     // Market price patterns
-    /class=["']market-price[^"']*["'][^>]*>\s*\$?([\d,.]+)/i,
-    /market-price[^>]*>\s*\$?([\d,.]+)/i,
+    /class=["'][^"']*market-price[^"']*["'][^>]*>\s*\$([\d,]+\.?\d*)/i,
+    /market-price[^>]*>\s*\$([\d,]+\.?\d*)/i,
+    // Listing price
+    /listing-price[^>]*>\s*\$([\d,]+\.?\d*)/i,
+    // TCG specific selectors
+    /product-price[^>]*>\s*\$([\d,]+\.?\d*)/i,
+    /spotlight__price[^>]*>\s*\$([\d,]+\.?\d*)/i,
     // Data attribute patterns
-    /data-price=["']([\d,.]+)["']/i,
-    /data-market-price=["']([\d,.]+)["']/i,
+    /data-price=["']\$?([\d,.]+)["']/i,
+    /data-market-price=["']\$?([\d,.]+)["']/i,
     // JSON patterns in script tags
     /"marketPrice"\s*:\s*([\d.]+)/i,
+    /"lowPrice"\s*:\s*([\d.]+)/i,
     /"price"\s*:\s*([\d.]+)/i,
-    // Generic price patterns
-    />\s*\$\s*([\d]+\.[\d]{2})\s*</,
+    // Generic: any dollar amount > $1 in a span/div (likely a price)
+    /<(?:span|div)[^>]*>\s*\$([\d,]+\.[\d]{2})\s*<\/(?:span|div)>/i,
   ];
 
   for (const pattern of patterns) {
@@ -143,7 +167,21 @@ function extractPriceFromHTML(html: string): number {
     if (match && match[1]) {
       const price = parseFloat(match[1].replace(/,/g, ""));
       if (price > 0) {
-        console.log("Found price in HTML:", price, "using pattern:", pattern.toString().substring(0, 50));
+        console.log("Found price in HTML:", price, "using pattern:", pattern.toString().substring(0, 60));
+        return price;
+      }
+    }
+  }
+
+  // Last resort: Find all dollar amounts and pick the most likely price
+  // (usually the first one that's > $0.01 and < $10000)
+  const allPrices = html.match(/\$([\d,]+\.[\d]{2})/g);
+  if (allPrices && allPrices.length > 0) {
+    console.log("All dollar amounts found:", allPrices.slice(0, 5));
+    for (const priceStr of allPrices) {
+      const price = parseFloat(priceStr.replace(/[$,]/g, ""));
+      if (price >= 0.01 && price < 10000) {
+        console.log("Using first reasonable price:", price);
         return price;
       }
     }
