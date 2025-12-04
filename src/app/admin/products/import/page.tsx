@@ -60,7 +60,7 @@ export default function ImportProduct() {
 
   const handleImport = async () => {
     if (!url) return;
-    
+
     const price = parseFloat(marketPrice);
     if (!price || price <= 0) {
       setError("Please enter a valid market price");
@@ -75,9 +75,9 @@ export default function ImportProduct() {
       const res = await fetch("/api/products/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          url, 
-          quantity, 
+        body: JSON.stringify({
+          url,
+          quantity,
           condition,
           manualPrice: price,
         }),
