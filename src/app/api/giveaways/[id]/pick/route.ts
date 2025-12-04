@@ -44,7 +44,7 @@ export async function POST(
   const { slot, pickNumber, useFreeEntry } = body;
 
   // Validate slot and pickNumber
-  if (!slot || !pickNumber) {
+  if (slot === undefined || slot === null || !pickNumber) {
     return NextResponse.json(
       { error: "Slot and pick number are required" },
       { status: 400 }
