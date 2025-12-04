@@ -14,4 +14,3 @@ export const ROLE_NAMES: Record<number, string> = {
 };
 
 export type RoleLevel = (typeof ROLES)[keyof typeof ROLES];
-

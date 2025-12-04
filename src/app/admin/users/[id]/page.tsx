@@ -171,7 +171,7 @@ export default function EditUserPage({
           {/* Basic Info */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
             <h2 className="text-xl font-bold text-white mb-4">User Information</h2>
-            
+
             {error && (
               <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
                 {error}
@@ -251,7 +251,7 @@ export default function EditUserPage({
             <h2 className="text-xl font-bold text-white mb-4">
               Giveaway Credits
             </h2>
-            
+
             <div className="text-center mb-6">
               <div className="text-4xl font-bold text-amber-400">
                 🎁 {user.giveawayCredits}
@@ -306,7 +306,7 @@ export default function EditUserPage({
         {/* Credit History */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
           <h2 className="text-xl font-bold text-white mb-4">Credit History</h2>
-          
+
           {creditLogs.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
               No manual credit adjustments
@@ -350,4 +350,3 @@ export default function EditUserPage({
     </div>
   );
 }
-

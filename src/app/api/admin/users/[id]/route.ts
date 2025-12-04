@@ -89,4 +89,3 @@ export async function PUT(
 
   return NextResponse.json({ user });
 }
-
