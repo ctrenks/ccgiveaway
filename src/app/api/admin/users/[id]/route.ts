@@ -19,7 +19,7 @@ export async function GET(
     where: { id },
     include: {
       _count: {
-        select: { 
+        select: {
           orders: {
             where: {
               status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] },
@@ -93,7 +93,7 @@ export async function PUT(
     },
     include: {
       _count: {
-        select: { 
+        select: {
           orders: {
             where: {
               status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] },
