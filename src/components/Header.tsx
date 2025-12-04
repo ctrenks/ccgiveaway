@@ -5,11 +5,15 @@ import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import CartButton from "./CartButton";
+import { ROLES } from "@/lib/constants";
 
 export function Header() {
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [credits, setCredits] = useState<number | null>(null);
+  
+  const isAdmin = session?.user?.role === ROLES.ADMIN;
+  const isMod = session?.user?.role && session.user.role >= ROLES.MODERATOR;
 
   // Fetch user credits
   useEffect(() => {
@@ -49,6 +53,11 @@ export function Header() {
             <Link href="/giveaways" className="text-slate-300 hover:text-white transition-colors font-medium flex items-center gap-1">
               <span>🎁</span> Giveaways
             </Link>
+            {isMod && (
+              <Link href="/admin" className="text-purple-400 hover:text-purple-300 transition-colors font-medium flex items-center gap-1">
+                <span>⚙️</span> Admin
+              </Link>
+            )}
           </div>
 
           {/* Auth & Cart */}
@@ -152,6 +161,11 @@ export function Header() {
               {session && (
                 <Link href="/profile" className="text-slate-300 hover:text-white transition-colors font-medium">
                   👤 Profile
+                </Link>
+              )}
+              {isMod && (
+                <Link href="/admin" className="text-purple-400 hover:text-purple-300 transition-colors font-medium">
+                  ⚙️ Admin
                 </Link>
               )}
             </div>
