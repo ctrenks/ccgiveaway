@@ -356,6 +356,83 @@ export default function GiveawayPage({
               </div>
             </div>
 
+            {/* How It Works */}
+            <details className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden group">
+              <summary className="p-6 cursor-pointer flex items-center justify-between hover:bg-slate-800/30 transition-colors">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <span>📖</span> How This Giveaway Works
+                </h2>
+                <span className="text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="px-6 pb-6 space-y-4 text-slate-300">
+                {/* Quick Summary */}
+                <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+                  <p className="text-sm">
+                    <strong className="text-purple-400">TL;DR:</strong> Pick a slot (1-{giveaway.slotCount}), pick a number (000-999). 
+                    Winner is whoever&apos;s number is closest to the Ohio Pick 3 lottery drawing!
+                    {giveaway.freeEntriesPerUser > 0 && ` You get ${giveaway.freeEntriesPerUser} free entries!`}
+                  </p>
+                </div>
+
+                {/* Step by Step */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-white">🎯 Step by Step</h3>
+                  <ol className="list-decimal list-inside space-y-2 text-sm">
+                    <li><strong>Choose a Slot:</strong> Each slot represents one prize (like a booster pack from the box). This giveaway has <span className="text-purple-400 font-medium">{giveaway.slotCount} slots</span>{giveaway.hasBoxTopper ? " plus a special Box Topper slot" : ""}.</li>
+                    <li><strong>Pick Your Number:</strong> Choose any 3-digit number from 000 to 999. Try to find gaps where fewer people have picked!</li>
+                    <li><strong>Wait for the Draw:</strong> Once we reach {giveaway.minParticipation.toLocaleString()} total picks, the draw is scheduled for the next business day.</li>
+                    <li><strong>Watch the Lottery:</strong> Winners are determined by the <span className="text-amber-400">Ohio Pick 3 Evening drawing</span> at 7:30 PM EST.</li>
+                  </ol>
+                </div>
+
+                {/* Winning */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-white">🏆 How Winners Are Chosen</h3>
+                  <ul className="list-disc list-inside space-y-2 text-sm">
+                    <li>For each slot, the pick <strong>closest to the Pick 3 number</strong> wins that prize.</li>
+                    <li>Example: If Pick 3 is <span className="font-mono text-green-400">472</span>, someone with <span className="font-mono">470</span> (2 away) beats <span className="font-mono">475</span> (3 away).</li>
+                    <li>If there&apos;s a tie (same distance), the <strong>lower number wins</strong>. So 470 beats 474 if Pick 3 is 472.</li>
+                    <li>Each slot has its own winner - you can win multiple slots if you picked in several!</li>
+                  </ul>
+                </div>
+
+                {/* Entries */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-white">🎟️ Free Entries & Credits</h3>
+                  <ul className="list-disc list-inside space-y-2 text-sm">
+                    <li><strong className="text-green-400">{giveaway.freeEntriesPerUser} Free Entries</strong> per person - no purchase necessary!</li>
+                    <li>Want more picks? Use <strong className="text-purple-400">Giveaway Credits</strong> ({giveaway.creditCostPerPick || 1} credit{(giveaway.creditCostPerPick || 1) > 1 ? "s" : ""} per pick).</li>
+                    <li>Earn credits by shopping in our store - credits are awarded with purchases!</li>
+                    {giveaway.hasBoxTopper && (
+                      <li><strong className="text-amber-400">Box Topper</strong> is a special premium slot - costs <span className="text-red-400">{(giveaway.creditCostPerPick || 1) * 3} credits</span> (3x normal) and cannot use free entries.</li>
+                    )}
+                  </ul>
+                </div>
+
+                {/* Timing */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-white">⏰ Important Timing</h3>
+                  <ul className="list-disc list-inside space-y-2 text-sm">
+                    <li><strong>Minimum Picks:</strong> {giveaway.minParticipation.toLocaleString()} picks needed before draw is scheduled.</li>
+                    <li><strong>Entry Cutoff:</strong> 5:00 PM EST on draw day - no more picks after this!</li>
+                    <li><strong>Draw Time:</strong> 7:30 PM EST - Ohio Pick 3 Evening number is used.</li>
+                    <li>Draw is always on a <strong>business day</strong> (Mon-Fri, excluding holidays).</li>
+                  </ul>
+                </div>
+
+                {/* Pro Tips */}
+                <div className="p-4 bg-slate-800/50 rounded-xl">
+                  <h3 className="text-sm font-semibold text-white mb-2">💡 Pro Tips</h3>
+                  <ul className="list-disc list-inside space-y-1 text-xs text-slate-400">
+                    <li>Use <strong>Auto-Pick</strong> to find the slot with fewest picks and biggest number gaps.</li>
+                    <li>Spread your picks across multiple slots to increase your chances.</li>
+                    <li>Look for big gaps in the number map - the middle of a gap gives you the best odds!</li>
+                    <li>Numbers near 000 and 999 can be good choices since people often avoid edges.</li>
+                  </ul>
+                </div>
+              </div>
+            </details>
+
             {/* Slot Grid */}
             <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
               <h2 className="text-xl font-bold text-white mb-4">
