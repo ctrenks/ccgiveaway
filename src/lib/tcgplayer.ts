@@ -133,90 +133,81 @@ async function fetchDirect(url: string): Promise<string | null> {
 }
 
 /**
- * Extract price from HTML
+ * Extract price from HTML - targets specific TCGPlayer elements
  */
 function extractPriceFromHTML(html: string): number {
-  // First, try to find the market price in the specific TCGPlayer price section
-  // Look for the price-points section which contains the market price
-  const pricePointsMatch = html.match(/price-points__upper__price[^>]*>([^<]+)</i);
-  if (pricePointsMatch) {
-    const priceText = pricePointsMatch[1];
-    const priceMatch = priceText.match(/\$([\d,]+\.?\d*)/);
-    if (priceMatch) {
-      const price = parseFloat(priceMatch[1].replace(/,/g, ""));
-      if (price > 0) {
-        console.log("Found market price in price-points:", price);
-        return price;
-      }
-    }
-  }
-
-  // Find dollar amounts with proper price format: $XX.XX (must have cents)
-  const allPrices = html.match(/\$\d{1,4}(?:,\d{3})*\.\d{2}/g);
+  // TCGPlayer Market Price is in: <span class="price-points__upper__price">$38.28</span>
+  // Try multiple patterns to find this specific element
   
-  if (allPrices && allPrices.length > 0) {
-    console.log("All prices found:", allPrices.slice(0, 20));
-    
-    // Parse all prices and filter card prices ($5 - $10000)
-    // Skip prices under $5 (likely shipping, fees, etc.)
-    const cardPrices: number[] = [];
-    for (const priceStr of allPrices) {
-      const price = parseFloat(priceStr.replace(/[$,]/g, ""));
-      if (price >= 5 && price < 10000) {
-        cardPrices.push(price);
-      }
-    }
-    
-    console.log("Card prices (>=$5):", cardPrices.slice(0, 15));
-    
-    if (cardPrices.length > 0) {
-      // Count occurrences of each price
-      const priceCounts = new Map<number, number>();
-      for (const price of cardPrices) {
-        const rounded = Math.round(price * 100) / 100;
-        priceCounts.set(rounded, (priceCounts.get(rounded) || 0) + 1);
-      }
-      
-      // Find most common price among card prices
-      let mostCommonPrice = cardPrices[0];
-      let maxCount = 1;
-      for (const [price, count] of priceCounts.entries()) {
-        if (count > maxCount) {
-          maxCount = count;
-          mostCommonPrice = price;
-        }
-      }
-      
-      if (maxCount > 1) {
-        console.log("Using most common card price:", mostCommonPrice, "appears", maxCount, "times");
-        return mostCommonPrice;
-      }
-      
-      // Use first card price
-      console.log("Using first card price:", cardPrices[0]);
-      return cardPrices[0];
-    }
-  }
-
-  // Fallback: Try JSON patterns in script tags
   const patterns = [
-    /"marketPrice"\s*:\s*([\d.]+)/i,
-    /"lowPrice"\s*:\s*([\d.]+)/i,
-    /"price"\s*:\s*([\d.]+)/i,
+    // Direct class match with content
+    /class="[^"]*price-points__upper__price[^"]*"[^>]*>\s*\$([\d,]+\.?\d*)/i,
+    // With data attributes (Vue)
+    /price-points__upper__price[^>]*>\s*\$([\d,]+\.?\d*)/i,
+    // Market price label nearby
+    /Market\s*Price[^<]*<[^>]*>\s*\$([\d,]+\.?\d*)/i,
+    // In a span right after market price text
+    />Market\s*Price<\/[^>]+>[^$]*\$([\d,]+\.?\d*)/i,
   ];
 
   for (const pattern of patterns) {
     const match = html.match(pattern);
     if (match && match[1]) {
-      const price = parseFloat(match[1]);
-      if (price >= 5) {
-        console.log("Found price via JSON pattern:", price);
+      const price = parseFloat(match[1].replace(/,/g, ""));
+      if (price > 0) {
+        console.log("Found market price:", price, "via pattern:", pattern.toString().slice(0, 50));
         return price;
       }
     }
   }
 
-  console.log("No price found in HTML");
+  // Look for the price-points section and extract price from it
+  const priceSection = html.match(/price-points__upper[^]*?price-points__upper__price[^>]*>([^<]+)/i);
+  if (priceSection && priceSection[1]) {
+    const priceMatch = priceSection[1].match(/\$([\d,]+\.?\d*)/);
+    if (priceMatch) {
+      const price = parseFloat(priceMatch[1].replace(/,/g, ""));
+      if (price > 0) {
+        console.log("Found price in price-points section:", price);
+        return price;
+      }
+    }
+  }
+
+  // Try to find "Market Price" text and the price near it (within 500 chars)
+  const marketPriceIndex = html.indexOf("Market Price");
+  if (marketPriceIndex > -1) {
+    const nearbyHtml = html.substring(marketPriceIndex, marketPriceIndex + 500);
+    console.log("Near Market Price:", nearbyHtml.replace(/\s+/g, ' ').slice(0, 200));
+    
+    const nearbyPriceMatch = nearbyHtml.match(/\$([\d,]+\.[\d]{2})/);
+    if (nearbyPriceMatch) {
+      const price = parseFloat(nearbyPriceMatch[1].replace(/,/g, ""));
+      if (price > 0) {
+        console.log("Found price near 'Market Price' text:", price);
+        return price;
+      }
+    }
+  }
+
+  // Fallback: JSON patterns in script tags
+  const jsonPatterns = [
+    /"marketPrice"\s*:\s*([\d.]+)/i,
+    /"lowPrice"\s*:\s*([\d.]+)/i,
+  ];
+
+  for (const pattern of jsonPatterns) {
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      const price = parseFloat(match[1]);
+      if (price > 0) {
+        console.log("Found price via JSON:", price);
+        return price;
+      }
+    }
+  }
+
+  console.log("No market price found in HTML");
   return 0;
 }
 
