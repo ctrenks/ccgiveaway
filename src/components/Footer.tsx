@@ -34,17 +34,25 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Categories */}
+          {/* Browse */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Categories</h4>
+            <h4 className="text-white font-semibold mb-4">Browse</h4>
             <ul className="space-y-2">
-              {["Magic: The Gathering", "Pokémon", "Yu-Gi-Oh!", "Sports Cards"].map((cat) => (
-                <li key={cat}>
-                  <Link href={`/categories/${cat.toLowerCase().replace(/[:\s!]+/g, "-")}`} className="text-slate-500 hover:text-purple-400 transition-colors text-sm">
-                    {cat}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link href="/store" className="text-slate-500 hover:text-purple-400 transition-colors text-sm">
+                  All Products
+                </Link>
+              </li>
+              <li>
+                <Link href="/store?category=trading-cards" className="text-slate-500 hover:text-purple-400 transition-colors text-sm">
+                  Trading Cards
+                </Link>
+              </li>
+              <li>
+                <Link href="/giveaways" className="text-slate-500 hover:text-purple-400 transition-colors text-sm">
+                  Current Giveaways
+                </Link>
+              </li>
             </ul>
           </div>
 
