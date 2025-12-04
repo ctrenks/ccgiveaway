@@ -138,7 +138,7 @@ async function fetchDirect(url: string): Promise<string | null> {
 function extractPriceFromHTML(html: string): number {
   // TCGPlayer Market Price is in: <span class="price-points__upper__price">$38.28</span>
   // Try multiple patterns to find this specific element
-  
+
   const patterns = [
     // Direct class match with content
     /class="[^"]*price-points__upper__price[^"]*"[^>]*>\s*\$([\d,]+\.?\d*)/i,
@@ -179,7 +179,7 @@ function extractPriceFromHTML(html: string): number {
   if (marketPriceIndex > -1) {
     const nearbyHtml = html.substring(marketPriceIndex, marketPriceIndex + 500);
     console.log("Near Market Price:", nearbyHtml.replace(/\s+/g, ' ').slice(0, 200));
-    
+
     const nearbyPriceMatch = nearbyHtml.match(/\$([\d,]+\.[\d]{2})/);
     if (nearbyPriceMatch) {
       const price = parseFloat(nearbyPriceMatch[1].replace(/,/g, ""));
