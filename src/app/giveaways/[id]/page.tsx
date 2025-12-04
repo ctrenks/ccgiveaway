@@ -654,28 +654,74 @@ export default function GiveawayPage({
           </div>
         </div>
 
-        {/* Your Picks - Full Width Below */}
-        {userPicks.length > 0 && (
-          <div className="mt-8 bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-xl font-bold text-white mb-4">
-              Your Picks ({userPicks.length})
-            </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-              {userPicks.map((pick, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg"
-                >
-                  <span className="text-slate-400 text-sm">Slot {pick.slot}</span>
-                  <span className="font-mono text-purple-400 font-bold">{pick.pickNumber}</span>
-                  {pick.isFreeEntry && (
-                    <span className="text-[10px] text-green-400 bg-green-500/20 px-1 rounded">FREE</span>
-                  )}
-                </div>
-              ))}
+        {/* Your Picks - Full Width Below, Grouped by Slot */}
+        {userPicks.length > 0 && (() => {
+          // Group picks by slot and sort
+          const picksBySlot: Record<number, typeof userPicks> = {};
+          userPicks.forEach((pick) => {
+            if (!picksBySlot[pick.slot]) {
+              picksBySlot[pick.slot] = [];
+            }
+            picksBySlot[pick.slot].push(pick);
+          });
+          
+          // Sort picks within each slot by number
+          Object.values(picksBySlot).forEach((picks) => {
+            picks.sort((a, b) => parseInt(a.pickNumber) - parseInt(b.pickNumber));
+          });
+          
+          // Get sorted slot numbers (box topper first if exists)
+          const sortedSlots = Object.keys(picksBySlot)
+            .map(Number)
+            .sort((a, b) => a - b);
+
+          return (
+            <div className="mt-8 bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+              <h2 className="text-xl font-bold text-white mb-4">
+                Your Picks ({userPicks.length})
+              </h2>
+              <div className="space-y-4">
+                {sortedSlots.map((slot) => (
+                  <div key={slot}>
+                    <div className="flex items-center gap-2 mb-2">
+                      {slot === 0 ? (
+                        <span className="text-amber-400 font-medium">⭐ Box Topper</span>
+                      ) : (
+                        <span className="text-slate-400 font-medium">Slot {slot}</span>
+                      )}
+                      <span className="text-slate-600 text-sm">
+                        ({picksBySlot[slot].length} {picksBySlot[slot].length === 1 ? "pick" : "picks"})
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {picksBySlot[slot].map((pick, i) => (
+                        <div
+                          key={i}
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+                            slot === 0
+                              ? "bg-amber-500/10 border border-amber-500/30"
+                              : "bg-slate-800/50"
+                          }`}
+                        >
+                          <span className={`font-mono font-bold ${
+                            slot === 0 ? "text-amber-400" : "text-purple-400"
+                          }`}>
+                            {pick.pickNumber}
+                          </span>
+                          {pick.isFreeEntry && (
+                            <span className="text-[10px] text-green-400 bg-green-500/20 px-1 rounded">
+                              FREE
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );
