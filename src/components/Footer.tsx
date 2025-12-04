@@ -56,13 +56,32 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Contact */}
+          {/* Support */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Contact</h4>
-            <ul className="space-y-2 text-sm text-slate-500">
-              <li>support@collectorcaredgiveaway.com</li>
+            <h4 className="text-white font-semibold mb-4">Support</h4>
+            <ul className="space-y-2 text-sm">
               <li>
-                <div className="flex gap-4 mt-4">
+                <Link href="/contact" className="text-slate-500 hover:text-purple-400 transition-colors">
+                  Contact Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="text-slate-500 hover:text-purple-400 transition-colors">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="text-slate-500 hover:text-purple-400 transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="text-slate-500 hover:text-purple-400 transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
+              <li className="pt-2">
+                <div className="flex gap-4">
                   {/* Social Icons */}
                   {["twitter", "instagram", "discord"].map((social) => (
                     <a

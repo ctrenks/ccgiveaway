@@ -368,7 +368,7 @@ export default function GiveawayPage({
                 {/* Quick Summary */}
                 <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
                   <p className="text-sm">
-                    <strong className="text-purple-400">TL;DR:</strong> Pick a slot (1-{giveaway.slotCount}), pick a number (000-999). 
+                    <strong className="text-purple-400">TL;DR:</strong> Pick a slot (1-{giveaway.slotCount}), pick a number (000-999).
                     Winner is whoever&apos;s number is closest to the Ohio Pick 3 lottery drawing!
                     {giveaway.freeEntriesPerUser > 0 && ` You get ${giveaway.freeEntriesPerUser} free entries!`}
                   </p>
