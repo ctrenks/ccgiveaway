@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
 
   if (!planId) {
     return NextResponse.json(
-      { error: `PayPal plan not configured for ${tier}. Set PAYPAL_PLAN_${tier} environment variable.` },
+      {
+        error: `PayPal plan not configured for ${tier}. Set PAYPAL_PLAN_${tier} environment variable.`,
+      },
       { status: 500 }
     );
   }
@@ -44,9 +46,10 @@ export async function GET(request: NextRequest) {
   if (verify === "true") {
     try {
       const paypalMode = process.env.PAYPAL_MODE || "sandbox";
-      const baseUrl = paypalMode === "live"
-        ? "https://api-m.paypal.com"
-        : "https://api-m.sandbox.paypal.com";
+      const baseUrl =
+        paypalMode === "live"
+          ? "https://api-m.paypal.com"
+          : "https://api-m.sandbox.paypal.com";
 
       // Get access token
       const authResponse = await fetch(`${baseUrl}/v1/oauth2/token`, {
@@ -63,10 +66,10 @@ export async function GET(request: NextRequest) {
       const authData = await authResponse.json();
 
       if (!authData.access_token) {
-        return NextResponse.json({ 
-          planId, 
-          verified: false, 
-          error: "Could not verify plan - auth failed" 
+        return NextResponse.json({
+          planId,
+          verified: false,
+          error: "Could not verify plan - auth failed",
         });
       }
 
@@ -84,24 +87,28 @@ export async function GET(request: NextRequest) {
       const planData = await planResponse.json();
 
       if (planResponse.ok) {
-        return NextResponse.json({ 
-          planId, 
-          verified: true, 
+        return NextResponse.json({
+          planId,
+          verified: true,
           planName: planData.name,
           planStatus: planData.status,
-          mode: paypalMode
+          mode: paypalMode,
         });
       } else {
-        return NextResponse.json({ 
-          planId, 
-          verified: false, 
+        return NextResponse.json({
+          planId,
+          verified: false,
           error: planData.message || "Plan not found",
-          mode: paypalMode
+          mode: paypalMode,
         });
       }
     } catch (err) {
       console.error("Plan verification error:", err);
-      return NextResponse.json({ planId, verified: false, error: "Verification failed" });
+      return NextResponse.json({
+        planId,
+        verified: false,
+        error: "Verification failed",
+      });
     }
   }
 
@@ -129,9 +136,10 @@ export async function POST(request: NextRequest) {
 
     // Verify the subscription with PayPal
     const paypalMode = process.env.PAYPAL_MODE || "sandbox";
-    const baseUrl = paypalMode === "live"
-      ? "https://api-m.paypal.com"
-      : "https://api-m.sandbox.paypal.com";
+    const baseUrl =
+      paypalMode === "live"
+        ? "https://api-m.paypal.com"
+        : "https://api-m.sandbox.paypal.com";
 
     // Get access token
     const authResponse = await fetch(`${baseUrl}/v1/oauth2/token`, {

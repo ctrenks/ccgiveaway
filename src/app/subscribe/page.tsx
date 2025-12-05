@@ -76,14 +76,14 @@ export default function SubscribePage() {
     try {
       const res = await fetch(`/api/subscriptions/paypal?tier=${tierId}&verify=true`);
       const data = await res.json();
-      
+
       console.log("Plan verification response:", data);
-      
+
       if (data.error && !data.planId) {
         setError(data.error);
         return;
       }
-      
+
       if (data.planId) {
         // Show warning if plan couldn't be verified but still allow attempt
         if (data.verified === false) {
@@ -118,7 +118,7 @@ export default function SubscribePage() {
 
         try {
           console.log("Rendering PayPal button with plan ID:", planId);
-          
+
           (window as any).paypal
             .Buttons({
               style: {
