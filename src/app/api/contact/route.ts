@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend with API key
+const resendApiKey = process.env.RESEND_API_KEY;
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 // Simple rate limiting - store IPs and timestamps
 const rateLimitMap = new Map<string, number[]>();
@@ -74,10 +76,25 @@ export async function POST(request: Request) {
       );
     }
 
+    // Check if Resend is configured
+    if (!resend) {
+      console.error("RESEND_API_KEY is not configured");
+      return NextResponse.json(
+        { error: "Email service is not configured. Please try again later." },
+        { status: 500 }
+      );
+    }
+
+    const contactEmail = process.env.CONTACT_EMAIL || "contact@collectorcardgiveaway.com";
+    console.log("Sending contact form email to:", contactEmail);
+
     // Send email using Resend
-    const { error } = await resend.emails.send({
-      from: "Collector Card Giveaway <noreply@collectorcardgiveaway.com>",
-      to: process.env.CONTACT_EMAIL || "contact@collectorcardgiveaway.com",
+    // Note: You can use "onboarding@resend.dev" for testing without domain verification
+    const fromEmail = process.env.RESEND_FROM_EMAIL || "Collector Card Giveaway <onboarding@resend.dev>";
+    
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: contactEmail,
       replyTo: email,
       subject: `[Contact Form] ${subject}`,
       html: `
@@ -103,16 +120,18 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      console.error("Resend error:", error);
+      console.error("Resend error:", JSON.stringify(error, null, 2));
       return NextResponse.json(
         { error: "Failed to send message. Please try again." },
         { status: 500 }
       );
     }
 
+    console.log("Contact email sent successfully:", data?.id);
+
     // Send confirmation email to user
     await resend.emails.send({
-      from: "Collector Card Giveaway <noreply@collectorcardgiveaway.com>",
+      from: fromEmail,
       to: email,
       subject: "We received your message!",
       html: `
