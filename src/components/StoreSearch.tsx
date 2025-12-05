@@ -8,8 +8,8 @@ interface Product {
   id: string;
   name: string;
   image: string | null;
-  price: string;
-  originalPrice: string | null;
+  price: number | string;
+  originalPrice: number | string | null;
   quantity: number;
   setName: string | null;
   condition: string | null;
@@ -24,7 +24,7 @@ interface StoreSearchProps {
 }
 
 function getCreditsForProduct(
-  product: { price: string; giveawayCredits?: number | null },
+  product: { price: number | string; giveawayCredits?: number | null },
   creditsPerDollar: number,
   creditsEnabled: boolean
 ): number {
