@@ -1,21 +1,91 @@
-import { prisma } from "@/lib/prisma";
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-export default async function AdminProducts() {
-  const products = await prisma.product.findMany({
-    include: {
-      category: true,
-      subType: true,
-    },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
+interface Product {
+  id: string;
+  name: string;
+  setName: string | null;
+  cardNumber: string | null;
+  image: string | null;
+  price: string;
+  quantity: number;
+  active: boolean;
+  isFoil: boolean;
+  createdAt: Date;
+  category: { id: string; name: string };
+  subType: { id: string; name: string } | null;
+}
+
+export default function AdminProducts() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [totalValue, setTotalValue] = useState<number | null>(null);
+  const [loadingValue, setLoadingValue] = useState(false);
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    const res = await fetch("/api/admin/products");
+    const data = await res.json();
+    
+    // Sort: last 5 by date desc, then rest alphabetically
+    const sorted = [...data.products].sort((a, b) => {
+      const aDate = new Date(a.createdAt).getTime();
+      const bDate = new Date(b.createdAt).getTime();
+      
+      // Get the 5th most recent date
+      const dates = data.products.map((p: Product) => new Date(p.createdAt).getTime()).sort((x: number, y: number) => y - x);
+      const fifthDate = dates[4] || 0;
+      
+      const aIsRecent = aDate >= fifthDate;
+      const bIsRecent = bDate >= fifthDate;
+      
+      if (aIsRecent && bIsRecent) {
+        // Both in top 5: sort by date desc
+        return bDate - aDate;
+      } else if (aIsRecent) {
+        return -1; // a comes first
+      } else if (bIsRecent) {
+        return 1; // b comes first
+      } else {
+        // Both older: alphabetical
+        return a.name.localeCompare(b.name);
+      }
+    });
+    
+    setProducts(sorted);
+  };
+
+  const calculateTotalValue = async () => {
+    setLoadingValue(true);
+    const res = await fetch("/api/admin/products/total-value");
+    const data = await res.json();
+    setTotalValue(data.totalValue);
+    setLoadingValue(false);
+  };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-white">Products</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold text-white">Products</h1>
+          <button
+            onClick={calculateTotalValue}
+            disabled={loadingValue}
+            className="px-3 py-1.5 bg-green-600 hover:bg-green-500 disabled:bg-slate-700 text-white text-sm rounded-lg transition-colors"
+          >
+            {loadingValue ? "Calculating..." : "💰 Total Value"}
+          </button>
+          {totalValue !== null && (
+            <span className="text-green-400 font-semibold">
+              ${totalValue.toFixed(2)}
+            </span>
+          )}
+        </div>
         <div className="flex gap-3">
           <Link
             href="/admin/products/import"
