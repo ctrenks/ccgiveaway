@@ -27,7 +27,8 @@ export default function ImportProduct() {
   const [marketPrice, setMarketPrice] = useState<string>("");
   const [discountType, setDiscountType] = useState<"percentage" | "fixed">("percentage");
   const [discountValue, setDiscountValue] = useState<number>(10);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -47,7 +48,7 @@ export default function ImportProduct() {
 
   const handlePreview = async () => {
     if (!url) return;
-    setIsLoading(true);
+    setIsFetching(true);
     setError("");
     setPreview(null);
     setMarketPrice("");
@@ -69,7 +70,7 @@ export default function ImportProduct() {
     } catch {
       setError("Failed to connect to server");
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
     }
   };
 
@@ -82,7 +83,7 @@ export default function ImportProduct() {
       return;
     }
 
-    setIsLoading(true);
+    setIsImporting(true);
     setError("");
     setSuccess("");
 
@@ -113,7 +114,7 @@ export default function ImportProduct() {
     } catch {
       setError("Failed to connect to server");
     } finally {
-      setIsLoading(false);
+      setIsImporting(false);
     }
   };
 
@@ -148,10 +149,10 @@ export default function ImportProduct() {
             />
             <button
               onClick={handlePreview}
-              disabled={isLoading || !url}
+              disabled={isFetching || !url}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white rounded-lg transition-colors"
             >
-              {isLoading ? "Loading..." : "Fetch"}
+              {isFetching ? "Loading..." : "Fetch"}
             </button>
           </div>
           <p className="text-slate-500 text-sm mt-2">
@@ -327,10 +328,10 @@ export default function ImportProduct() {
             {/* Import Button */}
             <button
               onClick={handleImport}
-              disabled={isLoading || !marketPrice || parseFloat(marketPrice) <= 0}
+              disabled={isImporting || !marketPrice || parseFloat(marketPrice) <= 0}
               className="mt-6 w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 text-white font-semibold rounded-lg transition-all"
             >
-              {isLoading ? "Importing..." : `Import at $${discountedPrice.toFixed(2)}`}
+              {isImporting ? "Importing..." : `Import at $${discountedPrice.toFixed(2)}`}
             </button>
           </div>
         )}
