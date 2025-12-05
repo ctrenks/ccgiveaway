@@ -137,9 +137,13 @@ export default function ImportProduct() {
       }
 
       setSuccess(`Successfully imported "${data.product.name}" at $${Number(data.product.price).toFixed(2)}!`);
+      // Reset form to defaults
       setUrl("");
       setPreview(null);
       setMarketPrice("");
+      setQuantity(1);
+      setIsFoil(false);
+      setCondition("OPENED");
     } catch {
       setError("Failed to connect to server");
     } finally {

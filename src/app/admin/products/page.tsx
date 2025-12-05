@@ -11,6 +11,7 @@ interface Product {
   cardNumber: string | null;
   image: string | null;
   price: string;
+  originalPrice: string | null;
   quantity: number;
   active: boolean;
   isFoil: boolean;
