@@ -13,7 +13,7 @@ async function verifyWebhookSignature(
   body: string
 ): Promise<boolean> {
   const webhookId = process.env.PAYPAL_WEBHOOK_ID;
-  
+
   if (!webhookId) {
     console.warn("PAYPAL_WEBHOOK_ID not set - skipping signature verification");
     return true; // Skip verification in development
@@ -71,7 +71,7 @@ async function verifyWebhookSignature(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();
-    
+
     // Verify webhook signature in production
     const isValid = await verifyWebhookSignature(request, body);
     if (!isValid) {
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       // Subscription activated (first payment successful)
       case "BILLING.SUBSCRIPTION.ACTIVATED": {
         const subscriptionId = resource.id;
-        
+
         // Find subscription by PayPal ID
         const subscription = await prisma.subscription.findFirst({
           where: { paypalSubscriptionId: subscriptionId },
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       // Payment successful (monthly renewal)
       case "PAYMENT.SALE.COMPLETED": {
         const subscriptionId = resource.billing_agreement_id;
-        
+
         if (!subscriptionId) break;
 
         const subscription = await prisma.subscription.findFirst({
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
 
           // Check if we already granted credits this month
           const lastGrant = subscription.user.lastCreditsGranted;
-          const shouldGrantCredits = !lastGrant || 
+          const shouldGrantCredits = !lastGrant ||
             (now.getTime() - lastGrant.getTime()) > 25 * 24 * 60 * 60 * 1000; // 25 days
 
           if (shouldGrantCredits) {
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
       // Subscription cancelled
       case "BILLING.SUBSCRIPTION.CANCELLED": {
         const subscriptionId = resource.id;
-        
+
         const subscription = await prisma.subscription.findFirst({
           where: { paypalSubscriptionId: subscriptionId },
         });
@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
       // Subscription suspended (payment failed)
       case "BILLING.SUBSCRIPTION.SUSPENDED": {
         const subscriptionId = resource.id;
-        
+
         const subscription = await prisma.subscription.findFirst({
           where: { paypalSubscriptionId: subscriptionId },
         });
@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
       // Subscription reactivated
       case "BILLING.SUBSCRIPTION.RE-ACTIVATED": {
         const subscriptionId = resource.id;
-        
+
         const subscription = await prisma.subscription.findFirst({
           where: { paypalSubscriptionId: subscriptionId },
         });
@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
       // Subscription expired
       case "BILLING.SUBSCRIPTION.EXPIRED": {
         const subscriptionId = resource.id;
-        
+
         const subscription = await prisma.subscription.findFirst({
           where: { paypalSubscriptionId: subscriptionId },
         });
@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
 
           await prisma.user.update({
             where: { id: subscription.userId },
-            data: { 
+            data: {
               subscriptionTier: null,
               subscriptionEnd: null,
             },
@@ -270,4 +270,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
