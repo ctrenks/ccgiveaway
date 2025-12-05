@@ -4,12 +4,12 @@ export const SUBSCRIPTION_TIERS = {
     id: "BASIC",
     name: "Basic",
     price: 20,
-    discount: 5, // 5% off orders
+    discount: 5, // 5% off products
     monthlyCredits: 100,
-    freeShippingType: "wins", // Only on giveaway wins
+    freeShippingType: "all", // Products and wins
     features: [
-      "5% off all orders",
-      "Free shipping on giveaway wins (1x/month)",
+      "5% off all products",
+      "Free shipping on products & wins (1x/month)",
       "100 credits per month",
       "Priority support",
     ],
@@ -18,12 +18,12 @@ export const SUBSCRIPTION_TIERS = {
     id: "PLUS",
     name: "Plus",
     price: 35,
-    discount: 5, // 5% off orders
+    discount: 5, // 5% off products
     monthlyCredits: 200,
-    freeShippingType: "all", // On all orders
+    freeShippingType: "all", // Products and wins
     features: [
-      "5% off all orders",
-      "Free shipping on any order (1x/month)",
+      "5% off all products",
+      "Free shipping on products & wins (1x/month)",
       "200 credits per month",
       "Priority support",
       "Early access to giveaways",
@@ -33,12 +33,12 @@ export const SUBSCRIPTION_TIERS = {
     id: "PREMIUM",
     name: "Premium",
     price: 50,
-    discount: 7, // 7% off orders
+    discount: 7, // 7% off products
     monthlyCredits: 340,
-    freeShippingType: "all", // On all orders
+    freeShippingType: "all", // Products and wins
     features: [
-      "7% off all orders",
-      "Free shipping on any order (1x/month)",
+      "7% off all products",
+      "Free shipping on products & wins (1x/month)",
       "340 credits per month",
       "Priority support",
       "Early access to giveaways",
@@ -61,8 +61,8 @@ export function getCreditsForTier(tier: SubscriptionTierKey | null): number {
   return SUBSCRIPTION_TIERS[tier]?.monthlyCredits || 0;
 }
 
-// Check if tier allows free shipping on all orders (vs just wins)
-export function canUseFreeShippingOnAll(tier: SubscriptionTierKey | null): boolean {
+// Check if tier has free shipping benefit (all tiers now include products & wins)
+export function hasFreeShippingBenefit(tier: SubscriptionTierKey | null): boolean {
   if (!tier) return false;
   return SUBSCRIPTION_TIERS[tier]?.freeShippingType === "all";
 }

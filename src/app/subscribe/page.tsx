@@ -12,8 +12,8 @@ const TIERS = [
     color: "from-blue-600 to-cyan-600",
     borderColor: "border-blue-500/30",
     features: [
-      { text: "5% off all orders", icon: "💰" },
-      { text: "Free shipping on giveaway wins", subtext: "(once per month, bundled)", icon: "📦" },
+      { text: "5% off all products", icon: "💰" },
+      { text: "Free shipping on products & wins", subtext: "(once per month)", icon: "📦" },
       { text: "100 credits per month", subtext: "(never expire)", icon: "🎟️" },
       { text: "Priority support", icon: "⭐" },
     ],
@@ -26,8 +26,8 @@ const TIERS = [
     color: "from-purple-600 to-pink-600",
     borderColor: "border-purple-500/50",
     features: [
-      { text: "5% off all orders", icon: "💰" },
-      { text: "Free shipping on ALL orders", subtext: "(once per month)", icon: "📦" },
+      { text: "5% off all products", icon: "💰" },
+      { text: "Free shipping on products & wins", subtext: "(once per month)", icon: "📦" },
       { text: "200 credits per month", subtext: "(never expire)", icon: "🎟️" },
       { text: "Priority support", icon: "⭐" },
       { text: "Early access to new giveaways", icon: "🚀" },
@@ -40,8 +40,8 @@ const TIERS = [
     color: "from-amber-500 to-orange-600",
     borderColor: "border-amber-500/30",
     features: [
-      { text: "7% off all orders", icon: "💰" },
-      { text: "Free shipping on ALL orders", subtext: "(once per month)", icon: "📦" },
+      { text: "7% off all products", icon: "💰" },
+      { text: "Free shipping on products & wins", subtext: "(once per month)", icon: "📦" },
       { text: "340 credits per month", subtext: "(never expire)", icon: "🎟️" },
       { text: "Priority support", icon: "⭐" },
       { text: "Early access to new giveaways", icon: "🚀" },
@@ -233,8 +233,8 @@ export default function SubscribePage() {
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
               <h3 className="text-white font-semibold mb-2">How does free shipping work?</h3>
               <p className="text-slate-400 text-sm">
-                You get one free shipping use per month. For Basic tier, this applies to giveaway wins.
-                Plus and Premium can use it on any order.
+                All tiers get one free shipping use per month that works on both store purchases 
+                and giveaway wins. Use it on whichever you prefer!
               </p>
             </div>
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
