@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import CartButton from "./CartButton";
+import NotificationBell from "./NotificationBell";
 import { ROLES } from "@/lib/constants";
 
 export function Header() {
@@ -47,11 +48,11 @@ export function Header() {
             <Link href="/store" className="text-slate-300 hover:text-white transition-colors font-medium">
               Store
             </Link>
-            <Link href="/categories" className="text-slate-300 hover:text-white transition-colors font-medium">
-              Categories
-            </Link>
             <Link href="/giveaways" className="text-slate-300 hover:text-white transition-colors font-medium flex items-center gap-1">
               <span>🎁</span> Giveaways
+            </Link>
+            <Link href="/forum" className="text-slate-300 hover:text-white transition-colors font-medium flex items-center gap-1">
+              <span>💬</span> Forum
             </Link>
             <Link href="/subscribe" className="text-amber-400 hover:text-amber-300 transition-colors font-medium flex items-center gap-1">
               <span>⭐</span> VIP
@@ -73,6 +74,9 @@ export function Header() {
               <div className="w-8 h-8 rounded-full bg-slate-800 animate-pulse" />
             ) : session ? (
               <div className="flex items-center gap-3">
+                {/* Notifications */}
+                <NotificationBell />
+
                 {/* Giveaway Credits */}
                 <Link
                   href="/giveaways"
@@ -155,11 +159,11 @@ export function Header() {
               <Link href="/store" className="text-slate-300 hover:text-white transition-colors font-medium">
                 Store
               </Link>
-              <Link href="/categories" className="text-slate-300 hover:text-white transition-colors font-medium">
-                Categories
-              </Link>
               <Link href="/giveaways" className="text-slate-300 hover:text-white transition-colors font-medium">
                 🎁 Giveaways
+              </Link>
+              <Link href="/forum" className="text-slate-300 hover:text-white transition-colors font-medium">
+                💬 Forum
               </Link>
               <Link href="/subscribe" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
                 ⭐ VIP Membership
