@@ -157,7 +157,13 @@ export default function CheckoutPage() {
           <div className="space-y-6">
             {/* Shipping */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <h2 className="text-xl font-bold text-white mb-4">Shipping Address</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-white">Shipping Address</h2>
+                <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full">
+                  <span className="text-blue-400">🇺🇸</span>
+                  <span className="text-blue-300 text-xs font-medium">USA Only</span>
+                </div>
+              </div>
 
               <div className="space-y-4">
                 <div>
@@ -218,18 +224,15 @@ export default function CheckoutPage() {
                   </div>
                   <div>
                     <label className="block text-sm text-slate-400 mb-1">Country</label>
-                    <select
-                      value={shipping.country}
-                      onChange={(e) => setShipping({ ...shipping, country: e.target.value })}
-                      className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white"
-                    >
-                      <option value="US">United States</option>
-                      <option value="CA">Canada</option>
-                      <option value="GB">United Kingdom</option>
-                      <option value="AU">Australia</option>
-                      <option value="DE">Germany</option>
-                      <option value="FR">France</option>
-                    </select>
+                    <input
+                      type="text"
+                      value="United States"
+                      disabled
+                      className="w-full px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-slate-400 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      We currently only ship within the USA
+                    </p>
                   </div>
                 </div>
               </div>

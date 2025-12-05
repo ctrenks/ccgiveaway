@@ -142,9 +142,15 @@ export default async function StorePage({ searchParams }: PageProps) {
               </>
             )}
           </nav>
-          <h1 className="text-4xl font-bold text-white mb-4">
-            {currentSubType ? currentSubType.name : currentCategory ? currentCategory.name : "Card Store"}
-          </h1>
+          <div className="flex items-center gap-3 mb-4">
+            <h1 className="text-4xl font-bold text-white">
+              {currentSubType ? currentSubType.name : currentCategory ? currentCategory.name : "Card Store"}
+            </h1>
+            <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full">
+              <span className="text-blue-400">🇺🇸</span>
+              <span className="text-blue-300 text-sm font-medium">USA Shipping Only</span>
+            </div>
+          </div>
           <p className="text-slate-400 max-w-2xl">
             {currentSubType
               ? `Browse our ${currentSubType.name} collection.`

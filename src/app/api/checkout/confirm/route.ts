@@ -63,6 +63,20 @@ export async function POST(request: NextRequest) {
         });
 
         if (order) {
+          // Validate USA-only shipping
+          try {
+            const shippingAddress = JSON.parse(order.shippingAddress);
+            if (shippingAddress.country !== "US") {
+              console.error("Non-US order detected:", shippingAddress.country);
+              return NextResponse.json(
+                { error: "Invalid shipping address. USA shipping only." },
+                { status: 400 }
+              );
+            }
+          } catch (e) {
+            console.error("Error parsing shipping address:", e);
+          }
+
           // Update order status
           await prisma.order.update({
             where: { id: order.id },

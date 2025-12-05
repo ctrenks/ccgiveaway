@@ -54,6 +54,14 @@ export async function POST(request: NextRequest) {
 
     const { items, shipping } = await request.json();
 
+    // Validate USA-only shipping
+    if (shipping.country !== "US") {
+      return NextResponse.json(
+        { error: "We currently only ship to USA addresses. International shipping is not available at this time." },
+        { status: 400 }
+      );
+    }
+
     // Validate items and calculate total
     const productIds = items.map((item: { id: string }) => item.id);
     const products = await prisma.product.findMany({
