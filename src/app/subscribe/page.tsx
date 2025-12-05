@@ -87,62 +87,77 @@ export default function SubscribePage() {
 
   // Render PayPal button when plan is selected and PayPal is loaded
   useEffect(() => {
-    if (
-      selectedTier &&
-      planId &&
-      paymentMethod === "paypal" &&
-      paypalLoaded &&
-      paypalButtonRef.current &&
-      (window as any).paypal
-    ) {
-      // Clear any existing buttons
-      paypalButtonRef.current.innerHTML = "";
+    const renderPayPalButton = () => {
+      if (
+        selectedTier &&
+        planId &&
+        paymentMethod === "paypal" &&
+        paypalButtonRef.current &&
+        (window as any).paypal
+      ) {
+        // Clear any existing buttons
+        paypalButtonRef.current.innerHTML = "";
 
-      (window as any).paypal
-        .Buttons({
-          style: {
-            shape: "rect",
-            color: "blue",
-            layout: "vertical",
-            label: "subscribe",
-          },
-          createSubscription: function (data: any, actions: any) {
-            return actions.subscription.create({
-              plan_id: planId,
-            });
-          },
-          onApprove: async function (data: any) {
-            setLoading(true);
-            try {
-              const res = await fetch("/api/subscriptions/paypal", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  subscriptionId: data.subscriptionID,
-                  tier: selectedTier,
-                  orderId: data.orderID,
-                }),
-              });
+        try {
+          (window as any).paypal
+            .Buttons({
+              style: {
+                shape: "rect",
+                color: "blue",
+                layout: "vertical",
+                label: "subscribe",
+              },
+              createSubscription: function (data: any, actions: any) {
+                return actions.subscription.create({
+                  plan_id: planId,
+                });
+              },
+              onApprove: async function (data: any) {
+                setLoading(true);
+                try {
+                  const res = await fetch("/api/subscriptions/paypal", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      subscriptionId: data.subscriptionID,
+                      tier: selectedTier,
+                      orderId: data.orderID,
+                    }),
+                  });
 
-              const result = await res.json();
+                  const result = await res.json();
 
-              if (result.success) {
-                setSuccess(true);
-              } else {
-                setError(result.error || "Failed to activate subscription");
-              }
-            } catch (err) {
-              setError("Failed to activate subscription");
-            } finally {
-              setLoading(false);
-            }
-          },
-          onError: function (err: any) {
-            console.error("PayPal error:", err);
-            setError("Payment failed. Please try again.");
-          },
-        })
-        .render(paypalButtonRef.current);
+                  if (result.success) {
+                    setSuccess(true);
+                  } else {
+                    setError(result.error || "Failed to activate subscription");
+                  }
+                } catch (err) {
+                  setError("Failed to activate subscription");
+                } finally {
+                  setLoading(false);
+                }
+              },
+              onError: function (err: any) {
+                console.error("PayPal error:", err);
+                setError("Payment failed. Please try again.");
+              },
+            })
+            .render(paypalButtonRef.current);
+        } catch (err) {
+          console.error("Error rendering PayPal button:", err);
+          setError("Failed to load PayPal. Please refresh the page.");
+        }
+      }
+    };
+
+    // If PayPal is already loaded, render immediately
+    if (paypalLoaded && (window as any).paypal) {
+      renderPayPalButton();
+    } else if (paypalLoaded) {
+      // PayPal SDK loaded but buttons not ready yet - wait a moment
+      const timeout = setTimeout(renderPayPalButton, 500);
+      return () => clearTimeout(timeout);
     }
   }, [selectedTier, planId, paymentMethod, paypalLoaded]);
 
@@ -172,10 +187,19 @@ export default function SubscribePage() {
 
   return (
     <div className="min-h-screen py-12">
-      {/* PayPal SDK */}
+      {/* PayPal SDK - Using dynamic import to ensure it loads after component mount */}
       <Script
-        src={`https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}&vault=true&intent=subscription`}
-        onLoad={() => setPaypalLoaded(true)}
+        id="paypal-sdk"
+        src={`https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "sb"}&vault=true&intent=subscription`}
+        strategy="afterInteractive"
+        onLoad={() => {
+          console.log("PayPal SDK loaded successfully");
+          setPaypalLoaded(true);
+        }}
+        onError={(e) => {
+          console.error("PayPal SDK failed to load:", e);
+          setError("Failed to load PayPal. Please refresh the page.");
+        }}
       />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -304,10 +328,26 @@ export default function SubscribePage() {
                     </div>
                   ) : planId ? (
                     <>
-                      <p className="text-slate-400 text-sm">
+                      <p className="text-slate-400 text-sm mb-4">
                         Complete your subscription setup with PayPal:
                       </p>
-                      <div ref={paypalButtonRef} className="min-h-[150px]" />
+                      {/* PayPal Button Container */}
+                      <div ref={paypalButtonRef} className="min-h-[50px]" />
+                      
+                      {/* Show loading state while PayPal SDK loads */}
+                      {!paypalLoaded && (
+                        <div className="text-center py-4">
+                          <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto" />
+                          <p className="text-slate-500 text-sm mt-2">Loading PayPal...</p>
+                        </div>
+                      )}
+                      
+                      {/* Debug info - remove in production */}
+                      {paypalLoaded && !((window as any)?.paypal) && (
+                        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-400 text-sm">
+                          PayPal SDK loaded but buttons not available. Please refresh the page.
+                        </div>
+                      )}
                     </>
                   ) : (
                     <div className="text-center py-4">
