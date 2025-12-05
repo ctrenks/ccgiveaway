@@ -8,6 +8,7 @@ interface PreviewData {
     name: string;
     setName?: string;
     cardNumber?: string;
+    cardType?: string;
     rarity?: string;
     imageUrl?: string;
     game: string;
@@ -123,6 +124,7 @@ export default function ImportProduct() {
             name: preview.product.name,
             setName: preview.product.setName,
             cardNumber: preview.product.cardNumber,
+            cardType: preview.product.cardType,
             rarity: preview.product.rarity,
             imageUrl: preview.product.imageUrl,
             game: preview.product.game,

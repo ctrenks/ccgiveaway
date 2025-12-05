@@ -215,6 +215,7 @@ model Product {
   // Card-specific fields (optional)
   setName     String? // e.g., "Foundations", "Base Set"
   cardNumber  String? // e.g., "102/165", "PSA 10"
+  cardType    String? // e.g., "Land — Mountain Forest Plains", "Creature — Human Soldier"
 
   // Condition
   condition   Condition?  @default(NEW)

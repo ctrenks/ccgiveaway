@@ -13,6 +13,7 @@ interface Product {
   originalPrice: number | string | Decimal | null;
   quantity: number;
   setName: string | null;
+  cardType: string | null;
   condition: string | null;
   isFoil: boolean;
   subType: { id: string; name: string } | null;
@@ -47,6 +48,7 @@ export default function StoreSearch({ products, creditsPerDollar, creditsEnabled
     return products.filter(product => 
       product.name.toLowerCase().includes(query) ||
       (product.setName && product.setName.toLowerCase().includes(query)) ||
+      (product.cardType && product.cardType.toLowerCase().includes(query)) ||
       (product.subType && product.subType.name.toLowerCase().includes(query))
     );
   }, [products, searchQuery]);

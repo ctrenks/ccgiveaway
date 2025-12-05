@@ -5,6 +5,7 @@ export interface TCGPlayerProduct {
   name: string;
   setName: string;
   cardNumber?: string;
+  cardType?: string;
   game: string;
   rarity?: string;
   imageUrl?: string;
@@ -291,8 +292,9 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
     const name = extractName(html, parsed.slug);
     const imageUrl = extractImage(html);
     const setName = extractSetName(html, parsed.slug);
+    const cardType = extractCardType(html);
 
-    console.log("Extracted:", { name, imageUrl: imageUrl?.substring(0, 50), setName, normalPrice: prices.normal, foilPrice: prices.foil });
+    console.log("Extracted:", { name, imageUrl: imageUrl?.substring(0, 50), setName, cardType, normalPrice: prices.normal, foilPrice: prices.foil });
 
     const product: TCGPlayerProduct = {
       productId: parsed.productId,
@@ -301,6 +303,7 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
       name,
       setName,
       cardNumber: extractCardNumber(html),
+      cardType,
       rarity: extractRarity(html),
       imageUrl,
       marketPrice: prices.normal,
@@ -316,7 +319,25 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
 }
 
 function extractName(html: string, slug: string): string {
-  // Try multiple patterns for og:title
+  // First try to extract from breadcrumb - most accurate
+  // <a href="..." class="breadcrumb__link">Jetmir's Garden (Showcase)</a>
+  const breadcrumbPatterns = [
+    /breadcrumb__link[^>]*>([^<]+)<\/a>\s*<\/li>\s*<\/ul>/i, // Last breadcrumb item
+    /breadcrumb[^>]*>[^<]*<[^>]*>[^<]*<[^>]*>([^<]+)<\/a>\s*<\/li>\s*<\/ul>/i,
+  ];
+
+  for (const pattern of breadcrumbPatterns) {
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      const name = match[1].trim();
+      if (name && name.length > 2 && !name.includes('TCGplayer')) {
+        console.log("Extracted name from breadcrumb:", name);
+        return name;
+      }
+    }
+  }
+
+  // Fallback to og:title
   const patterns = [
     /<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i,
     /<meta\s+content=["']([^"']+)["']\s+property=["']og:title["']/i,
@@ -398,6 +419,41 @@ function extractRarity(html: string): string | undefined {
       return rarity;
     }
   }
+  return undefined;
+}
+
+function extractCardType(html: string): string | undefined {
+  // Extract card type from detail sections
+  // Common patterns:
+  // "Card Type: Land — Mountain Forest Plains"
+  // "Card Type:</span><span>Instant</span>"
+  // "Type: Creature — Human Soldier"
+  
+  const patterns = [
+    /Card Type:\s*<\/[^>]+>\s*<[^>]+>([^<]+)</i,
+    /Card Type:\s*([^\n<]+)/i,
+    /Type:\s*<\/[^>]+>\s*<[^>]+>([^<]+)</i,
+    /Type:\s*([^\n<]+)/i,
+    /"cardType"\s*:\s*"([^"]+)"/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      const cardType = match[1].trim();
+      // Clean up HTML entities and extra whitespace
+      const cleaned = cardType
+        .replace(/&mdash;/g, '—')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (cleaned && cleaned.length > 0 && cleaned !== 'null') {
+        console.log("Extracted card type:", cleaned);
+        return cleaned;
+      }
+    }
+  }
+
   return undefined;
 }
 
