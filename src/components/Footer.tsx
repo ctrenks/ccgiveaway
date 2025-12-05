@@ -24,33 +24,33 @@ export function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2">
-              {["Store", "Categories", "Giveaways", "About"].map((link) => (
+              {["Store", "Giveaways", "Forum", "Subscribe"].map((link) => (
                 <li key={link}>
                   <Link href={`/${link.toLowerCase()}`} className="text-slate-500 hover:text-purple-400 transition-colors text-sm">
-                    {link}
+                    {link === "Subscribe" ? "VIP Membership" : link}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Browse */}
+          {/* Community */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Browse</h4>
+            <h4 className="text-white font-semibold mb-4">Community</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/store" className="text-slate-500 hover:text-purple-400 transition-colors text-sm">
-                  All Products
-                </Link>
-              </li>
-              <li>
-                <Link href="/store?category=trading-cards" className="text-slate-500 hover:text-purple-400 transition-colors text-sm">
-                  Trading Cards
+                <Link href="/forum" className="text-slate-500 hover:text-purple-400 transition-colors text-sm">
+                  💬 Forum
                 </Link>
               </li>
               <li>
                 <Link href="/giveaways" className="text-slate-500 hover:text-purple-400 transition-colors text-sm">
-                  Current Giveaways
+                  🎁 Current Giveaways
+                </Link>
+              </li>
+              <li>
+                <Link href="/categories" className="text-slate-500 hover:text-purple-400 transition-colors text-sm">
+                  Browse Categories
                 </Link>
               </li>
             </ul>
