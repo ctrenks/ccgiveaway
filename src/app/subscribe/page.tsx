@@ -61,6 +61,7 @@ export default function SubscribePage() {
   const [error, setError] = useState<string | null>(null);
   const paypalButtonRef = useRef<HTMLDivElement>(null);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>("");
 
   const handleSubscribe = async (tierId: string) => {
     if (!session) {
@@ -232,13 +233,17 @@ export default function SubscribePage() {
 
   return (
     <div className="min-h-screen py-12">
-      {/* PayPal SDK - Using dynamic import to ensure it loads after component mount */}
+      {/* PayPal SDK */}
       <Script
         id="paypal-sdk"
         src={`https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "sb"}&vault=true&intent=subscription`}
         strategy="afterInteractive"
         onLoad={() => {
-          console.log("PayPal SDK loaded successfully");
+          const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "sb";
+          console.log("PayPal SDK loaded");
+          console.log("Client ID starts with:", clientId.substring(0, 10));
+          console.log("Client ID ends with:", clientId.substring(clientId.length - 10));
+          setDebugInfo(`Client ID: ${clientId.substring(0, 8)}...${clientId.substring(clientId.length - 4)}`);
           setPaypalLoaded(true);
         }}
         onError={(e) => {
@@ -362,7 +367,10 @@ export default function SubscribePage() {
                 <div className="space-y-4">
                   {error && (
                     <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
-                      {error}
+                      <p>{error}</p>
+                      {debugInfo && (
+                        <p className="mt-2 text-xs text-slate-500">Debug: {debugInfo}</p>
+                      )}
                     </div>
                   )}
 
