@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
         setName: previewData.setName,
         cardNumber: previewData.cardNumber,
         cardType: previewData.cardType,
+        description: previewData.description,
         rarity: previewData.rarity,
         game: previewData.game,
         imageUrl: previewData.imageUrl,
@@ -256,6 +257,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: tcgProduct.name || "Unnamed Product",
         slug,
+        description: tcgProduct.description || null,
         setName: tcgProduct.setName || null,
         cardNumber: tcgProduct.cardNumber || null,
         cardType: tcgProduct.cardType || null,

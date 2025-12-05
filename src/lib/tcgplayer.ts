@@ -6,6 +6,7 @@ export interface TCGPlayerProduct {
   setName: string;
   cardNumber?: string;
   cardType?: string;
+  description?: string;
   game: string;
   rarity?: string;
   imageUrl?: string;
@@ -293,8 +294,9 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
     const imageUrl = extractImage(html);
     const setName = extractSetName(html, parsed.slug);
     const cardType = extractCardType(html);
+    const description = extractDescription(html);
 
-    console.log("Extracted:", { name, imageUrl: imageUrl?.substring(0, 50), setName, cardType, normalPrice: prices.normal, foilPrice: prices.foil });
+    console.log("Extracted:", { name, imageUrl: imageUrl?.substring(0, 50), setName, cardType, description: description?.substring(0, 50), normalPrice: prices.normal, foilPrice: prices.foil });
 
     const product: TCGPlayerProduct = {
       productId: parsed.productId,
@@ -304,6 +306,7 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
       setName,
       cardNumber: extractCardNumber(html),
       cardType,
+      description,
       rarity: extractRarity(html),
       imageUrl,
       marketPrice: prices.normal,
@@ -329,7 +332,9 @@ function extractName(html: string, slug: string): string {
   for (const pattern of breadcrumbPatterns) {
     const match = html.match(pattern);
     if (match && match[1]) {
-      const name = match[1].trim();
+      let name = match[1].trim();
+      // Decode HTML entities
+      name = decodeHtmlEntities(name);
       if (name && name.length > 2 && !name.includes('TCGplayer')) {
         console.log("Extracted name from breadcrumb:", name);
         return name;
@@ -349,6 +354,8 @@ function extractName(html: string, slug: string): string {
     const match = html.match(pattern);
     if (match && match[1]) {
       let name = match[1];
+      // Decode HTML entities
+      name = decodeHtmlEntities(name);
       // Clean up
       name = name.split(" | ")[0].split(" - TCG")[0].split(" - Price")[0].trim();
       if (name && name.length > 2) return name;
@@ -356,6 +363,22 @@ function extractName(html: string, slug: string): string {
   }
 
   return formatSlugAsName(slug);
+}
+
+function decodeHtmlEntities(text: string): string {
+  // Decode common HTML entities
+  return text
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
+    .replace(/&#x([0-9a-f]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
 }
 
 function extractImage(html: string): string | undefined {
@@ -440,16 +463,55 @@ function extractCardType(html: string): string | undefined {
   for (const pattern of patterns) {
     const match = html.match(pattern);
     if (match && match[1]) {
-      const cardType = match[1].trim();
-      // Clean up HTML entities and extra whitespace
-      const cleaned = cardType
-        .replace(/&mdash;/g, '—')
-        .replace(/&nbsp;/g, ' ')
+      let cardType = match[1].trim();
+      // Decode HTML entities and clean up
+      cardType = decodeHtmlEntities(cardType);
+      cardType = cardType.replace(/\s+/g, ' ').trim();
+      if (cardType && cardType.length > 0 && cardType !== 'null') {
+        console.log("Extracted card type:", cardType);
+        return cardType;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function extractDescription(html: string): string | undefined {
+  // Extract card description/text from detail sections
+  // Common patterns:
+  // "Card Text:</span><span>Enter the battlefield tapped...</span>"
+  // "Card Text: Tap: Add R, G, or W."
+  // Meta description tag
+  
+  const patterns = [
+    /Card Text:\s*<\/[^>]+>\s*<[^>]+>([^<]+)</i,
+    /Card Text:\s*([^\n<]+(?:<br[^>]*>[^\n<]+)*)/i,
+    /Text:\s*<\/[^>]+>\s*<[^>]+>([^<]+)</i,
+    /Ability:\s*<\/[^>]+>\s*<[^>]+>([^<]+)</i,
+    /<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i,
+    /<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      let description = match[1].trim();
+      // Decode HTML entities and clean up
+      description = decodeHtmlEntities(description);
+      description = description
+        .replace(/<br\s*\/?>/gi, '\n')
         .replace(/\s+/g, ' ')
         .trim();
-      if (cleaned && cleaned.length > 0 && cleaned !== 'null') {
-        console.log("Extracted card type:", cleaned);
-        return cleaned;
+      
+      // Filter out generic TCGPlayer descriptions
+      if (description && 
+          description.length > 5 && 
+          !description.includes('TCGplayer') &&
+          !description.includes('Buy and sell') &&
+          description !== 'null') {
+        console.log("Extracted description:", description.substring(0, 100));
+        return description;
       }
     }
   }
