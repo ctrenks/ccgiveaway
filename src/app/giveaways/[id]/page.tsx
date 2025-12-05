@@ -664,10 +664,10 @@ export default function GiveawayPage({
           </div>
 
           {/* Sidebar - Pick Form */}
-          <div className="space-y-6">
+          <div className="space-y-6 relative">
             {/* Pick Form */}
             {canPick && session?.user && (
-              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 sticky top-24 z-10">
+              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 sticky top-24 z-20">
                 <h2 className="text-xl font-bold text-white mb-4">Make a Pick</h2>
 
                 {error && (
@@ -883,7 +883,7 @@ export default function GiveawayPage({
             )}
 
             {/* VIP Promo */}
-            <div className="bg-gradient-to-br from-amber-900/30 to-orange-900/30 border border-amber-500/30 rounded-2xl p-5">
+            <div className="bg-gradient-to-br from-amber-900/30 to-orange-900/30 border border-amber-500/30 rounded-2xl p-5 relative z-0">
               <div className="flex items-start gap-3 mb-3">
                 <span className="text-2xl">⭐</span>
                 <div>
@@ -902,7 +902,7 @@ export default function GiveawayPage({
             </div>
 
             {/* Referral Promo */}
-            <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border border-purple-500/30 rounded-2xl p-5">
+            <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border border-purple-500/30 rounded-2xl p-5 relative z-0">
               <div className="flex items-start gap-3 mb-3">
                 <span className="text-2xl">🔗</span>
                 <div>

@@ -12,30 +12,12 @@ async function updateCardData() {
   console.log("Starting card data update...\n");
 
   try {
-    // Get all products that have a TCGPlayer URL and name length < 25 characters
-    // (likely truncated names due to apostrophe issues)
-    const products = await prisma.product.findMany({
+    // Get all products that have a TCGPlayer URL
+    const allProducts = await prisma.product.findMany({
       where: {
-        AND: [
-          {
-            tcgPlayerUrl: {
-              not: null,
-            },
-          },
-          {
-            OR: [
-              {
-                name: {
-                  // MySQL: LENGTH(name) < 25
-                  // For Prisma, we'll fetch and filter in code
-                },
-              },
-              {
-                cardType: null,
-              },
-            ],
-          },
-        ],
+        tcgPlayerUrl: {
+          not: null,
+        },
       },
       select: {
         id: true,
@@ -47,20 +29,22 @@ async function updateCardData() {
     });
 
     // Filter for names less than 25 characters OR missing cardType
-    const filteredProducts = products.filter(
+    const products = allProducts.filter(
       (p) => p.name.length < 25 || !p.cardType
     );
 
-    console.log(`Found ${products.length} products with TCGPlayer URLs`);
-    console.log(`Filtered to ${filteredProducts.length} products (name < 25 chars OR missing cardType)\n`);
+    console.log(`Found ${allProducts.length} total products with TCGPlayer URLs`);
+    console.log(`Filtered to ${products.length} products that need updating:`);
+    console.log(`  - ${allProducts.filter(p => p.name.length < 25).length} with name < 25 characters`);
+    console.log(`  - ${allProducts.filter(p => !p.cardType).length} missing cardType\n`);
 
     let updated = 0;
     let skipped = 0;
     let failed = 0;
 
-    for (let i = 0; i < filteredProducts.length; i++) {
-      const product = filteredProducts[i];
-      console.log(`[${i + 1}/${filteredProducts.length}] Processing: ${product.name} (${product.name.length} chars)`);
+    for (let i = 0; i < products.length; i++) {
+      const product = products[i];
+      console.log(`[${i + 1}/${products.length}] Processing: ${product.name} (${product.name.length} chars)`);
 
       if (!product.tcgPlayerUrl) {
         console.log("  ⚠️  No URL, skipping\n");
@@ -118,7 +102,7 @@ async function updateCardData() {
         }
 
         // Rate limiting - wait 2 seconds between requests
-        if (i < filteredProducts.length - 1) {
+        if (i < products.length - 1) {
           await new Promise((resolve) => setTimeout(resolve, 2000));
         }
       } catch (error) {
@@ -133,8 +117,8 @@ async function updateCardData() {
     console.log(`✅ Updated: ${updated}`);
     console.log(`⏭️  Skipped: ${skipped}`);
     console.log(`❌ Failed: ${failed}`);
-    console.log(`📊 Total processed: ${filteredProducts.length}`);
-    console.log(`📊 Total in database: ${products.length}`);
+    console.log(`📊 Total processed: ${products.length}`);
+    console.log(`📊 Total in database: ${allProducts.length}`);
   } catch (error) {
     console.error("Fatal error:", error);
     process.exit(1);
