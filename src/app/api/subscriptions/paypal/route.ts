@@ -184,6 +184,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if subscriber is from USA
+    const subscriberCountry = subData.subscriber?.shipping_address?.address?.country_code ||
+                             subData.subscriber?.address?.country_code;
+    
+    if (subscriberCountry && subscriberCountry !== "US") {
+      console.error("Subscription from non-US country:", subscriberCountry);
+      return NextResponse.json(
+        { error: "VIP memberships are only available to USA residents at this time." },
+        { status: 403 }
+      );
+    }
+
     // Calculate subscription period
     const now = new Date();
     const endDate = new Date(now);

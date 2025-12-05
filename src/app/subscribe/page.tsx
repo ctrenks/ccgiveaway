@@ -237,7 +237,7 @@ export default function SubscribePage() {
       {/* PayPal SDK */}
       <Script
         id="paypal-sdk"
-        src={`https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "sb"}&vault=true&intent=subscription`}
+        src={`https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "sb"}&vault=true&intent=subscription&locale=en_US`}
         strategy="afterInteractive"
         onLoad={() => {
           const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "sb";
@@ -270,9 +270,15 @@ export default function SubscribePage() {
             Unlock exclusive benefits, earn more credits, and save on every order.
             Cancel anytime - no commitment required.
           </p>
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full">
-            <span className="text-green-400">✓</span>
-            <span className="text-green-300 text-sm font-medium">Guaranteed 5+ active giveaways every month!</span>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-2">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full">
+              <span className="text-green-400">✓</span>
+              <span className="text-green-300 text-sm font-medium">Guaranteed 5+ active giveaways every month!</span>
+            </div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-full">
+              <span className="text-blue-400">🇺🇸</span>
+              <span className="text-blue-300 text-sm font-medium">USA Only</span>
+            </div>
           </div>
         </div>
 
@@ -483,6 +489,13 @@ export default function SubscribePage() {
               <p className="text-slate-400 text-sm">
                 Yes! You can hold winnings for up to 90 days to bundle shipments. However, if shipping is
                 not paid within 90 days, winnings are forfeited.
+              </p>
+            </div>
+            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+              <h3 className="text-white font-semibold mb-2">🇺🇸 Is VIP available outside the USA?</h3>
+              <p className="text-slate-400 text-sm">
+                VIP memberships are currently only available to USA residents due to shipping and prize
+                fulfillment logistics. International expansion may be considered in the future.
               </p>
             </div>
           </div>
