@@ -110,20 +110,34 @@ export async function POST(request: NextRequest) {
 
     // If no TCG product fetched, use manual card info (for bulk import)
     if (!tcgProduct && manualCardInfo) {
-      console.log("Using manual card info:", manualCardInfo);
+      console.log("Creating product from manual card info:", manualCardInfo);
       
       // Check if product already exists by name and set
       const existing = await prisma.product.findFirst({
         where: {
           name: manualCardInfo.name,
-          setName: manualCardInfo.setName
+          setName: manualCardInfo.setName,
+          cardNumber: manualCardInfo.cardNumber
         },
       });
 
       if (existing) {
+        // Update quantity if it exists
+        await prisma.product.update({
+          where: { id: existing.id },
+          data: { 
+            quantity: { increment: quantity },
+            active: true // Reactivate if it was inactive
+          }
+        });
+        
         return NextResponse.json(
-          { error: "Product already imported", product: existing },
-          { status: 409 }
+          { 
+            success: true,
+            product: existing,
+            message: `Updated quantity for existing product: ${existing.name}`
+          },
+          { status: 200 }
         );
       }
 
@@ -132,7 +146,7 @@ export async function POST(request: NextRequest) {
         name: manualCardInfo.name,
         setName: manualCardInfo.setName,
         cardNumber: manualCardInfo.cardNumber,
-        game: "magic", // Default to Magic, could be enhanced
+        game: "magic", // Default to Magic, could be enhanced based on set code
         productId: null,
         imageUrl: null,
         rarity: null,

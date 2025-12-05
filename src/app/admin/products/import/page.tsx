@@ -117,21 +117,18 @@ export default function ImportProduct() {
       if (!card) continue;
       
       try {
-        // Create search URL for TCGPlayer
-        const searchName = encodeURIComponent(`${card.name} ${card.set}`);
-        const tcgUrl = `https://www.tcgplayer.com/search/all/product?q=${searchName}`;
-        
+        // Create product directly from scanner data (no TCGPlayer fetch needed)
         const res = await fetch("/api/products/import", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            url: tcgUrl,
+            // No URL - using manual card info only
             quantity: card.quantity,
             condition: bulkCondition,
             manualPrice: defaultPrice,
             discountType: bulkDiscountType,
             discountValue: bulkDiscountValue,
-            // Pass card info for manual creation if URL scraping fails
+            // Create from scanner data
             manualCardInfo: {
               name: card.fullName,
               setName: card.set,
@@ -641,6 +638,11 @@ export default function ImportProduct() {
               <p className="text-slate-300 text-xs font-mono mb-2">Example format:</p>
               <p className="text-slate-500 text-xs font-mono">1 Grim Tutor (Alternate Art) [M21] 315</p>
               <p className="text-slate-500 text-xs font-mono">1 Peer into the Abyss [M21] 117</p>
+            </div>
+            <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <p className="text-blue-300 text-xs">
+                <strong>Note:</strong> Products are created directly from scanner data. You can add images and update details individually later.
+              </p>
             </div>
           </div>
         </div>
