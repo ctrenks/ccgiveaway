@@ -3,13 +3,14 @@
 import { useState, useMemo } from "react";
 import Image from "next/image";
 import AddToCartButton from "@/components/AddToCartButton";
+import { Decimal } from "@prisma/client/runtime/library";
 
 interface Product {
   id: string;
   name: string;
   image: string | null;
-  price: number | string;
-  originalPrice: number | string | null;
+  price: number | string | Decimal;
+  originalPrice: number | string | Decimal | null;
   quantity: number;
   setName: string | null;
   condition: string | null;
@@ -24,7 +25,7 @@ interface StoreSearchProps {
 }
 
 function getCreditsForProduct(
-  product: { price: number | string; giveawayCredits?: number | null },
+  product: { price: number | string | Decimal; giveawayCredits?: number | null },
   creditsPerDollar: number,
   creditsEnabled: boolean
 ): number {
