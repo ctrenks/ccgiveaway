@@ -261,15 +261,20 @@ export default async function HomePage() {
             <div className="text-center md:text-left">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full mb-4">
                 <span className="text-2xl">🎁</span>
-                <span className="text-sm font-medium text-white">Weekly Giveaways</span>
+                <span className="text-sm font-medium text-white">Lottery-Style Drawings</span>
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Win Rare Cards Every Week!
+                Free Sealed Booster Packs!
               </h2>
               <p className="text-slate-300 max-w-lg">
-                Enter our exclusive giveaways for a chance to win rare and valuable collector cards.
-                New giveaways every week – it&apos;s free to enter!
+                Pick your lucky numbers and win sealed booster packs! Every account gets 10 free entries per giveaway.
+                Winners determined by Ohio Lottery Pick 3 – fair and transparent!
               </p>
+              <div className="flex flex-wrap gap-3 mt-4 justify-center md:justify-start">
+                <span className="text-xs bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full">✓ 10 Free Entries</span>
+                <span className="text-xs bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full">✓ Pick Your Numbers</span>
+                <span className="text-xs bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full">✓ 5+ Giveaways Monthly</span>
+              </div>
             </div>
             <Link
               href="/giveaways"
@@ -281,29 +286,6 @@ export default async function HomePage() {
               </svg>
             </Link>
           </div>
-        </div>
-      </section>
-
-      {/* Newsletter Section */}
-      <section className="bg-slate-900/50 py-20 border-t border-slate-800">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">Stay in the Loop</h2>
-          <p className="text-slate-400 mb-8">
-            Get notified about new arrivals, exclusive deals, and upcoming giveaways.
-          </p>
-          <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-5 py-3 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50"
-            />
-            <button
-              type="submit"
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-xl shadow-lg transition-all"
-            >
-              Subscribe
-            </button>
-          </form>
         </div>
       </section>
     </div>

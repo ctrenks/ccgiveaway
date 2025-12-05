@@ -112,17 +112,37 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Check if product has any order items
-    const orderItemCount = await prisma.orderItem.count({
-      where: { productId: id },
+    // First, delete order items from cancelled/refunded orders
+    await prisma.orderItem.deleteMany({
+      where: {
+        productId: id,
+        order: {
+          status: { in: ["CANCELLED", "REFUNDED"] },
+        },
+      },
     });
 
-    if (orderItemCount > 0) {
+    // Check if product still has order items from active orders
+    const activeOrderItemCount = await prisma.orderItem.count({
+      where: {
+        productId: id,
+        order: {
+          status: { notIn: ["CANCELLED", "REFUNDED"] },
+        },
+      },
+    });
+
+    if (activeOrderItemCount > 0) {
       return NextResponse.json(
-        { error: `Cannot delete product with ${orderItemCount} order(s). Set it as inactive instead.` },
+        { error: `Cannot delete product with ${activeOrderItemCount} active order(s). Set it as inactive instead.` },
         { status: 400 }
       );
     }
+
+    // Delete any remaining orphaned order items (shouldn't be any, but just in case)
+    await prisma.orderItem.deleteMany({
+      where: { productId: id },
+    });
 
     await prisma.product.delete({
       where: { id },
@@ -134,4 +154,3 @@ export async function DELETE(
     return NextResponse.json({ error: "Failed to delete product" }, { status: 500 });
   }
 }
-
