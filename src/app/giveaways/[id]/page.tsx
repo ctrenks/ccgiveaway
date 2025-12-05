@@ -667,7 +667,7 @@ export default function GiveawayPage({
           <div className="space-y-6">
             {/* Pick Form */}
             {canPick && session?.user && (
-              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 sticky top-24">
+              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 sticky top-24 z-10">
                 <h2 className="text-xl font-bold text-white mb-4">Make a Pick</h2>
 
                 {error && (
