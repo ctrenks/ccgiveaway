@@ -23,7 +23,7 @@ export function Hero({ cardImages = [] }: HeroProps) {
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-32 h-44 rounded-xl border border-slate-600/30 shadow-2xl overflow-hidden"
+              className="absolute w-32 h-44 rounded-xl border border-slate-600/30 shadow-2xl overflow-hidden opacity-20"
               style={{
                 left: `${15 + i * 15}%`,
                 top: `${20 + (i % 3) * 25}%`,
@@ -41,7 +41,7 @@ export function Hero({ cardImages = [] }: HeroProps) {
                   sizes="128px"
                 />
               ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-800/50 to-slate-700/30 flex items-center justify-center text-4xl opacity-30">
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-800/50 to-slate-700/30 flex items-center justify-center text-4xl">
                   {fallbackIcons[i]}
                 </div>
               )}
@@ -60,10 +60,11 @@ export function Hero({ cardImages = [] }: HeroProps) {
         </div>
 
         <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-          <span className="text-white">Discover Rare </span>
+          <span className="text-white">Giving Away Free </span>
           <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
             Collector Cards
           </span>
+          <span className="text-white"> Every Month</span>
         </h1>
 
         <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
@@ -90,21 +91,6 @@ export function Hero({ cardImages = [] }: HeroProps) {
           </Link>
         </div>
 
-        {/* Stats */}
-        <div className="mt-16 grid grid-cols-3 gap-8 max-w-lg mx-auto">
-          {[
-            { value: "10K+", label: "Cards" },
-            { value: "5K+", label: "Collectors" },
-            { value: "100+", label: "Giveaways" },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                {stat.value}
-              </div>
-              <div className="text-slate-500 text-sm">{stat.label}</div>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Scroll Indicator */}
