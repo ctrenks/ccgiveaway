@@ -2,7 +2,8 @@
 
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import Script from "next/script";
 
 const TIERS = [
   {
@@ -54,6 +55,12 @@ export default function SubscribePage() {
   const { data: session } = useSession();
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<"paypal" | "crypto">("paypal");
+  const [planId, setPlanId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const paypalButtonRef = useRef<HTMLDivElement>(null);
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
 
   const handleSubscribe = async (tierId: string) => {
     if (!session) {
@@ -62,10 +69,115 @@ export default function SubscribePage() {
     }
 
     setSelectedTier(tierId);
+    setError(null);
+    
+    // Fetch the PayPal plan ID for this tier
+    try {
+      const res = await fetch(`/api/subscriptions/paypal?tier=${tierId}`);
+      const data = await res.json();
+      if (data.planId) {
+        setPlanId(data.planId);
+      } else {
+        setError(data.error || "Failed to load payment options");
+      }
+    } catch (err) {
+      setError("Failed to load payment options");
+    }
   };
+
+  // Render PayPal button when plan is selected and PayPal is loaded
+  useEffect(() => {
+    if (
+      selectedTier &&
+      planId &&
+      paymentMethod === "paypal" &&
+      paypalLoaded &&
+      paypalButtonRef.current &&
+      (window as any).paypal
+    ) {
+      // Clear any existing buttons
+      paypalButtonRef.current.innerHTML = "";
+
+      (window as any).paypal
+        .Buttons({
+          style: {
+            shape: "rect",
+            color: "blue",
+            layout: "vertical",
+            label: "subscribe",
+          },
+          createSubscription: function (data: any, actions: any) {
+            return actions.subscription.create({
+              plan_id: planId,
+            });
+          },
+          onApprove: async function (data: any) {
+            setLoading(true);
+            try {
+              const res = await fetch("/api/subscriptions/paypal", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  subscriptionId: data.subscriptionID,
+                  tier: selectedTier,
+                  orderId: data.orderID,
+                }),
+              });
+
+              const result = await res.json();
+
+              if (result.success) {
+                setSuccess(true);
+              } else {
+                setError(result.error || "Failed to activate subscription");
+              }
+            } catch (err) {
+              setError("Failed to activate subscription");
+            } finally {
+              setLoading(false);
+            }
+          },
+          onError: function (err: any) {
+            console.error("PayPal error:", err);
+            setError("Payment failed. Please try again.");
+          },
+        })
+        .render(paypalButtonRef.current);
+    }
+  }, [selectedTier, planId, paymentMethod, paypalLoaded]);
+
+  // Success state
+  if (success) {
+    return (
+      <div className="min-h-screen py-12">
+        <div className="max-w-lg mx-auto px-4 text-center">
+          <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-8">
+            <div className="text-6xl mb-4">🎉</div>
+            <h1 className="text-3xl font-bold text-white mb-4">Welcome to VIP!</h1>
+            <p className="text-slate-300 mb-6">
+              Your {TIERS.find((t) => t.id === selectedTier)?.name} subscription is now active.
+              Credits have been added to your account!
+            </p>
+            <Link
+              href="/giveaways"
+              className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl"
+            >
+              Start Entering Giveaways →
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-12">
+      {/* PayPal SDK */}
+      <Script
+        src={`https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}&vault=true&intent=subscription`}
+        onLoad={() => setPaypalLoaded(true)}
+      />
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
@@ -179,18 +291,30 @@ export default function SubscribePage() {
 
               {paymentMethod === "paypal" ? (
                 <div className="space-y-4">
-                  <p className="text-slate-400 text-sm">
-                    Click below to set up your PayPal subscription. You&apos;ll be redirected to PayPal to complete the setup.
-                  </p>
-                  <button
-                    onClick={() => {
-                      // TODO: Integrate PayPal subscription
-                      alert("PayPal subscription integration coming soon! Please use crypto payment for now.");
-                    }}
-                    className="w-full py-3 bg-[#0070ba] hover:bg-[#005ea6] text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-                  >
-                    <span>Subscribe with PayPal</span>
-                  </button>
+                  {error && (
+                    <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+                      {error}
+                    </div>
+                  )}
+                  
+                  {loading ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-4" />
+                      <p className="text-slate-400">Activating your subscription...</p>
+                    </div>
+                  ) : planId ? (
+                    <>
+                      <p className="text-slate-400 text-sm">
+                        Complete your subscription setup with PayPal:
+                      </p>
+                      <div ref={paypalButtonRef} className="min-h-[150px]" />
+                    </>
+                  ) : (
+                    <div className="text-center py-4">
+                      <div className="animate-spin w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full mx-auto" />
+                      <p className="text-slate-500 text-sm mt-2">Loading payment options...</p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
