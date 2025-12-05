@@ -233,7 +233,7 @@ export default function SubscribePage() {
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
               <h3 className="text-white font-semibold mb-2">How does free shipping work?</h3>
               <p className="text-slate-400 text-sm">
-                All tiers get one free shipping use per month that works on both store purchases 
+                All tiers get one free shipping use per month that works on both store purchases
                 and giveaway wins. Use it on whichever you prefer!
               </p>
             </div>
@@ -247,6 +247,20 @@ export default function SubscribePage() {
               <h3 className="text-white font-semibold mb-2">When do I get my credits?</h3>
               <p className="text-slate-400 text-sm">
                 Credits are added to your account immediately when you subscribe, then on each monthly renewal.
+              </p>
+            </div>
+            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+              <h3 className="text-white font-semibold mb-2">What does shipping on wins cost?</h3>
+              <p className="text-slate-400 text-sm">
+                Shipping for giveaway wins is a flat $5 for up to 5 packs/items. VIP members can use their 
+                monthly free shipping on wins too!
+              </p>
+            </div>
+            <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+              <h3 className="text-white font-semibold mb-2">Can I hold my winnings?</h3>
+              <p className="text-slate-400 text-sm">
+                Yes! You can hold winnings for up to 90 days to bundle shipments. However, if shipping is 
+                not paid within 90 days, winnings are forfeited.
               </p>
             </div>
           </div>

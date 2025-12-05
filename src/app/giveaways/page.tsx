@@ -161,6 +161,16 @@ export default async function GiveawaysPage() {
               </ul>
             </div>
 
+            {/* Claiming Prizes */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold text-white">📦 Claiming Your Prizes</h3>
+              <ul className="list-disc list-inside space-y-2 text-sm">
+                <li><strong>Shipping Cost:</strong> Flat rate of <span className="text-green-400">$5 for up to 5 packs/items</span>. VIP members can use their monthly free shipping!</li>
+                <li><strong>Hold Period:</strong> You can hold your winnings for up to <span className="text-amber-400">90 days</span> to bundle with other wins.</li>
+                <li><strong>Important:</strong> If shipping is not paid within 90 days, winnings are <span className="text-red-400">forfeited</span> and returned to Collector Card Giveaway.</li>
+              </ul>
+            </div>
+
             {/* Fairness */}
             <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
               <h3 className="text-sm font-semibold text-purple-400 mb-2">🎲 100% Fair & Transparent</h3>

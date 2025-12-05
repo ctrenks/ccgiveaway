@@ -430,6 +430,16 @@ export default function GiveawayPage({
                   </ul>
                 </div>
 
+                {/* Claiming Prizes */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-white">📦 Claiming Prizes</h3>
+                  <ul className="list-disc list-inside space-y-2 text-sm">
+                    <li><strong>Shipping:</strong> Flat <span className="text-green-400">$5 for up to 5 packs</span>. VIP members can use free shipping!</li>
+                    <li><strong>Hold Period:</strong> Bundle wins for up to <span className="text-amber-400">90 days</span>.</li>
+                    <li><strong>Forfeiture:</strong> Unpaid shipping after 90 days = <span className="text-red-400">winnings returned</span>.</li>
+                  </ul>
+                </div>
+
                 {/* Pro Tips */}
                 <div className="p-4 bg-slate-800/50 rounded-xl">
                   <h3 className="text-sm font-semibold text-white mb-2">💡 Pro Tips</h3>
