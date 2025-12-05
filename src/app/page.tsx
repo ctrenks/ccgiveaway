@@ -222,7 +222,7 @@ export default async function HomePage() {
         <div className="relative overflow-hidden bg-gradient-to-r from-amber-900/40 via-orange-900/40 to-amber-900/40 rounded-3xl p-8 md:p-10 border border-amber-500/30">
           <div className="absolute top-0 left-0 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl" />
           <div className="absolute bottom-0 right-0 w-48 h-48 bg-orange-500/20 rounded-full blur-3xl" />
-          
+
           <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8">
             <div className="text-6xl">⭐</div>
             <div className="flex-1 text-center lg:text-left">
@@ -230,8 +230,8 @@ export default async function HomePage() {
                 Become a VIP Member
               </h2>
               <p className="text-amber-200/80 mb-4">
-                Get <span className="text-white font-semibold">up to 7% off</span> all orders, 
-                <span className="text-white font-semibold"> free shipping</span>, and 
+                Get <span className="text-white font-semibold">up to 7% off</span> all orders,
+                <span className="text-white font-semibold"> free shipping</span>, and
                 <span className="text-white font-semibold"> up to 340 credits/month</span> for giveaways!
               </p>
               <div className="flex flex-wrap justify-center lg:justify-start gap-4 text-sm">
