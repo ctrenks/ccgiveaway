@@ -70,17 +70,35 @@ export default function SubscribePage() {
 
     setSelectedTier(tierId);
     setError(null);
+    setPlanId(null);
 
-    // Fetch the PayPal plan ID for this tier
+    // Fetch and verify the PayPal plan ID for this tier
     try {
-      const res = await fetch(`/api/subscriptions/paypal?tier=${tierId}`);
+      const res = await fetch(`/api/subscriptions/paypal?tier=${tierId}&verify=true`);
       const data = await res.json();
+      
+      console.log("Plan verification response:", data);
+      
+      if (data.error && !data.planId) {
+        setError(data.error);
+        return;
+      }
+      
       if (data.planId) {
+        // Show warning if plan couldn't be verified but still allow attempt
+        if (data.verified === false) {
+          console.warn("Plan verification failed:", data.error);
+          console.warn("Mode:", data.mode);
+        } else if (data.planStatus && data.planStatus !== "ACTIVE") {
+          setError(`PayPal plan is ${data.planStatus}. It needs to be ACTIVE.`);
+          return;
+        }
         setPlanId(data.planId);
       } else {
         setError(data.error || "Failed to load payment options");
       }
     } catch (err) {
+      console.error("Failed to fetch plan:", err);
       setError("Failed to load payment options");
     }
   };
@@ -99,6 +117,8 @@ export default function SubscribePage() {
         paypalButtonRef.current.innerHTML = "";
 
         try {
+          console.log("Rendering PayPal button with plan ID:", planId);
+          
           (window as any).paypal
             .Buttons({
               style: {
@@ -108,11 +128,19 @@ export default function SubscribePage() {
                 label: "subscribe",
               },
               createSubscription: function (data: any, actions: any) {
+                console.log("Creating subscription with plan:", planId);
                 return actions.subscription.create({
                   plan_id: planId,
+                }).catch((err: any) => {
+                  console.error("Subscription creation error:", err);
+                  // Extract more details from the error
+                  const errorMessage = err?.message || err?.details?.[0]?.description || "Unknown error";
+                  setError(`Subscription setup failed: ${errorMessage}`);
+                  throw err;
                 });
               },
               onApprove: async function (data: any) {
+                console.log("Subscription approved:", data);
                 setLoading(true);
                 try {
                   const res = await fetch("/api/subscriptions/paypal", {
@@ -138,12 +166,29 @@ export default function SubscribePage() {
                   setLoading(false);
                 }
               },
+              onCancel: function (data: any) {
+                console.log("Subscription cancelled by user:", data);
+                setError("Subscription was cancelled. Please try again.");
+              },
               onError: function (err: any) {
-                console.error("PayPal error:", err);
-                setError("Payment failed. Please try again.");
+                console.error("PayPal onError:", err);
+                // Try to extract meaningful error message
+                let errorMsg = "Payment failed. ";
+                if (err?.message) {
+                  errorMsg += err.message;
+                } else if (typeof err === "string") {
+                  errorMsg += err;
+                } else {
+                  errorMsg += "Please check the browser console for details.";
+                }
+                setError(errorMsg);
               },
             })
-            .render(paypalButtonRef.current);
+            .render(paypalButtonRef.current)
+            .catch((err: any) => {
+              console.error("PayPal render error:", err);
+              setError("Failed to display PayPal button. Please refresh.");
+            });
         } catch (err) {
           console.error("Error rendering PayPal button:", err);
           setError("Failed to load PayPal. Please refresh the page.");
