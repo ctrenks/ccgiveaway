@@ -8,7 +8,7 @@ interface CreateNotificationParams {
   message: string;
   link?: string;
   icon?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, string | number | boolean | null>;
 }
 
 /**

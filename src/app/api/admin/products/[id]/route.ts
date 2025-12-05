@@ -112,6 +112,18 @@ export async function DELETE(
 
     const { id } = await params;
 
+    // Check if product has any order items
+    const orderItemCount = await prisma.orderItem.count({
+      where: { productId: id },
+    });
+
+    if (orderItemCount > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete product with ${orderItemCount} order(s). Set it as inactive instead.` },
+        { status: 400 }
+      );
+    }
+
     await prisma.product.delete({
       where: { id },
     });

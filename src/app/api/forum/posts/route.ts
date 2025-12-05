@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
 
     // Send notifications to followers (asynchronously)
     const replierName = session.user.name || "A forum user";
-    
+
     for (const follower of topic.followers) {
       try {
         // Get follower details
@@ -152,4 +152,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
