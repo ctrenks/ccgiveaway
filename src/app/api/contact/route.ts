@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     // Send email using Resend
     // Note: You can use "onboarding@resend.dev" for testing without domain verification
     const fromEmail = process.env.RESEND_FROM_EMAIL || "Collector Card Giveaway <onboarding@resend.dev>";
-    
+
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: contactEmail,
