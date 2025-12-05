@@ -1,4 +1,5 @@
 "use client";
+// Build timestamp: 2024-12-05T12:00:00Z - Force rebuild for env vars
 
 import { useSession } from "next-auth/react";
 import Link from "next/link";
