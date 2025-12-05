@@ -344,9 +344,12 @@ function extractName(html: string, slug: string): string {
 
   // Fallback to og:title
   const patterns = [
-    /<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i,
-    /<meta\s+content=["']([^"']+)["']\s+property=["']og:title["']/i,
-    /<meta\s+name=["']og:title["']\s+content=["']([^"']+)["']/i,
+    /<meta\s+property=["']og:title["']\s+content="([^"]+)"/i,
+    /<meta\s+property=["']og:title["']\s+content='([^']+)'/i,
+    /<meta\s+content="([^"]+)"\s+property=["']og:title["']/i,
+    /<meta\s+content='([^']+)'\s+property=["']og:title["']/i,
+    /<meta\s+name=["']og:title["']\s+content="([^"]+)"/i,
+    /<meta\s+name=["']og:title["']\s+content='([^']+)'/i,
     /<title[^>]*>([^<]+)<\/title>/i,
   ];
 
@@ -383,10 +386,14 @@ function decodeHtmlEntities(text: string): string {
 
 function extractImage(html: string): string | undefined {
   const patterns = [
-    /<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i,
-    /<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i,
-    /<meta\s+name=["']twitter:image["']\s+content=["']([^"']+)["']/i,
-    /<meta\s+property=["']twitter:image["']\s+content=["']([^"']+)["']/i,
+    /<meta\s+property=["']og:image["']\s+content="([^"]+)"/i,
+    /<meta\s+property=["']og:image["']\s+content='([^']+)'/i,
+    /<meta\s+content="([^"]+)"\s+property=["']og:image["']/i,
+    /<meta\s+content='([^']+)'\s+property=["']og:image["']/i,
+    /<meta\s+name=["']twitter:image["']\s+content="([^"]+)"/i,
+    /<meta\s+name=["']twitter:image["']\s+content='([^']+)'/i,
+    /<meta\s+property=["']twitter:image["']\s+content="([^"]+)"/i,
+    /<meta\s+property=["']twitter:image["']\s+content='([^']+)'/i,
   ];
 
   for (const pattern of patterns) {
@@ -489,8 +496,10 @@ function extractDescription(html: string): string | undefined {
     /Card Text:\s*([^\n<]+(?:<br[^>]*>[^\n<]+)*)/i,
     /Text:\s*<\/[^>]+>\s*<[^>]+>([^<]+)</i,
     /Ability:\s*<\/[^>]+>\s*<[^>]+>([^<]+)</i,
-    /<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i,
-    /<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i,
+    /<meta\s+name=["']description["']\s+content="([^"]+)"/i,
+    /<meta\s+name=["']description["']\s+content='([^']+)'/i,
+    /<meta\s+property=["']og:description["']\s+content="([^"]+)"/i,
+    /<meta\s+property=["']og:description["']\s+content='([^']+)'/i,
   ];
 
   for (const pattern of patterns) {
