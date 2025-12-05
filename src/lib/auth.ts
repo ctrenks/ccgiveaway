@@ -42,7 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       try {
         const cookieStore = await cookies();
         const referralCode = cookieStore.get("referralCode")?.value;
-        
+
         if (referralCode && user.id && user.email) {
           // Find the referrer
           const referrer = await prisma.user.findUnique({

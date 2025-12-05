@@ -43,7 +43,7 @@ export async function GET() {
   if (!user?.referralCode) {
     let code = generateReferralCode();
     let attempts = 0;
-    
+
     // Make sure code is unique
     while (attempts < 10) {
       const existing = await prisma.user.findUnique({
@@ -87,4 +87,3 @@ export async function GET() {
     pendingCount: user.referrals.filter((r) => r.status === "PENDING").length,
   });
 }
-
