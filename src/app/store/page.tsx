@@ -79,8 +79,9 @@ function getCreditsForProduct(
   if (product.giveawayCredits !== null) {
     return product.giveawayCredits;
   }
-  // Otherwise calculate from price
-  return Math.floor(Number(product.price) * creditsPerDollar);
+  // Otherwise calculate from price (minimum 1 credit for any purchase)
+  const calculated = Math.floor(Number(product.price) * creditsPerDollar);
+  return Math.max(1, calculated);
 }
 
 interface PageProps {
@@ -101,7 +102,7 @@ export default async function StorePage({ searchParams }: PageProps) {
 
   const creditsPerDollar = settings?.giveawayCreditsPerDollar
     ? Number(settings.giveawayCreditsPerDollar)
-    : 0.1;
+    : 1; // Default: 1 credit per dollar spent
   const creditsEnabled = settings?.giveawayCreditsEnabled ?? true;
 
   // Find current category name for display
