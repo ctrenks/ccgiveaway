@@ -333,7 +333,7 @@ export default function SubscribePage() {
                       </p>
                       {/* PayPal Button Container */}
                       <div ref={paypalButtonRef} className="min-h-[50px]" />
-                      
+
                       {/* Show loading state while PayPal SDK loads */}
                       {!paypalLoaded && (
                         <div className="text-center py-4">
@@ -341,7 +341,7 @@ export default function SubscribePage() {
                           <p className="text-slate-500 text-sm mt-2">Loading PayPal...</p>
                         </div>
                       )}
-                      
+
                       {/* Debug info - remove in production */}
                       {paypalLoaded && !((window as any)?.paypal) && (
                         <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-400 text-sm">
