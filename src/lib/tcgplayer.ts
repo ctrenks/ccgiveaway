@@ -9,6 +9,7 @@ export interface TCGPlayerProduct {
   rarity?: string;
   imageUrl?: string;
   marketPrice?: number;
+  foilPrice?: number;
   listedPrice?: number;
   url: string;
 }
@@ -133,9 +134,53 @@ async function fetchDirect(url: string): Promise<string | null> {
 }
 
 /**
- * Extract price from HTML - targets specific TCGPlayer elements
+ * Extract both normal and foil prices from HTML
+ * Returns { normal: number, foil: number }
  */
-function extractPriceFromHTML(html: string): number {
+function extractPricesFromHTML(html: string): { normal: number; foil: number } {
+  let normalPrice = 0;
+  let foilPrice = 0;
+
+  // First try to find the near-mint table with both prices
+  // <section data-v-6d035c54="" class="near-mint__container">
+  //   <table data-v-8422f827="" data-v-6d035c54="" class="near-mint-table">
+  //     <tr><td><span>Normal:</span></td><td><span class="near-mint-table__price">$23.93</span></td>
+  //         <td><span>Foil:</span></td><td><span class="near-mint-table__price">$26.90</span></td></tr>
+  //   </table>
+  // </section>
+  
+  const nearMintTableMatch = html.match(/near-mint-table[^]*?<\/table>/i);
+  if (nearMintTableMatch) {
+    const tableHtml = nearMintTableMatch[0];
+    console.log("Found near-mint table:", tableHtml.slice(0, 300));
+    
+    // Extract Normal price
+    const normalMatch = tableHtml.match(/Normal[^$]*\$([\d,]+\.?\d*)/i);
+    if (normalMatch && normalMatch[1]) {
+      normalPrice = parseFloat(normalMatch[1].replace(/,/g, ""));
+      console.log("Found Normal price:", normalPrice);
+    }
+    
+    // Extract Foil price
+    const foilMatch = tableHtml.match(/Foil[^$]*\$([\d,]+\.?\d*)/i);
+    if (foilMatch && foilMatch[1]) {
+      foilPrice = parseFloat(foilMatch[1].replace(/,/g, ""));
+      console.log("Found Foil price:", foilPrice);
+    }
+  }
+
+  // If we didn't find prices in the table, fall back to old method (gets one price)
+  if (normalPrice === 0) {
+    normalPrice = extractSinglePrice(html);
+  }
+
+  return { normal: normalPrice, foil: foilPrice };
+}
+
+/**
+ * Extract a single price from HTML (fallback for old method)
+ */
+function extractSinglePrice(html: string): number {
   // TCGPlayer Market Price is in: <span class="price-points__upper__price">$38.28</span>
   // Try multiple patterns to find this specific element
 
@@ -238,16 +283,16 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
 
     console.log("HTML length:", html.length);
 
-    // Extract price from rendered HTML
-    const marketPrice = extractPriceFromHTML(html);
-    console.log("Price from HTML:", marketPrice);
+    // Extract both normal and foil prices from rendered HTML
+    const prices = extractPricesFromHTML(html);
+    console.log("Prices from HTML - Normal:", prices.normal, "Foil:", prices.foil);
 
     // Extract other data from HTML
     const name = extractName(html, parsed.slug);
     const imageUrl = extractImage(html);
     const setName = extractSetName(html, parsed.slug);
 
-    console.log("Extracted:", { name, imageUrl: imageUrl?.substring(0, 50), setName, marketPrice });
+    console.log("Extracted:", { name, imageUrl: imageUrl?.substring(0, 50), setName, normalPrice: prices.normal, foilPrice: prices.foil });
 
     const product: TCGPlayerProduct = {
       productId: parsed.productId,
@@ -258,8 +303,9 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
       cardNumber: extractCardNumber(html),
       rarity: extractRarity(html),
       imageUrl,
-      marketPrice,
-      listedPrice: marketPrice,
+      marketPrice: prices.normal,
+      foilPrice: prices.foil,
+      listedPrice: prices.normal,
     };
 
     return product;
