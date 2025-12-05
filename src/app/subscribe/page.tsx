@@ -70,7 +70,7 @@ export default function SubscribePage() {
 
     setSelectedTier(tierId);
     setError(null);
-    
+
     // Fetch the PayPal plan ID for this tier
     try {
       const res = await fetch(`/api/subscriptions/paypal?tier=${tierId}`);
@@ -296,7 +296,7 @@ export default function SubscribePage() {
                       {error}
                     </div>
                   )}
-                  
+
                   {loading ? (
                     <div className="text-center py-8">
                       <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full mx-auto mb-4" />

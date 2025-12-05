@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   }
 
   const planId = PLAN_IDS[tier];
-  
+
   if (!planId) {
     return NextResponse.json(
       { error: "PayPal plan not configured for this tier" },
@@ -166,4 +166,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
