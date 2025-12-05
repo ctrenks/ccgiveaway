@@ -117,18 +117,7 @@ export async function POST(request: NextRequest) {
               },
             },
             items: orderItems,
-            shipping: {
-              name: {
-                full_name: shipping.name,
-              },
-              address: {
-                address_line_1: shipping.address,
-                admin_area_2: shipping.city,
-                admin_area_1: shipping.state,
-                postal_code: shipping.zip,
-                country_code: shipping.country,
-              },
-            },
+            // Shipping address will be collected by PayPal
           },
         ],
         application_context: {
@@ -136,6 +125,7 @@ export async function POST(request: NextRequest) {
           return_url: `${process.env.NEXTAUTH_URL || process.env.AUTH_URL}/checkout/success?provider=paypal`,
           cancel_url: `${process.env.NEXTAUTH_URL || process.env.AUTH_URL}/checkout?cancelled=true`,
           user_action: "PAY_NOW",
+          shipping_preference: "GET_FROM_FILE", // Let PayPal use customer's saved addresses
         },
       }),
     });
