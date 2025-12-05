@@ -79,10 +79,14 @@ export default function SubscribePage() {
           <h1 className="text-4xl font-bold text-white mb-4">
             Collector Card <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">VIP Membership</span>
           </h1>
-          <p className="text-slate-400 max-w-2xl mx-auto">
+          <p className="text-slate-400 max-w-2xl mx-auto mb-4">
             Unlock exclusive benefits, earn more credits, and save on every order.
             Cancel anytime - no commitment required.
           </p>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full">
+            <span className="text-green-400">✓</span>
+            <span className="text-green-300 text-sm font-medium">Guaranteed 5+ active giveaways every month!</span>
+          </div>
         </div>
 
         {/* Pricing Cards */}
@@ -252,14 +256,14 @@ export default function SubscribePage() {
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
               <h3 className="text-white font-semibold mb-2">What does shipping on wins cost?</h3>
               <p className="text-slate-400 text-sm">
-                Shipping for giveaway wins is a flat $5 for up to 5 packs/items. VIP members can use their 
+                Shipping for giveaway wins is a flat $5 for up to 5 packs/items. VIP members can use their
                 monthly free shipping on wins too!
               </p>
             </div>
             <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
               <h3 className="text-white font-semibold mb-2">Can I hold my winnings?</h3>
               <p className="text-slate-400 text-sm">
-                Yes! You can hold winnings for up to 90 days to bundle shipments. However, if shipping is 
+                Yes! You can hold winnings for up to 90 days to bundle shipments. However, if shipping is
                 not paid within 90 days, winnings are forfeited.
               </p>
             </div>

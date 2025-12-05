@@ -382,6 +382,10 @@ export default function GiveawayPage({
                     Winner is whoever&apos;s number is closest to the Ohio Pick 3 lottery drawing!
                     {giveaway.freeEntriesPerUser > 0 && ` You get ${giveaway.freeEntriesPerUser} free entries!`}
                   </p>
+                  <div className="mt-3 pt-3 border-t border-purple-500/30 flex items-center gap-2">
+                    <span className="text-green-400">✓</span>
+                    <span className="text-green-300 text-xs">We guarantee 5+ active giveaways every month!</span>
+                  </div>
                 </div>
 
                 {/* Step by Step */}

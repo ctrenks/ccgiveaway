@@ -66,11 +66,15 @@ export default async function GiveawaysPage() {
             <span className="text-white">Giveaways</span>
           </nav>
           <h1 className="text-4xl font-bold text-white mb-4">🎁 Card Giveaways</h1>
-          <p className="text-slate-400 max-w-2xl">
+          <p className="text-slate-400 max-w-2xl mb-4">
             Pick your lucky numbers for a chance to win sealed products! Every account gets{" "}
             <span className="text-purple-400 font-medium">10 free entries</span> per giveaway.
             Earn more entries by shopping in our store.
           </p>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-full">
+            <span className="text-green-400">✓</span>
+            <span className="text-green-300 text-sm font-medium">Guaranteed 5+ active giveaways every month!</span>
+          </div>
         </div>
 
         {/* How It Works - Quick Overview */}
