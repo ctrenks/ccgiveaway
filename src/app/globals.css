@@ -56,6 +56,19 @@ body {
   }
 }
 
+/* Foil card holographic glare effect */
+@keyframes foil-glare {
+  0% {
+    background-position: -200% 0;
+  }
+  50% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 /* Gradient text helper */
 .gradient-text {
   background: linear-gradient(135deg, #a78bfa 0%, #f472b6 50%, #22d3ee 100%);

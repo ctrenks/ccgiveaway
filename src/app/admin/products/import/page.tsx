@@ -25,7 +25,7 @@ interface PreviewData {
 export default function ImportProduct() {
   const [url, setUrl] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [condition, setCondition] = useState<"NEW" | "OPENED" | "USED">("NEW");
+  const [condition, setCondition] = useState<"NEW" | "OPENED" | "USED">("OPENED");
   const [isFoil, setIsFoil] = useState(false);
   const [marketPrice, setMarketPrice] = useState<string>("");
   const [discountType, setDiscountType] = useState<"percentage" | "fixed">("percentage");

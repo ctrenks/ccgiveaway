@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { url, quantity = 1, condition = "NEW", isFoil = false, manualPrice, discountType, discountValue, manualCardInfo, previewData } = body;
+    const { url, quantity = 1, condition = "OPENED", isFoil = false, manualPrice, discountType, discountValue, manualCardInfo, previewData } = body;
 
     console.log("Import request:", { url, quantity, condition, isFoil, manualPrice, hasPreviewData: !!previewData });
 

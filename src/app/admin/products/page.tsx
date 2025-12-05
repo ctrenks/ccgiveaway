@@ -73,7 +73,14 @@ export default async function AdminProducts() {
                         )}
                       </div>
                       <div>
-                        <div className="text-white font-medium">{product.name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-medium">{product.name}</span>
+                          {product.isFoil && (
+                            <span className="px-1.5 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-900 text-[10px] font-bold rounded">
+                              ✨ FOIL
+                            </span>
+                          )}
+                        </div>
                         <div className="text-slate-500 text-sm">
                           {product.setName && `${product.setName}`}
                           {product.cardNumber && ` #${product.cardNumber}`}

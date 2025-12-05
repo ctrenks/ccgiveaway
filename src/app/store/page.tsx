@@ -283,17 +283,38 @@ export default async function StorePage({ searchParams }: PageProps) {
                     {/* Image */}
                     <div className="aspect-[3/4] bg-slate-800 relative overflow-hidden">
                       {product.image ? (
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
+                        <>
+                          <Image
+                            src={product.image}
+                            alt={product.name}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          {/* Foil Glare Effect */}
+                          {product.isFoil && (
+                            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent opacity-30 group-hover:opacity-50 transition-opacity pointer-events-none"
+                              style={{
+                                background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.1) 25%, rgba(255,215,0,0.3) 50%, rgba(255,255,255,0.1) 75%, transparent 100%)',
+                                backgroundSize: '200% 200%',
+                                animation: 'foil-glare 3s ease-in-out infinite',
+                              }}
+                            />
+                          )}
+                        </>
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-6xl">
                           🃏
                         </div>
                       )}
+                      
+                      {/* Foil Badge */}
+                      {product.isFoil && (
+                        <div className="absolute top-3 left-3 bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-900 text-xs font-bold px-2 py-1 rounded shadow-lg">
+                          ✨ FOIL
+                        </div>
+                      )}
+                      
+                      {/* Discount Badge */}
                       {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
                         <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
                           {Math.round((1 - Number(product.price) / Number(product.originalPrice)) * 100)}% OFF
