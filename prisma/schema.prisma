@@ -233,9 +233,11 @@ model Product {
   active      Boolean     @default(true) // Show/hide in store
 
   // TCGPlayer integration
-  tcgPlayerId   String?   @unique // TCGPlayer product ID for re-scanning
+  tcgPlayerId   String?   // TCGPlayer product ID for re-scanning
   tcgPlayerUrl  String?   // Full TCGPlayer URL
   lastPriceSync DateTime? // Last time price was synced from TCGPlayer
+  
+  @@unique([tcgPlayerId, isFoil]) // Allow same card as both normal and foil
 
   // Giveaway credits - override default calculation
   giveawayCredits Int?    // Manual override: credits earned when purchased (null = use default calc)

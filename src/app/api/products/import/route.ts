@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { url, quantity = 1, condition = "NEW", isFoil = false, manualPrice, discountType, discountValue, manualCardInfo } = body;
+    const { url, quantity = 1, condition = "NEW", isFoil = false, manualPrice, discountType, discountValue, manualCardInfo, previewData } = body;
 
-    console.log("Import request:", { url, quantity, condition, manualPrice, discountType, discountValue, manualCardInfo });
+    console.log("Import request:", { url, quantity, condition, isFoil, manualPrice, hasPreviewData: !!previewData });
 
     if (!url && !manualCardInfo) {
       return NextResponse.json({ error: "TCGPlayer URL or manual card info is required" }, { status: 400 });
@@ -85,8 +85,42 @@ export async function POST(request: NextRequest) {
     let tcgProduct: any = null;
     let parsed: any = null;
 
-    // Try to fetch from URL if provided
-    if (url) {
+    // Use preview data if provided (avoid re-fetching)
+    if (previewData) {
+      console.log("Using preview data - skipping fetch");
+      parsed = url ? parseTCGPlayerUrl(url) : null;
+      
+      // Check if product already exists (consider foil status)
+      if (parsed) {
+        const existing = await prisma.product.findFirst({
+          where: { 
+            tcgPlayerId: parsed.productId,
+            isFoil: isFoil
+          },
+        });
+
+        if (existing) {
+          return NextResponse.json(
+            { error: `${isFoil ? 'Foil' : 'Normal'} version already imported`, product: existing },
+            { status: 409 }
+          );
+        }
+      }
+
+      // Use preview data
+      tcgProduct = {
+        productId: previewData.productId,
+        name: previewData.name,
+        setName: previewData.setName,
+        cardNumber: previewData.cardNumber,
+        rarity: previewData.rarity,
+        game: previewData.game,
+        imageUrl: previewData.imageUrl,
+        marketPrice: 0, // Will use manualPrice
+      };
+    } 
+    // Otherwise fetch from URL if provided
+    else if (url) {
       // Validate URL
       parsed = parseTCGPlayerUrl(url);
       if (parsed) {
@@ -106,6 +140,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Fetch product data from TCGPlayer
+        console.log("Fetching from TCGPlayer...");
         tcgProduct = await fetchTCGPlayerProduct(url);
         console.log("TCGPlayer product:", tcgProduct);
       }
@@ -300,9 +335,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       preview: true,
-      product: tcgProduct,
+      product: {
+        ...tcgProduct,
+        productId: tcgProduct.productId, // Include productId for preview data
+      },
       priceInfo: {
         tcgPlayerPrice: tcgPrice,
+        foilPrice: tcgProduct.foilPrice || 0,
         ourPrice: ourPrice,
         discount: discountSettings,
         savings: tcgPrice - ourPrice,

@@ -11,9 +11,11 @@ interface PreviewData {
     rarity?: string;
     imageUrl?: string;
     game: string;
+    productId?: string;
   };
   priceInfo: {
     tcgPlayerPrice: number;
+    foilPrice?: number;
     ourPrice: number;
     discount: { discountType: string; discountValue: number };
     savings: number;
@@ -47,6 +49,18 @@ export default function ImportProduct() {
       .catch(() => {});
   }, []);
 
+  // Auto-switch price when foil checkbox changes
+  useEffect(() => {
+    if (preview) {
+      const defaultPrice = isFoil && preview.priceInfo.foilPrice 
+        ? preview.priceInfo.foilPrice 
+        : preview.priceInfo.tcgPlayerPrice;
+      if (defaultPrice > 0) {
+        setMarketPrice(defaultPrice.toString());
+      }
+    }
+  }, [isFoil, preview]);
+
   const handlePreview = async () => {
     if (!url) return;
     setIsFetching(true);
@@ -64,9 +78,12 @@ export default function ImportProduct() {
       }
 
       setPreview(data);
-      // Pre-fill market price if found
-      if (data.priceInfo.tcgPlayerPrice > 0) {
-        setMarketPrice(data.priceInfo.tcgPlayerPrice.toString());
+      // Pre-fill market price based on foil selection
+      const defaultPrice = isFoil && data.priceInfo.foilPrice 
+        ? data.priceInfo.foilPrice 
+        : data.priceInfo.tcgPlayerPrice;
+      if (defaultPrice > 0) {
+        setMarketPrice(defaultPrice.toString());
       }
     } catch {
       setError("Failed to connect to server");
@@ -100,6 +117,16 @@ export default function ImportProduct() {
           manualPrice: price,
           discountType,
           discountValue,
+          // Pass preview data to avoid re-fetching
+          previewData: preview ? {
+            productId: preview.product.productId,
+            name: preview.product.name,
+            setName: preview.product.setName,
+            cardNumber: preview.product.cardNumber,
+            rarity: preview.product.rarity,
+            imageUrl: preview.product.imageUrl,
+            game: preview.product.game,
+          } : undefined,
         }),
       });
       const data = await res.json();
@@ -223,10 +250,24 @@ export default function ImportProduct() {
 
             {/* Price & Discount */}
             <div className="mt-6 pt-6 border-t border-slate-800">
+              {/* Show both prices if available */}
+              {preview.priceInfo.foilPrice && preview.priceInfo.foilPrice > 0 && (
+                <div className="mb-4 p-3 bg-slate-800/50 rounded-lg">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-400">Normal Price:</span>
+                    <span className="text-white font-medium">${preview.priceInfo.tcgPlayerPrice.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm mt-2">
+                    <span className="text-slate-400">Foil Price:</span>
+                    <span className="text-amber-400 font-medium">${preview.priceInfo.foilPrice.toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+              
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    TCGPlayer Market Price *
+                    {isFoil ? 'Foil' : 'Normal'} Market Price *
                   </label>
                   <div className="relative">
                     <span className="absolute left-4 top-3 text-slate-400">$</span>
@@ -240,6 +281,9 @@ export default function ImportProduct() {
                       className="w-full pl-8 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-lg"
                     />
                   </div>
+                  {isFoil && preview.priceInfo.foilPrice === 0 && (
+                    <p className="text-amber-400 text-xs mt-1">No foil price found - using manual entry</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
