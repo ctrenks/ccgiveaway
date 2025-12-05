@@ -68,8 +68,8 @@ export function Hero({ cardImages = [] }: HeroProps) {
         </h1>
 
         <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-          From Magic: The Gathering to Pokémon and beyond. Find your next prized card
-          or enter our exclusive giveaways for a chance to win rare collectibles.
+          We give away sealed booster packs every month using lottery-style drawings.
+          Everyone gets free entries - just pick your numbers and wait for the draw!
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

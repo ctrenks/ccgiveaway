@@ -187,7 +187,7 @@ export default async function GiveawaysPage() {
         </details>
 
         {/* VIP Credits Banner */}
-        <div className="mb-12 p-6 bg-gradient-to-r from-amber-900/30 via-orange-900/30 to-amber-900/30 border border-amber-500/30 rounded-2xl">
+        <div className="mb-6 p-6 bg-gradient-to-r from-amber-900/30 via-orange-900/30 to-amber-900/30 border border-amber-500/30 rounded-2xl">
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="text-5xl">🎟️</div>
             <div className="flex-1 text-center md:text-left">
@@ -207,6 +207,26 @@ export default async function GiveawaysPage() {
               className="shrink-0 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold rounded-xl shadow-lg transition-all"
             >
               ⭐ Become VIP
+            </Link>
+          </div>
+        </div>
+
+        {/* Referral Program Banner */}
+        <div className="mb-12 p-6 bg-gradient-to-r from-purple-900/30 via-pink-900/30 to-purple-900/30 border border-purple-500/30 rounded-2xl">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="text-5xl">🔗</div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-xl font-bold text-white mb-2">Refer Friends, Earn 100 Credits Each!</h3>
+              <p className="text-purple-200/80">
+                Share your unique referral link with friends. When they sign up, you get <span className="text-white font-semibold">100 free credits</span> instantly!
+                No limit on referrals - invite everyone you know.
+              </p>
+            </div>
+            <Link
+              href="/profile"
+              className="shrink-0 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-bold rounded-xl shadow-lg transition-all"
+            >
+              🔗 Get Your Link
             </Link>
           </div>
         </div>

@@ -901,6 +901,25 @@ export default function GiveawayPage({
               </Link>
             </div>
 
+            {/* Referral Promo */}
+            <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border border-purple-500/30 rounded-2xl p-5">
+              <div className="flex items-start gap-3 mb-3">
+                <span className="text-2xl">🔗</span>
+                <div>
+                  <h3 className="text-white font-semibold">Refer Friends!</h3>
+                  <p className="text-purple-200/70 text-sm">
+                    Get 100 free credits for each friend who signs up!
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/profile"
+                className="block w-full py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white text-center font-semibold rounded-lg text-sm transition-all"
+              >
+                Get Your Referral Link
+              </Link>
+            </div>
+
           </div>
         </div>
 

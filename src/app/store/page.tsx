@@ -272,7 +272,7 @@ export default async function StorePage({ searchParams }: PageProps) {
                 {products.map((product) => (
                   <div
                     key={product.id}
-                    className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden group hover:border-purple-500/30 transition-all"
+                    className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden group hover:border-purple-500/30 transition-all flex flex-col h-full"
                   >
                     {/* Image */}
                     <div className="aspect-[3/4] bg-slate-800 relative overflow-hidden">
@@ -296,16 +296,17 @@ export default async function StorePage({ searchParams }: PageProps) {
                     </div>
 
                     {/* Details */}
-                    <div className="p-4">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="text-white font-medium line-clamp-2">{product.name}</h3>
-                      </div>
+                    <div className="p-4 flex flex-col flex-1">
+                      {/* Title - fixed height for 2 lines */}
+                      <h3 className="text-white font-medium line-clamp-2 h-12 mb-2">{product.name}</h3>
 
-                      {product.setName && (
-                        <p className="text-slate-500 text-sm mb-2">{product.setName}</p>
-                      )}
+                      {/* Set name - fixed height */}
+                      <p className="text-slate-500 text-sm h-5 mb-2 truncate">
+                        {product.setName || "\u00A0"}
+                      </p>
 
-                      <div className="flex items-center gap-2 mb-3">
+                      {/* Tags - fixed height */}
+                      <div className="flex items-center gap-2 h-6 mb-3">
                         {product.subType && (
                           <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">
                             {product.subType.name}
@@ -318,6 +319,10 @@ export default async function StorePage({ searchParams }: PageProps) {
                         )}
                       </div>
 
+                      {/* Spacer to push content to bottom */}
+                      <div className="flex-1"></div>
+
+                      {/* Price row */}
                       <div className="flex items-center justify-between">
                         <div>
                           <span className="text-xl font-bold text-white">
