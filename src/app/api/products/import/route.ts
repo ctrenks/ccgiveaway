@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { url, quantity = 1, condition = "NEW", manualPrice, discountType, discountValue, manualCardInfo } = body;
+    const { url, quantity = 1, condition = "NEW", isFoil = false, manualPrice, discountType, discountValue, manualCardInfo } = body;
 
     console.log("Import request:", { url, quantity, condition, manualPrice, discountType, discountValue, manualCardInfo });
 
@@ -90,14 +90,17 @@ export async function POST(request: NextRequest) {
       // Validate URL
       parsed = parseTCGPlayerUrl(url);
       if (parsed) {
-        // Check if product already exists
-        const existing = await prisma.product.findUnique({
-          where: { tcgPlayerId: parsed.productId },
+        // Check if product already exists (consider foil status)
+        const existing = await prisma.product.findFirst({
+          where: { 
+            tcgPlayerId: parsed.productId,
+            isFoil: isFoil
+          },
         });
 
         if (existing) {
           return NextResponse.json(
-            { error: "Product already imported", product: existing },
+            { error: `${isFoil ? 'Foil' : 'Normal'} version already imported`, product: existing },
             { status: 409 }
           );
         }
@@ -112,12 +115,13 @@ export async function POST(request: NextRequest) {
     if (!tcgProduct && manualCardInfo) {
       console.log("Creating product from manual card info:", manualCardInfo);
       
-      // Check if product already exists by name and set
+      // Check if product already exists by name, set, and foil status
       const existing = await prisma.product.findFirst({
         where: {
           name: manualCardInfo.name,
           setName: manualCardInfo.setName,
-          cardNumber: manualCardInfo.cardNumber
+          cardNumber: manualCardInfo.cardNumber,
+          isFoil: isFoil
         },
       });
 
@@ -224,6 +228,7 @@ export async function POST(request: NextRequest) {
         originalPrice: originalPrice,
         quantity,
         condition: condition as "NEW" | "OPENED" | "USED",
+        isFoil,
         categoryId: category.id,
         subTypeId: subType.id,
         tcgPlayerId: tcgProduct.productId || null,

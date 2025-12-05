@@ -218,6 +218,7 @@ model Product {
 
   // Condition
   condition   Condition?  @default(NEW)
+  isFoil      Boolean     @default(false) // True for foil/holographic cards
 
   // Categorization
   categoryId  String
