@@ -21,6 +21,22 @@ interface UserProfile {
   createdAt: string;
 }
 
+interface ReferralData {
+  referralCode: string;
+  referralUrl: string;
+  totalCreditsEarned: number;
+  completedCount: number;
+  pendingCount: number;
+  referrals: Array<{
+    id: string;
+    referredEmail: string;
+    status: string;
+    creditsAwarded: number;
+    createdAt: string;
+    completedAt: string | null;
+  }>;
+}
+
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -31,6 +47,8 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [referralData, setReferralData] = useState<ReferralData | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Form state
   const [displayName, setDisplayName] = useState("");
@@ -51,8 +69,29 @@ export default function ProfilePage() {
   useEffect(() => {
     if (session?.user?.id) {
       fetchProfile();
+      fetchReferralData();
     }
   }, [session?.user?.id]);
+
+  const fetchReferralData = async () => {
+    try {
+      const res = await fetch("/api/user/referral");
+      const data = await res.json();
+      if (data.referralCode) {
+        setReferralData(data);
+      }
+    } catch (error) {
+      console.error("Error fetching referral data:", error);
+    }
+  };
+
+  const copyReferralLink = () => {
+    if (referralData?.referralUrl) {
+      navigator.clipboard.writeText(referralData.referralUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -225,6 +264,89 @@ export default function ProfilePage() {
               🎁 {profile?.giveawayCredits || 0}
             </div>
           </div>
+        </div>
+
+        {/* Referral Section */}
+        <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-xl p-6 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">🔗</span>
+            <div>
+              <h2 className="text-lg font-semibold text-white">Refer Friends, Earn Credits!</h2>
+              <p className="text-slate-400 text-sm">Get 100 credits for each friend who signs up</p>
+            </div>
+          </div>
+
+          {referralData ? (
+            <>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Your Referral Link
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={referralData.referralUrl}
+                    readOnly
+                    className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm"
+                  />
+                  <button
+                    onClick={copyReferralLink}
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      copied
+                        ? "bg-green-600 text-white"
+                        : "bg-purple-600 hover:bg-purple-500 text-white"
+                    }`}
+                  >
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-green-400">{referralData.completedCount}</div>
+                  <div className="text-xs text-slate-400">Successful</div>
+                </div>
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-amber-400">{referralData.pendingCount}</div>
+                  <div className="text-xs text-slate-400">Pending</div>
+                </div>
+                <div className="bg-slate-800/50 rounded-lg p-3">
+                  <div className="text-2xl font-bold text-purple-400">{referralData.totalCreditsEarned}</div>
+                  <div className="text-xs text-slate-400">Credits Earned</div>
+                </div>
+              </div>
+
+              {referralData.referrals.length > 0 && (
+                <details className="mt-4">
+                  <summary className="text-sm text-purple-400 cursor-pointer hover:text-purple-300">
+                    View referral history ({referralData.referrals.length})
+                  </summary>
+                  <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                    {referralData.referrals.map((ref) => (
+                      <div
+                        key={ref.id}
+                        className="flex items-center justify-between p-2 bg-slate-800/50 rounded-lg text-sm"
+                      >
+                        <span className="text-slate-300">{ref.referredEmail}</span>
+                        <span className={`px-2 py-0.5 rounded text-xs ${
+                          ref.status === "COMPLETED"
+                            ? "bg-green-500/20 text-green-400"
+                            : "bg-amber-500/20 text-amber-400"
+                        }`}>
+                          {ref.status === "COMPLETED" ? `+${ref.creditsAwarded}` : "Pending"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-4 text-slate-400">
+              Loading referral info...
+            </div>
+          )}
         </div>
 
         {/* Profile Info */}

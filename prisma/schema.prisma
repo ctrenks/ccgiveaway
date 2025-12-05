@@ -49,6 +49,11 @@ model User {
   role            Int       @default(0) // 0=user, 1=banned, 5=moderator, 9=admin
   giveawayCredits Int       @default(0) // Earned credits for giveaway entries
 
+  // Referral system
+  referralCode    String?   @unique // Unique code for sharing
+  referredBy      String?   // User ID of who referred this user
+  referralCreditsEarned Int @default(0) // Total credits earned from referrals
+
   // Subscription
   subscriptionTier     SubscriptionTier? // null = no subscription
   subscriptionId       String?           // PayPal subscription ID
@@ -70,8 +75,27 @@ model User {
   orders          Order[]
   creditLogs      CreditLog[]  // Log of manual credit adjustments
   subscription    Subscription?
+  referrals       Referral[]   @relation("ReferrerRelation")
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+model Referral {
+  id          String   @id @default(cuid())
+  referrerId  String
+  referrer    User     @relation("ReferrerRelation", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredEmail String // Email of the referred user
+  referredUserId String? // Set when they complete registration
+  creditsAwarded Int    @default(100)
+  status      ReferralStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+}
+
+enum ReferralStatus {
+  PENDING    // Link clicked but not registered
+  COMPLETED  // User registered and credits awarded
+  EXPIRED    // Link expired (optional)
 }
 
 enum SubscriptionTier {
