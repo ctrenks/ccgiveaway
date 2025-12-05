@@ -52,6 +52,32 @@ export async function POST(request: NextRequest) {
       const captureData = await captureResponse.json();
 
       if (captureData.status === "COMPLETED") {
+        // Extract shipping address from PayPal
+        const paypalShipping = captureData.purchase_units?.[0]?.shipping;
+        let shippingAddress = null;
+        
+        if (paypalShipping) {
+          const address = paypalShipping.address;
+          shippingAddress = {
+            name: paypalShipping.name?.full_name || "",
+            address: address?.address_line_1 || "",
+            address2: address?.address_line_2 || "",
+            city: address?.admin_area_2 || "",
+            state: address?.admin_area_1 || "",
+            zip: address?.postal_code || "",
+            country: address?.country_code || "",
+          };
+          
+          // Validate USA-only shipping
+          if (shippingAddress.country !== "US") {
+            console.error("Non-US order detected from PayPal:", shippingAddress.country);
+            return NextResponse.json(
+              { error: "We currently only ship to USA addresses. Your order has been cancelled." },
+              { status: 400 }
+            );
+          }
+        }
+
         // Find and update the order
         const order = await prisma.order.findFirst({
           where: {
@@ -63,24 +89,14 @@ export async function POST(request: NextRequest) {
         });
 
         if (order) {
-          // Validate USA-only shipping
-          try {
-            const shippingAddress = JSON.parse(order.shippingAddress);
-            if (shippingAddress.country !== "US") {
-              console.error("Non-US order detected:", shippingAddress.country);
-              return NextResponse.json(
-                { error: "Invalid shipping address. USA shipping only." },
-                { status: 400 }
-              );
-            }
-          } catch (e) {
-            console.error("Error parsing shipping address:", e);
-          }
 
-          // Update order status
+          // Update order status and add shipping address from PayPal
           await prisma.order.update({
             where: { id: order.id },
-            data: { status: "PAID" },
+            data: { 
+              status: "PAID",
+              shippingAddress: shippingAddress ? JSON.stringify(shippingAddress) : null
+            },
           });
 
           // Reduce product quantities

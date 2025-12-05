@@ -101,7 +101,7 @@ export default function CheckoutPage() {
             id: item.id,
             quantity: item.quantity,
           })),
-          shipping,
+          // No shipping - PayPal will collect it
         }),
       });
 
@@ -121,13 +121,8 @@ export default function CheckoutPage() {
     }
   };
 
-  const isShippingComplete =
-    shipping.name &&
-    shipping.address &&
-    shipping.city &&
-    shipping.state &&
-    shipping.zip &&
-    shipping.country;
+  // PayPal collects shipping, so we don't need to validate it
+  const isShippingComplete = true;
 
   if (status === "loading" || items.length === 0) {
     return (
@@ -155,16 +150,23 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left: Shipping & Payment */}
           <div className="space-y-6">
-            {/* Shipping */}
+            {/* Shipping Info Notice */}
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-white">Shipping Address</h2>
-                <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full">
-                  <span className="text-blue-400">🇺🇸</span>
-                  <span className="text-blue-300 text-xs font-medium">USA Only</span>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">📦</span>
+                <div>
+                  <h2 className="text-lg font-bold text-white">Shipping Address</h2>
+                  <p className="text-slate-400 text-sm">You'll enter your shipping address on PayPal</p>
                 </div>
               </div>
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <span className="text-blue-400">🇺🇸</span>
+                <span className="text-blue-300 text-sm">USA Shipping Only - PayPal will validate your address</span>
+              </div>
+            </div>
 
+            {/* Hidden shipping fields (keeping structure for compatibility) */}
+            <div className="hidden">
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-slate-400 mb-1">Full Name</label>

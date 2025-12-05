@@ -52,15 +52,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { items, shipping } = await request.json();
+    const { items } = await request.json();
 
-    // Validate USA-only shipping
-    if (shipping.country !== "US") {
-      return NextResponse.json(
-        { error: "We currently only ship to USA addresses. International shipping is not available at this time." },
-        { status: 400 }
-      );
-    }
+    // Note: Shipping address will be collected by PayPal and validated in confirm endpoint
 
     // Validate items and calculate total
     const productIds = items.map((item: { id: string }) => item.id);
@@ -159,13 +153,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Store pending order in database
+    // Store pending order in database (shipping address will be added when PayPal confirms)
     const order = await prisma.order.create({
       data: {
         userId: session.user.id,
         status: "PENDING",
         total: total,
-        shippingAddress: JSON.stringify(shipping),
+        shippingAddress: null, // Will be populated from PayPal on confirmation
         paymentProvider: "paypal",
         paymentId: orderData.id,
         items: {

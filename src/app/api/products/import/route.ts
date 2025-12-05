@@ -74,35 +74,71 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { url, quantity = 1, condition = "NEW", manualPrice, discountType, discountValue } = body;
+    const { url, quantity = 1, condition = "NEW", manualPrice, discountType, discountValue, manualCardInfo } = body;
 
-    console.log("Import request:", { url, quantity, condition, manualPrice, discountType, discountValue });
+    console.log("Import request:", { url, quantity, condition, manualPrice, discountType, discountValue, manualCardInfo });
 
-    if (!url) {
-      return NextResponse.json({ error: "TCGPlayer URL is required" }, { status: 400 });
+    if (!url && !manualCardInfo) {
+      return NextResponse.json({ error: "TCGPlayer URL or manual card info is required" }, { status: 400 });
     }
 
-    // Validate URL
-    const parsed = parseTCGPlayerUrl(url);
-    if (!parsed) {
-      return NextResponse.json({ error: "Invalid TCGPlayer URL" }, { status: 400 });
+    let tcgProduct: any = null;
+    let parsed: any = null;
+
+    // Try to fetch from URL if provided
+    if (url) {
+      // Validate URL
+      parsed = parseTCGPlayerUrl(url);
+      if (parsed) {
+        // Check if product already exists
+        const existing = await prisma.product.findUnique({
+          where: { tcgPlayerId: parsed.productId },
+        });
+
+        if (existing) {
+          return NextResponse.json(
+            { error: "Product already imported", product: existing },
+            { status: 409 }
+          );
+        }
+
+        // Fetch product data from TCGPlayer
+        tcgProduct = await fetchTCGPlayerProduct(url);
+        console.log("TCGPlayer product:", tcgProduct);
+      }
     }
 
-    // Check if product already exists
-    const existing = await prisma.product.findUnique({
-      where: { tcgPlayerId: parsed.productId },
-    });
+    // If no TCG product fetched, use manual card info (for bulk import)
+    if (!tcgProduct && manualCardInfo) {
+      console.log("Using manual card info:", manualCardInfo);
+      
+      // Check if product already exists by name and set
+      const existing = await prisma.product.findFirst({
+        where: {
+          name: manualCardInfo.name,
+          setName: manualCardInfo.setName
+        },
+      });
 
-    if (existing) {
-      return NextResponse.json(
-        { error: "Product already imported", product: existing },
-        { status: 409 }
-      );
+      if (existing) {
+        return NextResponse.json(
+          { error: "Product already imported", product: existing },
+          { status: 409 }
+        );
+      }
+
+      // Create minimal product info from manual data
+      tcgProduct = {
+        name: manualCardInfo.name,
+        setName: manualCardInfo.setName,
+        cardNumber: manualCardInfo.cardNumber,
+        game: "magic", // Default to Magic, could be enhanced
+        productId: null,
+        imageUrl: null,
+        rarity: null,
+        marketPrice: 0
+      };
     }
-
-    // Fetch product data from TCGPlayer
-    const tcgProduct = await fetchTCGPlayerProduct(url);
-    console.log("TCGPlayer product:", tcgProduct);
 
     if (!tcgProduct) {
       return NextResponse.json(
@@ -176,8 +212,8 @@ export async function POST(request: NextRequest) {
         condition: condition as "NEW" | "OPENED" | "USED",
         categoryId: category.id,
         subTypeId: subType.id,
-        tcgPlayerId: tcgProduct.productId,
-        tcgPlayerUrl: url,
+        tcgPlayerId: tcgProduct.productId || null,
+        tcgPlayerUrl: url || null,
         lastPriceSync: new Date(),
         active: true,
       },

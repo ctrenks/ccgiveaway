@@ -21,6 +21,9 @@ interface PreviewData {
 }
 
 export default function ImportProduct() {
+  const [importMode, setImportMode] = useState<"single" | "bulk">("single");
+  
+  // Single import state
   const [url, setUrl] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [condition, setCondition] = useState<"NEW" | "OPENED" | "USED">("NEW");
@@ -32,6 +35,17 @@ export default function ImportProduct() {
   const [preview, setPreview] = useState<PreviewData | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  
+  // Bulk import state
+  const [bulkText, setBulkText] = useState("");
+  const [bulkCondition, setBulkCondition] = useState<"NEW" | "OPENED" | "USED">("NEW");
+  const [bulkDiscountType, setBulkDiscountType] = useState<"percentage" | "fixed">("percentage");
+  const [bulkDiscountValue, setBulkDiscountValue] = useState<number>(10);
+  const [bulkDefaultPrice, setBulkDefaultPrice] = useState<string>("1.00");
+  const [isBulkImporting, setIsBulkImporting] = useState(false);
+  const [bulkError, setBulkError] = useState("");
+  const [bulkSuccess, setBulkSuccess] = useState("");
+  const [bulkResults, setBulkResults] = useState<Array<{name: string; status: string; error?: string}>>([]);
 
   // Load default settings
   useEffect(() => {
@@ -41,10 +55,114 @@ export default function ImportProduct() {
         if (data.settings) {
           setDiscountType(data.settings.discountType || "percentage");
           setDiscountValue(Number(data.settings.discountValue) || 10);
+          setBulkDiscountType(data.settings.discountType || "percentage");
+          setBulkDiscountValue(Number(data.settings.discountValue) || 10);
         }
       })
       .catch(() => {});
   }, []);
+
+  // Parse TCGPlayer scanner format: "1 Card Name (Variant) [SET] 123"
+  const parseBulkLine = (line: string) => {
+    const trimmed = line.trim();
+    if (!trimmed) return null;
+    
+    // Match pattern: quantity name [set] number
+    const match = trimmed.match(/^(\d+)\s+(.+?)\s+\[([^\]]+)\]\s+(\d+)$/);
+    if (!match) return null;
+    
+    const [, quantity, namePart, set, collectorNumber] = match;
+    // Remove variant info in parentheses for cleaner name
+    const name = namePart.replace(/\s*\([^)]+\)\s*/g, ' ').trim();
+    
+    return {
+      quantity: parseInt(quantity),
+      name,
+      set,
+      collectorNumber,
+      fullName: namePart // Keep full name with variants for display
+    };
+  };
+
+  const handleBulkImport = async () => {
+    if (!bulkText.trim()) {
+      setBulkError("Please paste TCGPlayer scanner export");
+      return;
+    }
+
+    const defaultPrice = parseFloat(bulkDefaultPrice);
+    if (!defaultPrice || defaultPrice <= 0) {
+      setBulkError("Please enter a valid default market price");
+      return;
+    }
+
+    setIsBulkImporting(true);
+    setBulkError("");
+    setBulkSuccess("");
+    setBulkResults([]);
+
+    const lines = bulkText.split('\n');
+    const parsed = lines.map(parseBulkLine).filter(Boolean);
+    
+    if (parsed.length === 0) {
+      setBulkError("No valid cards found. Format: '1 Card Name [SET] 123'");
+      setIsBulkImporting(false);
+      return;
+    }
+
+    const results: Array<{name: string; status: string; error?: string}> = [];
+    let successCount = 0;
+
+    for (const card of parsed) {
+      if (!card) continue;
+      
+      try {
+        // Create search URL for TCGPlayer
+        const searchName = encodeURIComponent(`${card.name} ${card.set}`);
+        const tcgUrl = `https://www.tcgplayer.com/search/all/product?q=${searchName}`;
+        
+        const res = await fetch("/api/products/import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: tcgUrl,
+            quantity: card.quantity,
+            condition: bulkCondition,
+            manualPrice: defaultPrice,
+            discountType: bulkDiscountType,
+            discountValue: bulkDiscountValue,
+            // Pass card info for manual creation if URL scraping fails
+            manualCardInfo: {
+              name: card.fullName,
+              setName: card.set,
+              cardNumber: card.collectorNumber
+            }
+          }),
+        });
+
+        if (res.ok) {
+          results.push({ name: card.fullName, status: 'success' });
+          successCount++;
+        } else {
+          const data = await res.json();
+          results.push({ name: card.fullName, status: 'failed', error: data.error || 'Unknown error' });
+        }
+      } catch (err) {
+        results.push({ name: card?.fullName || 'Unknown', status: 'failed', error: 'Network error' });
+      }
+    }
+
+    setBulkResults(results);
+    if (successCount > 0) {
+      setBulkSuccess(`Successfully imported ${successCount} of ${parsed.length} cards!`);
+      if (successCount === parsed.length) {
+        setBulkText("");
+      }
+    } else {
+      setBulkError("Failed to import any cards. Check the results below.");
+    }
+    setIsBulkImporting(false);
+  };
 
   const handlePreview = async () => {
     if (!url) return;
@@ -133,8 +251,33 @@ export default function ImportProduct() {
         <h1 className="text-3xl font-bold text-white">Import from TCGPlayer</h1>
       </div>
 
-      <div className="max-w-2xl">
-        {/* URL Input */}
+      {/* Mode Tabs */}
+      <div className="flex gap-2 mb-6 max-w-2xl">
+        <button
+          onClick={() => setImportMode("single")}
+          className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+            importMode === "single"
+              ? "bg-purple-600 text-white"
+              : "bg-slate-900 text-slate-400 hover:text-white border border-slate-800"
+          }`}
+        >
+          Single Import (URL)
+        </button>
+        <button
+          onClick={() => setImportMode("bulk")}
+          className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+            importMode === "bulk"
+              ? "bg-purple-600 text-white"
+              : "bg-slate-900 text-slate-400 hover:text-white border border-slate-800"
+          }`}
+        >
+          Bulk Import (Scanner)
+        </button>
+      </div>
+
+      {importMode === "single" ? (
+        <div className="max-w-2xl">
+          {/* URL Input */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
           <label className="block text-sm font-medium text-slate-300 mb-2">
             TCGPlayer Product URL
@@ -348,6 +491,160 @@ export default function ImportProduct() {
           </ol>
         </div>
       </div>
+      ) : (
+        /* Bulk Import Mode */
+        <div className="max-w-2xl">
+          {/* Bulk Import Input */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              TCGPlayer Scanner Export
+            </label>
+            <textarea
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+              placeholder="1 Card Name (Variant) [SET] 123&#10;1 Another Card [SET] 456&#10;..."
+              rows={10}
+              className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 font-mono text-sm"
+            />
+            <p className="text-slate-500 text-sm mt-2">
+              Paste cards from TCGPlayer Scanner app. Format: quantity name [SET] number
+            </p>
+          </div>
+
+          {/* Bulk Settings */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
+            <h3 className="text-white font-medium mb-4">Import Settings</h3>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Default Market Price *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-3 text-slate-400">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={bulkDefaultPrice}
+                    onChange={(e) => setBulkDefaultPrice(e.target.value)}
+                    placeholder="1.00"
+                    className="w-full pl-8 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                  />
+                </div>
+                <p className="text-slate-500 text-xs mt-1">Applied to all cards</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Condition
+                </label>
+                <select
+                  value={bulkCondition}
+                  onChange={(e) => setBulkCondition(e.target.value as "NEW" | "OPENED" | "USED")}
+                  className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white"
+                >
+                  <option value="NEW">New (Sealed)</option>
+                  <option value="OPENED">Opened</option>
+                  <option value="USED">Used</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-lg p-4">
+              <div className="text-slate-300 text-sm font-medium mb-3">Discount:</div>
+              <div className="flex gap-3">
+                <select
+                  value={bulkDiscountType}
+                  onChange={(e) => setBulkDiscountType(e.target.value as "percentage" | "fixed")}
+                  className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm"
+                >
+                  <option value="percentage">Percentage (%)</option>
+                  <option value="fixed">Fixed ($)</option>
+                </select>
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={bulkDiscountValue}
+                    onChange={(e) => setBulkDiscountValue(parseFloat(e.target.value) || 0)}
+                    className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm"
+                  />
+                  <span className="absolute right-3 top-2 text-slate-500 text-sm">
+                    {bulkDiscountType === "percentage" ? "%" : "$"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleBulkImport}
+              disabled={isBulkImporting || !bulkText.trim() || !parseFloat(bulkDefaultPrice)}
+              className="mt-6 w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 text-white font-semibold rounded-lg transition-all"
+            >
+              {isBulkImporting ? "Importing..." : "Bulk Import All Cards"}
+            </button>
+          </div>
+
+          {/* Bulk Error */}
+          {bulkError && (
+            <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-4 mb-6 text-red-400">
+              {bulkError}
+            </div>
+          )}
+
+          {/* Bulk Success */}
+          {bulkSuccess && (
+            <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-4 mb-6 text-green-400">
+              {bulkSuccess}
+              <Link href="/admin/products" className="ml-2 underline">
+                View Products
+              </Link>
+            </div>
+          )}
+
+          {/* Bulk Results */}
+          {bulkResults.length > 0 && (
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
+              <h3 className="text-white font-medium mb-4">Import Results</h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {bulkResults.map((result, i) => (
+                  <div key={i} className={`flex items-center justify-between p-3 rounded-lg ${
+                    result.status === 'success'
+                      ? 'bg-green-500/10 border border-green-500/30'
+                      : 'bg-red-500/10 border border-red-500/30'
+                  }`}>
+                    <span className={result.status === 'success' ? 'text-green-400' : 'text-red-400'}>
+                      {result.name}
+                    </span>
+                    <span className={`text-sm ${result.status === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                      {result.status === 'success' ? '✓' : `✗ ${result.error}`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Instructions */}
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
+            <h3 className="text-white font-medium mb-3">How to Bulk Import</h3>
+            <ol className="list-decimal list-inside space-y-2 text-slate-400 text-sm">
+              <li>Use TCGPlayer Scanner app to scan your cards</li>
+              <li>Export/copy the list (format: &quot;1 Card Name [SET] 123&quot;)</li>
+              <li>Paste the entire list above</li>
+              <li>Set default market price and discount</li>
+              <li>Click &quot;Bulk Import All Cards&quot;</li>
+            </ol>
+            <div className="mt-4 p-3 bg-slate-800/50 rounded-lg">
+              <p className="text-slate-300 text-xs font-mono mb-2">Example format:</p>
+              <p className="text-slate-500 text-xs font-mono">1 Grim Tutor (Alternate Art) [M21] 315</p>
+              <p className="text-slate-500 text-xs font-mono">1 Peer into the Abyss [M21] 117</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
