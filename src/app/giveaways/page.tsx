@@ -172,6 +172,31 @@ export default async function GiveawaysPage() {
           </div>
         </details>
 
+        {/* VIP Credits Banner */}
+        <div className="mb-12 p-6 bg-gradient-to-r from-amber-900/30 via-orange-900/30 to-amber-900/30 border border-amber-500/30 rounded-2xl">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="text-5xl">🎟️</div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-xl font-bold text-white mb-2">Want More Giveaway Credits?</h3>
+              <p className="text-amber-200/80 mb-3">
+                VIP members receive <span className="text-white font-semibold">up to 340 credits every month</span> that never expire!
+                Plus discounts on store purchases and free shipping.
+              </p>
+              <div className="flex flex-wrap justify-center md:justify-start gap-3 text-xs">
+                <span className="px-3 py-1 bg-blue-500/20 rounded-full text-blue-300">Basic: 100 credits/mo</span>
+                <span className="px-3 py-1 bg-purple-500/20 rounded-full text-purple-300">Plus: 200 credits/mo</span>
+                <span className="px-3 py-1 bg-amber-500/20 rounded-full text-amber-300">Premium: 340 credits/mo</span>
+              </div>
+            </div>
+            <Link
+              href="/subscribe"
+              className="shrink-0 px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold rounded-xl shadow-lg transition-all"
+            >
+              ⭐ Become VIP
+            </Link>
+          </div>
+        </div>
+
         {/* Active Giveaways */}
         <section className="mb-16">
           <h2 className="text-2xl font-bold text-white mb-6">Active Giveaways</h2>

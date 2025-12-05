@@ -217,6 +217,39 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* VIP Membership Banner */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="relative overflow-hidden bg-gradient-to-r from-amber-900/40 via-orange-900/40 to-amber-900/40 rounded-3xl p-8 md:p-10 border border-amber-500/30">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-0 w-48 h-48 bg-orange-500/20 rounded-full blur-3xl" />
+          
+          <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8">
+            <div className="text-6xl">⭐</div>
+            <div className="flex-1 text-center lg:text-left">
+              <h2 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                Become a VIP Member
+              </h2>
+              <p className="text-amber-200/80 mb-4">
+                Get <span className="text-white font-semibold">up to 7% off</span> all orders, 
+                <span className="text-white font-semibold"> free shipping</span>, and 
+                <span className="text-white font-semibold"> up to 340 credits/month</span> for giveaways!
+              </p>
+              <div className="flex flex-wrap justify-center lg:justify-start gap-4 text-sm">
+                <span className="px-3 py-1 bg-amber-500/20 rounded-full text-amber-300">💰 Save on orders</span>
+                <span className="px-3 py-1 bg-amber-500/20 rounded-full text-amber-300">📦 Free shipping</span>
+                <span className="px-3 py-1 bg-amber-500/20 rounded-full text-amber-300">🎟️ Monthly credits</span>
+              </div>
+            </div>
+            <Link
+              href="/subscribe"
+              className="shrink-0 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold rounded-xl shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all text-lg"
+            >
+              Join VIP from $20/mo
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Giveaway CTA Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="relative overflow-hidden bg-gradient-to-br from-purple-900/50 to-pink-900/50 rounded-3xl p-8 md:p-12 border border-purple-500/20">

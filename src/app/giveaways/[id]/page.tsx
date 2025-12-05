@@ -868,6 +868,25 @@ export default function GiveawayPage({
               </div>
             )}
 
+            {/* VIP Promo */}
+            <div className="bg-gradient-to-br from-amber-900/30 to-orange-900/30 border border-amber-500/30 rounded-2xl p-5">
+              <div className="flex items-start gap-3 mb-3">
+                <span className="text-2xl">⭐</span>
+                <div>
+                  <h3 className="text-white font-semibold">Need More Credits?</h3>
+                  <p className="text-amber-200/70 text-sm">
+                    VIP members get up to 340 credits every month!
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/subscribe"
+                className="block w-full py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-center font-semibold rounded-lg text-sm transition-all"
+              >
+                Join VIP from $20/mo
+              </Link>
+            </div>
+
           </div>
         </div>
 

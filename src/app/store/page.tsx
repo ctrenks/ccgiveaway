@@ -154,6 +154,25 @@ export default async function StorePage({ searchParams }: PageProps) {
           </p>
         </div>
 
+        {/* VIP Banner */}
+        <div className="mb-8 p-4 bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-500/30 rounded-xl">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">⭐</span>
+              <div>
+                <p className="text-white font-semibold">VIP Members save up to 7% on every order!</p>
+                <p className="text-amber-200/70 text-sm">Plus free shipping and monthly giveaway credits.</p>
+              </div>
+            </div>
+            <Link
+              href="/subscribe"
+              className="shrink-0 px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-semibold rounded-lg transition-all text-sm"
+            >
+              Join VIP →
+            </Link>
+          </div>
+        </div>
+
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Filters Sidebar */}
           <aside className="lg:w-64 shrink-0">
