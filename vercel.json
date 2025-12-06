@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/sync-prices",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/update-giveaway-status",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

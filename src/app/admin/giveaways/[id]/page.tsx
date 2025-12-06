@@ -345,6 +345,27 @@ export default function EditGiveawayPage({
                   Recalculate Draw Date
                 </button>
               )}
+              {giveaway.status === "FILLING" && (
+                <button
+                  onClick={async () => {
+                    if (!confirm("Close this giveaway for drawing? No more entries will be accepted.")) return;
+                    const res = await fetch(`/api/admin/giveaways/${giveaway.id}/close`, {
+                      method: "POST",
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      setSuccess("Giveaway closed! You can now enter the draw result.");
+                      // Refresh page to show new status
+                      window.location.reload();
+                    } else {
+                      setError(data.error || "Failed to close");
+                    }
+                  }}
+                  className="block w-full py-2 px-4 bg-amber-600 hover:bg-amber-500 text-white text-center rounded-lg transition-colors"
+                >
+                  🔒 Close for Drawing
+                </button>
+              )}
               {(giveaway.status === "CLOSED" || (giveaway.status === "COMPLETED" && !giveaway.pick3Result)) && (
                 <Link
                   href={`/admin/giveaways/${giveaway.id}/draw`}
