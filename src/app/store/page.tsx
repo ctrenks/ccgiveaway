@@ -1,12 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import StoreSearch from "@/components/StoreSearch";
+import StoreSortFilter from "@/components/StoreSortFilter";
 
 // Don't cache this page - always fetch fresh product data
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-async function getProducts(categorySlug?: string, subTypeId?: string) {
+async function getProducts(categorySlug?: string, subTypeId?: string, sortBy?: string) {
   const where: { active: boolean; category?: { slug: string }; subTypeId?: string } = { active: true };
 
   if (categorySlug) {
@@ -17,10 +18,32 @@ async function getProducts(categorySlug?: string, subTypeId?: string) {
     where.subTypeId = subTypeId;
   }
 
+  // Determine sort order
+  let orderBy: any = { createdAt: "desc" }; // Default: newest first
+  
+  switch (sortBy) {
+    case "price-low":
+      orderBy = { price: "asc" };
+      break;
+    case "price-high":
+      orderBy = { price: "desc" };
+      break;
+    case "name-asc":
+      orderBy = { name: "asc" };
+      break;
+    case "name-desc":
+      orderBy = { name: "desc" };
+      break;
+    case "newest":
+    default:
+      orderBy = { createdAt: "desc" };
+      break;
+  }
+
   const products = await prisma.product.findMany({
     where,
     include: { category: true, subType: true },
-    orderBy: { createdAt: "desc" },
+    orderBy,
   });
   return products;
 }
@@ -84,16 +107,17 @@ function getCreditsForProduct(
 }
 
 interface PageProps {
-  searchParams: Promise<{ category?: string; subtype?: string }>;
+  searchParams: Promise<{ category?: string; subtype?: string; sort?: string }>;
 }
 
 export default async function StorePage({ searchParams }: PageProps) {
   const params = await searchParams;
   const categorySlug = params.category;
   const subTypeId = params.subtype;
+  const sortBy = params.sort || "newest";
 
   const [products, categories, subTypes, settings] = await Promise.all([
-    getProducts(categorySlug, subTypeId),
+    getProducts(categorySlug, subTypeId, sortBy),
     getCategories(),
     getSubTypes(),
     getSettings(),
@@ -159,6 +183,9 @@ export default async function StorePage({ searchParams }: PageProps) {
                 : "Browse our collection of rare and collectible trading cards. Find your next treasure from Magic: The Gathering, Pokémon, Yu-Gi-Oh!, and more."}
           </p>
         </div>
+
+        {/* Sort Filter */}
+        <StoreSortFilter productCount={products.length} currentSort={sortBy} />
 
         {/* VIP Banner */}
         <div className="mb-8 p-4 bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-500/30 rounded-xl">
