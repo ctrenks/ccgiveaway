@@ -35,19 +35,19 @@ export default function AdminProducts() {
   const fetchProducts = async () => {
     const res = await fetch("/api/admin/products");
     const data = await res.json();
-    
+
     // Sort: last 5 by date desc, then rest alphabetically
     const sorted = [...data.products].sort((a, b) => {
       const aDate = new Date(a.createdAt).getTime();
       const bDate = new Date(b.createdAt).getTime();
-      
+
       // Get the 5th most recent date
       const dates = data.products.map((p: Product) => new Date(p.createdAt).getTime()).sort((x: number, y: number) => y - x);
       const fifthDate = dates[4] || 0;
-      
+
       const aIsRecent = aDate >= fifthDate;
       const bIsRecent = bDate >= fifthDate;
-      
+
       if (aIsRecent && bIsRecent) {
         // Both in top 5: sort by date desc
         return bDate - aDate;
@@ -60,7 +60,7 @@ export default function AdminProducts() {
         return a.name.localeCompare(b.name);
       }
     });
-    
+
     setProducts(sorted);
   };
 
@@ -74,13 +74,13 @@ export default function AdminProducts() {
 
   const updateQuantity = async (productId: string, delta: number) => {
     setUpdatingQuantity(productId);
-    
+
     try {
       const product = products.find(p => p.id === productId);
       if (!product) return;
 
       const newQuantity = Math.max(0, product.quantity + delta);
-      
+
       const res = await fetch(`/api/admin/products/${productId}/quantity`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -89,7 +89,7 @@ export default function AdminProducts() {
 
       if (res.ok) {
         // Update local state
-        setProducts(products.map(p => 
+        setProducts(products.map(p =>
           p.id === productId ? { ...p, quantity: newQuantity } : p
         ));
       }
@@ -103,7 +103,7 @@ export default function AdminProducts() {
   // Filter products based on search query
   const filteredProducts = products.filter(product => {
     if (!searchQuery.trim()) return true;
-    
+
     const query = searchQuery.toLowerCase();
     return (
       product.name.toLowerCase().includes(query) ||
@@ -212,7 +212,7 @@ export default function AdminProducts() {
                 <tr key={product.id} className="hover:bg-slate-800/30">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div 
+                      <div
                         className="w-12 h-12 bg-slate-800 rounded-lg overflow-hidden flex-shrink-0 relative cursor-pointer"
                         onMouseEnter={() => product.image && setHoveredImage(product.image)}
                         onMouseLeave={() => setHoveredImage(null)}
@@ -334,4 +334,3 @@ export default function AdminProducts() {
     </div>
   );
 }
-

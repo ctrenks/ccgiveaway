@@ -62,7 +62,7 @@ model User {
   lastCreditsGranted   DateTime?         // Last time monthly credits were granted
   freeShippingUsedAt   DateTime?         // When free shipping was last used this period
 
-  // Shipping address
+  // Shipping address (required for giveaway participation)
   shippingName    String?
   shippingAddress String?
   shippingCity    String?
@@ -70,14 +70,35 @@ model User {
   shippingZip     String?
   shippingCountry String?
 
+  // Profile completion timestamp
+  profileCompletedAt DateTime? // When user completed their profile (username + address)
+
   accounts        Account[]
   sessions        Session[]
   orders          Order[]
   creditLogs      CreditLog[]  // Log of manual credit adjustments
   subscription    Subscription?
   referrals       Referral[]   @relation("ReferrerRelation")
+  deviceFingerprints DeviceFingerprint[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+// Device fingerprinting for multi-account detection
+model DeviceFingerprint {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  fingerprint   String   // Hash of browser/device characteristics
+  ipAddress     String?  // IP address (optional, for additional verification)
+  userAgent     String?  // Browser user agent
+  
+  firstSeen     DateTime @default(now())
+  lastSeen      DateTime @default(now())
+  
+  @@unique([userId, fingerprint])
+  @@index([fingerprint])
 }
 
 model Referral {
