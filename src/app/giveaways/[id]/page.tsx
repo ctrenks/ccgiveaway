@@ -258,13 +258,16 @@ export default function GiveawayPage({
     setSuccess("");
 
     try {
+      // Determine if we're actually using a free entry
+      const actuallyUseFreeEntry = useFreeEntry && freeEntriesRemaining > 0;
+      
       const res = await fetch(`/api/giveaways/${id}/pick`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slot: selectedSlot,
           pickNumber,
-          useFreeEntry: useFreeEntry && freeEntriesRemaining > 0,
+          useFreeEntry: actuallyUseFreeEntry,
         }),
       });
 
@@ -280,9 +283,12 @@ export default function GiveawayPage({
       } else {
         setSuccess(`Pick submitted: Slot ${selectedSlot}, Number ${pickNumber}`);
         
-        // Update credits in header immediately
-        if (!useFreeEntry) {
-          deductCredits(giveaway?.creditCostPerPick || 1);
+        // Update credits in header immediately (only if not using free entry)
+        if (!actuallyUseFreeEntry) {
+          const isBoxTopper = selectedSlot === 0;
+          const baseCost = giveaway?.creditCostPerPick || 1;
+          const creditCost = isBoxTopper ? baseCost * 3 : baseCost;
+          deductCredits(creditCost);
         }
         
         // Refresh data
