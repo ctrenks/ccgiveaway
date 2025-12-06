@@ -81,6 +81,7 @@ model User {
   referrals       Referral[]   @relation("ReferrerRelation")
   deviceFingerprints DeviceFingerprint[]
   giveawayWins    GiveawayWinner[]
+  creditClaims    GiveawayCreditClaim[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
@@ -118,6 +119,21 @@ enum ReferralStatus {
   PENDING    // Link clicked but not registered
   COMPLETED  // User registered and credits awarded
   EXPIRED    // Link expired (optional)
+}
+
+// Track which users have claimed free credits for which giveaways
+model GiveawayCreditClaim {
+  id              String   @id @default(cuid())
+  userId          String
+  giveawayId      String
+  creditsClaimed  Int      @default(10)
+  claimedAt       DateTime @default(now())
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  giveaway        Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, giveawayId])
+  @@map("giveaway_credit_claims")
 }
 
 enum SubscriptionTier {
@@ -372,8 +388,9 @@ model Giveaway {
   prizeValue  Decimal?        @db.Decimal(10, 2) // Total value of the box
 
   // Relations
-  picks       GiveawayPick[]
-  winners     GiveawayWinner[]
+  picks         GiveawayPick[]
+  winners       GiveawayWinner[]
+  creditClaims  GiveawayCreditClaim[]
 
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt

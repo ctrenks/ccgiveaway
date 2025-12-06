@@ -54,6 +54,7 @@ export default function GiveawayPage({
   const [giveaway, setGiveaway] = useState<Giveaway | null>(null);
   const [userPicks, setUserPicks] = useState<UserPick[]>([]);
   const [freeEntriesRemaining, setFreeEntriesRemaining] = useState(0);
+  const [hasClaimed10Credits, setHasClaimed10Credits] = useState(false);
   const [loading, setLoading] = useState(true);
   const [countdown, setCountdown] = useState("");
   const [drawCountdown, setDrawCountdown] = useState("");
@@ -84,11 +85,36 @@ export default function GiveawayPage({
           setGiveaway(data.giveaway);
           setUserPicks(data.userPicks || []);
           setFreeEntriesRemaining(data.freeEntriesRemaining || 0);
+          setHasClaimed10Credits(data.hasClaimed10Credits || false);
         }
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [id]);
+
+  // Claim 10 free credits
+  const handleClaim10Credits = async () => {
+    try {
+      const res = await fetch(`/api/giveaways/${id}/claim-credits`, {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setHasClaimed10Credits(true);
+        refreshCredits();
+        setSuccess(`🎉 Claimed ${data.creditsGranted} free credits!`);
+        setTimeout(() => setSuccess(""), 3000);
+      } else {
+        setError(data.error || "Failed to claim credits");
+        setTimeout(() => setError(""), 3000);
+      }
+    } catch (error) {
+      setError("Failed to claim credits");
+      setTimeout(() => setError(""), 3000);
+    }
+  };
 
   // Fetch slot data when slot is selected
   useEffect(() => {
@@ -682,6 +708,16 @@ export default function GiveawayPage({
             {/* Pick Form */}
             {canPick && session?.user && (
               <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 sticky top-24 z-50">
+                {/* Claim 10 Free Credits Button */}
+                {session && !hasClaimed10Credits && (giveaway?.status === "OPEN" || giveaway?.status === "FILLING") && (
+                  <button
+                    onClick={handleClaim10Credits}
+                    className="block w-full mb-4 py-3 px-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white text-center font-bold rounded-lg transition-all shadow-lg"
+                  >
+                    🎁 Claim 10 FREE Credits!
+                  </button>
+                )}
+
                 <Link
                   href="/credits"
                   className="block w-full mb-4 py-2 px-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-center font-medium rounded-lg transition-all text-sm"
