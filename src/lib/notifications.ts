@@ -138,6 +138,33 @@ export async function createGiveawayWinNotification(
 }
 
 /**
+ * Helper function to notify about multiple giveaway wins
+ */
+export async function createGiveawayMultiWinNotification(
+  userId: string,
+  giveawayTitle: string,
+  giveawayId: string,
+  slots: number[]
+) {
+  const slotList = slots.map(s => s === 0 ? "Box Topper" : `Slot ${s}`).join(", ");
+  const count = slots.length;
+  
+  return createNotification({
+    userId,
+    type: "GIVEAWAY_WIN",
+    title: `🎉 You Won ${count} Prize${count > 1 ? 's' : ''}!`,
+    message: `Congratulations! You won ${slotList} in "${giveawayTitle}"! Visit your profile to arrange shipping.`,
+    link: `/profile`,
+    icon: "🎉",
+    metadata: {
+      giveawayId,
+      slots: slots.join(","),
+      count,
+    },
+  });
+}
+
+/**
  * Helper function to notify about order update
  */
 export async function createOrderNotification(

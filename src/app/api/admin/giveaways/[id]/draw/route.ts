@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ROLES } from "@/lib/constants";
+import { createGiveawayMultiWinNotification } from "@/lib/notifications";
 
 // Calculate distance from pick to Pick 3 result
 function calculateDistance(pick: string, result: string): number {
@@ -158,9 +159,39 @@ export async function POST(
     },
   });
 
+  // Send notifications to winners (grouped by user)
+  if (winners.length > 0) {
+    // Group winners by userId
+    const winnersByUser = winners.reduce((acc, winner) => {
+      if (!acc[winner.userId]) {
+        acc[winner.userId] = [];
+      }
+      acc[winner.userId].push(winner.slot);
+      return acc;
+    }, {} as Record<string, number[]>);
+
+    // Send one notification per user with all their winning slots
+    for (const [userId, slots] of Object.entries(winnersByUser)) {
+      try {
+        await createGiveawayMultiWinNotification(
+          userId,
+          giveaway.title,
+          id,
+          slots
+        );
+      } catch (error) {
+        console.error(`Failed to send notification to user ${userId}:`, error);
+        // Continue with other notifications even if one fails
+      }
+    }
+
+    console.log(`Sent ${Object.keys(winnersByUser).length} winner notifications`);
+  }
+
   return NextResponse.json({
     success: true,
     winnersCount: winners.length,
+    uniqueWinners: winners.length > 0 ? Object.keys(winners.reduce((acc, w) => ({ ...acc, [w.userId]: true }), {})).length : 0,
     pick3Result,
   });
 }
