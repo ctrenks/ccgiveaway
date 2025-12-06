@@ -7,6 +7,17 @@ interface Props {
   params: Promise<{ code: string }>;
 }
 
+async function setReferralCookie(code: string) {
+  "use server";
+  const cookieStore = await cookies();
+  cookieStore.set("referralCode", code, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  });
+}
+
 export default async function ReferralPage({ params }: Props) {
   const { code } = await params;
 
@@ -36,14 +47,8 @@ export default async function ReferralPage({ params }: Props) {
     );
   }
 
-  // Set referral cookie (expires in 30 days)
-  const cookieStore = await cookies();
-  cookieStore.set("referralCode", code, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  });
+  // Set referral cookie using Server Action
+  await setReferralCookie(code);
 
   // Show welcome page with sign up prompt
   const referrerName = referrer.displayName || referrer.name || "A friend";
