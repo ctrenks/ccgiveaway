@@ -18,6 +18,7 @@ export default function NewGiveawayPage() {
     freeEntriesPerUser: 10,
     creditCostPerPick: 1,
     prizeValue: "",
+    isTest: false,
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -248,6 +249,24 @@ export default function NewGiveawayPage() {
                 placeholder="Optional"
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
               />
+            </div>
+
+            <div className="flex items-center gap-3 p-4 bg-slate-800/50 rounded-lg">
+              <input
+                type="checkbox"
+                id="isTest"
+                checked={formData.isTest}
+                onChange={(e) =>
+                  setFormData({ ...formData, isTest: e.target.checked })
+                }
+                className="w-5 h-5"
+              />
+              <label htmlFor="isTest" className="text-white text-sm">
+                🧪 Test Giveaway (hidden from public)
+                <span className="block text-xs text-slate-500 mt-1">
+                  Check this to create a test giveaway that won&apos;t appear on the public giveaways page
+                </span>
+              </label>
             </div>
           </div>
         </div>

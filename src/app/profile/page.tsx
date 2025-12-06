@@ -65,7 +65,7 @@ export default function ProfilePage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">My Profile</h1>
           <p className="text-slate-400">
-            {session.user.displayName || session.user.name || session.user.email}
+            {session.user.name || session.user.email}
           </p>
         </div>
 
@@ -155,7 +155,7 @@ export default function ProfilePage() {
                             <span className="inline-block px-3 py-1 bg-orange-500/20 border border-orange-500/30 text-orange-400 rounded-full text-xs font-semibold mb-2">
                               ⏳ Awaiting Shipping
                             </span>
-                            {session.user.subscriptionTier ? (
+                            {(session.user as any).subscriptionTier ? (
                               <p className="text-amber-400 text-xs">
                                 VIP Free Shipping Available
                                 <br />
@@ -188,10 +188,10 @@ export default function ProfilePage() {
         </div>
 
         {/* VIP Info */}
-        {session.user.subscriptionTier && (
+        {(session.user as any).subscriptionTier && (
           <div className="mt-6 bg-gradient-to-br from-amber-900/30 to-orange-900/30 border border-amber-500/30 rounded-2xl p-6">
             <h3 className="text-xl font-bold text-amber-400 mb-3">
-              🌟 VIP {session.user.subscriptionTier} Member
+              🌟 VIP {(session.user as any).subscriptionTier} Member
             </h3>
             <p className="text-slate-300 text-sm">
               You receive free shipping on giveaway wins once per month between the 20th-28th.

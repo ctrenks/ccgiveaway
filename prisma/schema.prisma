@@ -360,6 +360,7 @@ model Giveaway {
   // Status tracking
   status      GiveawayStatus  @default(OPEN)
   totalPicks  Int             @default(0)     // Counter for total picks made
+  isTest      Boolean         @default(false) // Hide from public if true (testing only)
 
   // Draw information
   drawDate       DateTime?    // Set when min participation is reached (next business day 7:30 PM EST)
@@ -378,6 +379,7 @@ model Giveaway {
   updatedAt   DateTime        @updatedAt
 
   @@index([status])
+  @@index([isTest])
 }
 
 enum GiveawayStatus {

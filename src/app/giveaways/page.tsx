@@ -10,6 +10,7 @@ async function getGiveaways() {
       status: {
         in: ["OPEN", "FILLING", "CLOSED"],
       },
+      isTest: false, // Hide test giveaways from public
     },
     orderBy: { createdAt: "desc" },
     include: {
@@ -22,7 +23,10 @@ async function getGiveaways() {
 
 async function getCompletedGiveaways() {
   return prisma.giveaway.findMany({
-    where: { status: "COMPLETED" },
+    where: { 
+      status: "COMPLETED",
+      isTest: false, // Hide test giveaways from public
+    },
     orderBy: { updatedAt: "desc" },
     take: 5,
     include: {
@@ -323,7 +327,15 @@ export default async function GiveawaysPage() {
         {/* Completed Giveaways */}
         {completedGiveaways.length > 0 && (
           <section>
-            <h2 className="text-2xl font-bold text-white mb-6">Recent Winners</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Recent Winners</h2>
+              <Link
+                href="/giveaways/completed"
+                className="text-purple-400 hover:text-purple-300 text-sm transition-colors"
+              >
+                View All →
+              </Link>
+            </div>
             <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden">
               <table className="w-full">
                 <thead className="bg-slate-800/50">
