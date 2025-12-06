@@ -87,11 +87,18 @@ export default function GiveawayWinnersPage() {
 
   const canUseFreeShipping = (winner: Winner) => {
     if (!winner.user.subscriptionTier) return false;
+    
+    // Check if we're in the shipping window (20th-28th of month)
+    const now = new Date();
+    const dayOfMonth = now.getDate();
+    const inShippingWindow = dayOfMonth >= 20 && dayOfMonth <= 28;
+    
+    if (!inShippingWindow) return false;
+    
+    // Check if already used this month
     if (!winner.user.freeShippingUsedAt) return true;
     
-    // Check if used this month
     const usedDate = new Date(winner.user.freeShippingUsedAt);
-    const now = new Date();
     const monthsAgo = (now.getFullYear() - usedDate.getFullYear()) * 12 + (now.getMonth() - usedDate.getMonth());
     return monthsAgo >= 1;
   };
@@ -180,9 +187,24 @@ export default function GiveawayWinnersPage() {
                       </div>
                     </div>
 
-                    {canUseFreeShipping(winner) && (
-                      <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
-                        <p className="text-green-400 text-sm">✓ Eligible for VIP free shipping</p>
+                    {winner.user.subscriptionTier && (
+                      <div className={`mb-4 p-3 rounded-lg ${
+                        canUseFreeShipping(winner)
+                          ? "bg-green-500/10 border border-green-500/30"
+                          : "bg-orange-500/10 border border-orange-500/30"
+                      }`}>
+                        {canUseFreeShipping(winner) ? (
+                          <p className="text-green-400 text-sm">✓ Eligible for VIP free shipping (20th-28th window)</p>
+                        ) : (
+                          <p className="text-orange-400 text-sm">
+                            ⏳ VIP free shipping available 20th-28th of month
+                            {winner.user.freeShippingUsedAt && (
+                              <span className="block text-xs mt-1">
+                                (Used this month on {new Date(winner.user.freeShippingUsedAt).toLocaleDateString()})
+                              </span>
+                            )}
+                          </p>
+                        )}
                       </div>
                     )}
 
@@ -233,9 +255,13 @@ export default function GiveawayWinnersPage() {
                       className="w-5 h-5"
                     />
                     <label htmlFor="vipShipping" className="text-white text-sm">
-                      Use VIP free shipping (1x/month)
+                      Use VIP free shipping (20th-28th, 1x/month)
                       {!canUseFreeShipping(selectedWinner) && (
-                        <span className="block text-xs text-red-400 mt-1">Already used this month</span>
+                        <span className="block text-xs text-red-400 mt-1">
+                          {selectedWinner.user.freeShippingUsedAt 
+                            ? "Already used this month" 
+                            : "Outside shipping window (20th-28th)"}
+                        </span>
                       )}
                     </label>
                   </div>

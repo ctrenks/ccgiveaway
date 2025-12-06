@@ -98,14 +98,16 @@ export async function GET(request: Request) {
           }
         }
 
-        // Check if free shipping should be reset (monthly)
-        if (user.freeShippingUsedAt) {
+        // Reset free shipping on the 20th of each month
+        const dayOfMonth = now.getDate();
+        if (dayOfMonth === 20 && user.freeShippingUsedAt) {
           const usedDate = new Date(user.freeShippingUsedAt);
           const monthsAgo =
             (now.getFullYear() - usedDate.getFullYear()) * 12 +
             (now.getMonth() - usedDate.getMonth());
 
-          if (monthsAgo >= 1) {
+          // Only reset if it was used in a previous month
+          if (monthsAgo >= 1 || now.getMonth() !== usedDate.getMonth()) {
             await prisma.user.update({
               where: { id: user.id },
               data: {
@@ -113,7 +115,7 @@ export async function GET(request: Request) {
               },
             });
             results.freeShippingReset++;
-            console.log(`Reset free shipping for user ${user.email}`);
+            console.log(`Reset free shipping for user ${user.email} on the 20th`);
           }
         }
       } catch (error) {
