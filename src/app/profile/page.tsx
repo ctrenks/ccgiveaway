@@ -109,7 +109,7 @@ export default function ProfilePage() {
                 : "bg-slate-800 hover:bg-slate-700 text-white"
             }`}
           >
-            Giveaway Wins
+            🏆 Wins
           </button>
           <button
             onClick={() => setActiveTab("referrals")}
@@ -121,6 +121,12 @@ export default function ProfilePage() {
           >
             🔗 Referrals
           </button>
+          <Link
+            href="/profile/settings"
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors font-medium"
+          >
+            ⚙️ Settings
+          </Link>
         </div>
 
         {/* Giveaway Wins Tab */}
