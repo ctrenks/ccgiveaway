@@ -668,6 +668,12 @@ export default function GiveawayPage({
             {/* Pick Form */}
             {canPick && session?.user && (
               <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 sticky top-24 z-50">
+                <Link
+                  href="/credits"
+                  className="block w-full mb-4 py-2 px-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white text-center font-medium rounded-lg transition-all text-sm"
+                >
+                  💰 Need More Credits?
+                </Link>
                 <h2 className="text-xl font-bold text-white mb-4">Make a Pick</h2>
 
                 {error && (
@@ -881,44 +887,6 @@ export default function GiveawayPage({
                 </Link>
               </div>
             )}
-
-            {/* VIP Promo */}
-            <div className="bg-gradient-to-br from-amber-900/30 to-orange-900/30 border border-amber-500/30 rounded-2xl p-5">
-              <div className="flex items-start gap-3 mb-3">
-                <span className="text-2xl">⭐</span>
-                <div>
-                  <h3 className="text-white font-semibold">Need More Credits?</h3>
-                  <p className="text-amber-200/70 text-sm">
-                    VIP members get up to 340 credits every month!
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/subscribe"
-                className="block w-full py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-center font-semibold rounded-lg text-sm transition-all"
-              >
-                Join VIP from $20/mo
-              </Link>
-            </div>
-
-            {/* Referral Promo */}
-            <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border border-purple-500/30 rounded-2xl p-5">
-              <div className="flex items-start gap-3 mb-3">
-                <span className="text-2xl">🔗</span>
-                <div>
-                  <h3 className="text-white font-semibold">Refer Friends!</h3>
-                  <p className="text-purple-200/70 text-sm">
-                    Get 100 free credits for each friend who signs up!
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/profile"
-                className="block w-full py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white text-center font-semibold rounded-lg text-sm transition-all"
-              >
-                Get Your Referral Link
-              </Link>
-            </div>
 
           </div>
         </div>
