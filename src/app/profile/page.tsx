@@ -36,7 +36,7 @@ export default function ProfilePage() {
   const [referralData, setReferralData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<"wins" | "referrals">("wins");
+  const [activeTab, setActiveTab] = useState<"settings" | "wins" | "referrals">("settings");
 
   useEffect(() => {
     if (session?.user) {
@@ -102,6 +102,16 @@ export default function ProfilePage() {
         {/* Navigation Tabs */}
         <div className="flex gap-4 mb-8">
           <button
+            onClick={() => setActiveTab("settings")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === "settings"
+                ? "bg-purple-600 text-white"
+                : "bg-slate-800 hover:bg-slate-700 text-white"
+            }`}
+          >
+            ⚙️ Settings
+          </button>
+          <button
             onClick={() => setActiveTab("wins")}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === "wins"
@@ -121,13 +131,96 @@ export default function ProfilePage() {
           >
             🔗 Referrals
           </button>
-          <Link
-            href="/profile/settings"
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors font-medium"
-          >
-            ⚙️ Settings
-          </Link>
         </div>
+
+        {/* Settings Tab */}
+        {activeTab === "settings" && (
+          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-6">⚙️ Account Settings</h2>
+
+            <div className="space-y-6">
+              {/* Profile Info */}
+              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                <h3 className="text-lg font-bold text-white mb-4">Profile Information</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-slate-400 text-sm">Display Name</label>
+                    <p className="text-white font-medium">
+                      {(session.user as any).displayName || (session.user as any).name || "Not set"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-slate-400 text-sm">Email</label>
+                    <p className="text-white font-medium">{(session.user as any).email}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* VIP Status */}
+              {(session.user as any).subscriptionTier ? (
+                <div className="bg-gradient-to-br from-amber-900/30 to-orange-900/30 border border-amber-500/30 rounded-xl p-6">
+                  <h3 className="text-lg font-bold text-amber-400 mb-2">
+                    🌟 VIP {(session.user as any).subscriptionTier} Member
+                  </h3>
+                  <p className="text-slate-300 text-sm mb-4">
+                    You're enjoying exclusive VIP benefits including discounts, free shipping, and monthly credits!
+                  </p>
+                  <Link
+                    href="/subscribe"
+                    className="inline-block px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-sm transition-colors"
+                  >
+                    Manage Subscription
+                  </Link>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border border-purple-500/30 rounded-xl p-6">
+                  <h3 className="text-lg font-bold text-white mb-2">Upgrade to VIP</h3>
+                  <p className="text-slate-300 text-sm mb-4">
+                    Get exclusive discounts, free shipping, and monthly credits with a VIP membership!
+                  </p>
+                  <Link
+                    href="/subscribe"
+                    className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-lg font-medium transition-all"
+                  >
+                    Become VIP →
+                  </Link>
+                </div>
+              )}
+
+              {/* Shipping Address */}
+              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                <h3 className="text-lg font-bold text-white mb-4">Shipping Address</h3>
+                {(session.user as any).shippingAddress ? (
+                  <div className="text-slate-300 text-sm space-y-1">
+                    <p>{(session.user as any).shippingName}</p>
+                    <p>{(session.user as any).shippingAddress}</p>
+                    <p>
+                      {(session.user as any).shippingCity}, {(session.user as any).shippingState}{" "}
+                      {(session.user as any).shippingZip}
+                    </p>
+                    <p>{(session.user as any).shippingCountry || "USA"}</p>
+                  </div>
+                ) : (
+                  <p className="text-slate-400 text-sm">No shipping address on file</p>
+                )}
+                <p className="text-slate-500 text-xs mt-4">
+                  To update your shipping address or display name, please contact support.
+                </p>
+              </div>
+
+              {/* Account Actions */}
+              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                <h3 className="text-lg font-bold text-white mb-4">Account Actions</h3>
+                <button
+                  onClick={() => window.location.href = "/api/auth/signout"}
+                  className="px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Giveaway Wins Tab */}
         {activeTab === "wins" && (
