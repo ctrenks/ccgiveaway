@@ -2,29 +2,20 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import CartButton from "./CartButton";
 import NotificationBell from "./NotificationBell";
 import { ROLES } from "@/lib/constants";
+import { useCredits } from "@/lib/credits-context";
 
 export function Header() {
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [credits, setCredits] = useState<number | null>(null);
+  const { credits } = useCredits();
 
   const isAdmin = session?.user?.role === ROLES.ADMIN;
   const isMod = session?.user?.role && session.user.role >= ROLES.MODERATOR;
-
-  // Fetch user credits
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetch("/api/user/credits")
-        .then((res) => res.json())
-        .then((data) => setCredits(data.credits))
-        .catch(() => setCredits(0));
-    }
-  }, [session?.user?.id]);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-purple-500/10">
@@ -85,7 +76,7 @@ export function Header() {
                 >
                   <span className="text-amber-400">🎁</span>
                   <span className="text-amber-400 font-bold text-sm">
-                    {credits !== null ? credits : "..."}
+                    {credits}
                   </span>
                 </Link>
 

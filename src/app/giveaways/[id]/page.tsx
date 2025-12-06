@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
+import { useCredits } from "@/lib/credits-context";
 
 interface Giveaway {
   id: string;
@@ -49,6 +50,7 @@ export default function GiveawayPage({
 }) {
   const { id } = use(params);
   const { data: session } = useSession();
+  const { deductCredits, refreshCredits } = useCredits();
   const [giveaway, setGiveaway] = useState<Giveaway | null>(null);
   const [userPicks, setUserPicks] = useState<UserPick[]>([]);
   const [freeEntriesRemaining, setFreeEntriesRemaining] = useState(0);
@@ -188,6 +190,12 @@ export default function GiveawayPage({
         setSuccess(
           `Created ${data.picksCreated} picks! (${data.freeEntriesUsed} free, ${data.creditsUsed} credits used)`
         );
+        
+        // Update credits in header immediately
+        if (data.creditsUsed > 0) {
+          deductCredits(data.creditsUsed);
+        }
+        
         // Refresh data
         const refreshRes = await fetch(`/api/giveaways/${id}`);
         const refreshData = await refreshRes.json();
@@ -229,6 +237,12 @@ export default function GiveawayPage({
         setError(data.error || "Failed to submit pick");
       } else {
         setSuccess(`Pick submitted: Slot ${selectedSlot}, Number ${pickNumber}`);
+        
+        // Update credits in header immediately
+        if (!useFreeEntry) {
+          deductCredits(giveaway?.creditCostPerPick || 1);
+        }
+        
         // Refresh data
         const refreshRes = await fetch(`/api/giveaways/${id}`);
         const refreshData = await refreshRes.json();
