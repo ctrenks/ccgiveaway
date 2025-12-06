@@ -22,14 +22,26 @@ interface GiveawayWin {
   };
 }
 
+interface ReferralData {
+  referralCode: string;
+  referralUrl: string;
+  totalCreditsEarned: number;
+  completedCount: number;
+  pendingCount: number;
+}
+
 export default function ProfilePage() {
   const { data: session } = useSession();
   const [wins, setWins] = useState<GiveawayWin[]>([]);
+  const [referralData, setReferralData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<"wins" | "referrals">("wins");
 
   useEffect(() => {
     if (session?.user) {
       fetchWins();
+      fetchReferralData();
     }
   }, [session]);
 
@@ -42,6 +54,24 @@ export default function ProfilePage() {
       console.error("Failed to fetch wins:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReferralData = async () => {
+    try {
+      const res = await fetch("/api/user/referral");
+      const data = await res.json();
+      setReferralData(data);
+    } catch (error) {
+      console.error("Failed to fetch referral data:", error);
+    }
+  };
+
+  const copyReferralLink = () => {
+    if (referralData?.referralUrl) {
+      navigator.clipboard.writeText(referralData.referralUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -71,20 +101,32 @@ export default function ProfilePage() {
 
         {/* Navigation Tabs */}
         <div className="flex gap-4 mb-8">
-          <button className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium">
+          <button
+            onClick={() => setActiveTab("wins")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === "wins"
+                ? "bg-purple-600 text-white"
+                : "bg-slate-800 hover:bg-slate-700 text-white"
+            }`}
+          >
             Giveaway Wins
           </button>
-          <Link
-            href="/profile/settings"
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors"
+          <button
+            onClick={() => setActiveTab("referrals")}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === "referrals"
+                ? "bg-purple-600 text-white"
+                : "bg-slate-800 hover:bg-slate-700 text-white"
+            }`}
           >
-            Settings
-          </Link>
+            🔗 Referrals
+          </button>
         </div>
 
-        {/* Giveaway Wins */}
-        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
-          <h2 className="text-2xl font-bold text-white mb-6">🏆 My Giveaway Wins</h2>
+        {/* Giveaway Wins Tab */}
+        {activeTab === "wins" && (
+          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-6">🏆 My Giveaway Wins</h2>
 
           {loading ? (
             <div className="text-center py-12">
@@ -185,7 +227,106 @@ export default function ProfilePage() {
               ))}
             </div>
           )}
-        </div>
+          </div>
+        )}
+
+        {/* Referrals Tab */}
+        {activeTab === "referrals" && (
+          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold text-white mb-6">🔗 Referral Program</h2>
+
+            {!referralData ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-center">
+                    <div className="text-3xl font-bold text-purple-400">{referralData.completedCount}</div>
+                    <div className="text-slate-400 text-sm mt-1">Successful Referrals</div>
+                  </div>
+                  <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-center">
+                    <div className="text-3xl font-bold text-amber-400">{referralData.totalCreditsEarned}</div>
+                    <div className="text-slate-400 text-sm mt-1">Credits Earned</div>
+                  </div>
+                  <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 text-center">
+                    <div className="text-3xl font-bold text-blue-400">{referralData.pendingCount}</div>
+                    <div className="text-slate-400 text-sm mt-1">Pending</div>
+                  </div>
+                </div>
+
+                {/* Referral Link */}
+                <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border border-purple-500/30 rounded-xl p-6">
+                  <h3 className="text-lg font-bold text-white mb-3">Your Referral Link</h3>
+                  <p className="text-slate-300 text-sm mb-4">
+                    Share this link with friends. When they sign up, you both win! You get <strong className="text-purple-400">100 credits</strong> instantly.
+                  </p>
+                  
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={referralData.referralUrl}
+                      readOnly
+                      className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white font-mono text-sm"
+                    />
+                    <button
+                      onClick={copyReferralLink}
+                      className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors font-medium"
+                    >
+                      {copied ? "✓ Copied!" : "Copy"}
+                    </button>
+                  </div>
+
+                  <div className="mt-4 flex gap-2">
+                    <a
+                      href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                        `Join me on Collector Card Giveaway and get 10 free entries to win rare cards! ${referralData.referralUrl}`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-400 text-white rounded-lg text-center text-sm transition-colors"
+                    >
+                      Share on Twitter
+                    </a>
+                    <a
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralData.referralUrl)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-center text-sm transition-colors"
+                    >
+                      Share on Facebook
+                    </a>
+                  </div>
+                </div>
+
+                {/* How it Works */}
+                <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                  <h3 className="text-lg font-bold text-white mb-3">How It Works</h3>
+                  <ol className="space-y-2 text-slate-300 text-sm">
+                    <li className="flex gap-3">
+                      <span className="text-purple-400 font-bold">1.</span>
+                      <span>Share your unique referral link with friends</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="text-purple-400 font-bold">2.</span>
+                      <span>They click your link and sign up</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="text-purple-400 font-bold">3.</span>
+                      <span>You instantly receive <strong className="text-amber-400">100 credits</strong>!</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="text-purple-400 font-bold">4.</span>
+                      <span>No limit - refer as many friends as you want!</span>
+                    </li>
+                  </ol>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* VIP Info */}
         {(session.user as any).subscriptionTier && (
