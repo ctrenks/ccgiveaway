@@ -21,7 +21,7 @@ export async function generateFingerprint(): Promise<string> {
     // Platform
     navigator.platform,
     navigator.hardwareConcurrency || 0,
-    navigator.deviceMemory || 0,
+    (navigator as any).deviceMemory || 0,
     
     // User agent
     navigator.userAgent,
