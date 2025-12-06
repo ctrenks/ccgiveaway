@@ -1,16 +1,41 @@
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
+import Link from "next/link";
 
 interface Props {
   params: Promise<{ code: string }>;
 }
 
-export default async function ReferralPage({ params }: Props) {
+export default async function ReferralWelcomePage({ params }: Props) {
   const { code } = await params;
 
-  // Redirect to API route that will set the cookie
-  redirect(`/api/ref/${code}`);
-}
+  // Look up the referral code
+  const referrer = await prisma.user.findUnique({
+    where: { referralCode: code },
+    select: { id: true, displayName: true, name: true },
+  });
+
+  if (!referrer) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 text-center max-w-md">
+          <div className="text-6xl mb-4">❌</div>
+          <h1 className="text-2xl font-bold text-white mb-2">Invalid Referral Link</h1>
+          <p className="text-slate-400 mb-6">
+            This referral link is not valid or has expired.
+          </p>
+          <Link
+            href="/"
+            className="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-medium rounded-lg transition-colors"
+          >
+            Go to Homepage
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Show welcome page with sign up prompt
+  const referrerName = referrer.displayName || referrer.name || "A friend";
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12">
