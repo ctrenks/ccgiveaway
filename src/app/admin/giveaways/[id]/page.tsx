@@ -345,12 +345,20 @@ export default function EditGiveawayPage({
                   Recalculate Draw Date
                 </button>
               )}
-              {giveaway.status === "CLOSED" && (
+              {(giveaway.status === "CLOSED" || (giveaway.status === "COMPLETED" && !giveaway.pick3Result)) && (
                 <Link
                   href={`/admin/giveaways/${giveaway.id}/draw`}
                   className="block w-full py-2 px-4 bg-green-600 hover:bg-green-500 text-white text-center rounded-lg transition-colors"
                 >
-                  Enter Draw Result
+                  {giveaway.pick3Result ? "View Draw Results" : "Enter Draw Result"}
+                </Link>
+              )}
+              {giveaway.status === "COMPLETED" && giveaway.pick3Result && (
+                <Link
+                  href={`/admin/giveaways/${giveaway.id}/draw`}
+                  className="block w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 text-white text-center rounded-lg transition-colors"
+                >
+                  View Winners
                 </Link>
               )}
               {["OPEN", "FILLING", "CLOSED"].includes(giveaway.status) && (
