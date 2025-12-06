@@ -24,6 +24,8 @@ export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [totalValue, setTotalValue] = useState<number | null>(null);
   const [loadingValue, setLoadingValue] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [updatingQuantity, setUpdatingQuantity] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -69,6 +71,48 @@ export default function AdminProducts() {
     setLoadingValue(false);
   };
 
+  const updateQuantity = async (productId: string, delta: number) => {
+    setUpdatingQuantity(productId);
+    
+    try {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+
+      const newQuantity = Math.max(0, product.quantity + delta);
+      
+      const res = await fetch(`/api/admin/products/${productId}/quantity`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity: newQuantity }),
+      });
+
+      if (res.ok) {
+        // Update local state
+        setProducts(products.map(p => 
+          p.id === productId ? { ...p, quantity: newQuantity } : p
+        ));
+      }
+    } catch (error) {
+      console.error("Failed to update quantity:", error);
+    } finally {
+      setUpdatingQuantity(null);
+    }
+  };
+
+  // Filter products based on search query
+  const filteredProducts = products.filter(product => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      product.name.toLowerCase().includes(query) ||
+      (product.setName && product.setName.toLowerCase().includes(query)) ||
+      (product.cardNumber && product.cardNumber.toLowerCase().includes(query)) ||
+      product.category.name.toLowerCase().includes(query) ||
+      (product.subType && product.subType.name.toLowerCase().includes(query))
+    );
+  });
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -103,6 +147,45 @@ export default function AdminProducts() {
         </div>
       </div>
 
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search products by name, set, card number, or category..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-3 pl-12 bg-slate-900 border border-slate-800 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
+          />
+          <svg
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        {searchQuery && (
+          <p className="mt-2 text-sm text-slate-400">
+            Found {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+          </p>
+        )}
+      </div>
+
       {/* Products Table */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
         <table className="w-full">
@@ -117,14 +200,14 @@ export default function AdminProducts() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
-            {products.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
-                  No products yet. Add your first product!
+                  {searchQuery ? `No products found matching "${searchQuery}"` : "No products yet. Add your first product!"}
                 </td>
               </tr>
             ) : (
-              products.map((product) => (
+              filteredProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-slate-800/30">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -176,13 +259,31 @@ export default function AdminProducts() {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`${
-                        product.quantity > 0 ? "text-white" : "text-red-400"
-                      }`}
-                    >
-                      {product.quantity}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => updateQuantity(product.id, -1)}
+                        disabled={product.quantity === 0 || updatingQuantity === product.id}
+                        className="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-red-600 disabled:opacity-50 disabled:hover:bg-slate-800 text-white rounded transition-colors text-sm"
+                        title="Decrease quantity"
+                      >
+                        −
+                      </button>
+                      <span
+                        className={`min-w-[2rem] text-center font-medium ${
+                          product.quantity > 0 ? "text-white" : "text-red-400"
+                        }`}
+                      >
+                        {product.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(product.id, 1)}
+                        disabled={updatingQuantity === product.id}
+                        className="w-6 h-6 flex items-center justify-center bg-slate-800 hover:bg-green-600 disabled:opacity-50 disabled:hover:bg-slate-800 text-white rounded transition-colors text-sm"
+                        title="Increase quantity"
+                      >
+                        +
+                      </button>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <span
