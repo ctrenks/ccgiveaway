@@ -26,6 +26,7 @@ export default function AdminProducts() {
   const [loadingValue, setLoadingValue] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [updatingQuantity, setUpdatingQuantity] = useState<string | null>(null);
+  const [hoveredImage, setHoveredImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -211,7 +212,11 @@ export default function AdminProducts() {
                 <tr key={product.id} className="hover:bg-slate-800/30">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-slate-800 rounded-lg overflow-hidden flex-shrink-0">
+                      <div 
+                        className="w-12 h-12 bg-slate-800 rounded-lg overflow-hidden flex-shrink-0 relative cursor-pointer"
+                        onMouseEnter={() => product.image && setHoveredImage(product.image)}
+                        onMouseLeave={() => setHoveredImage(null)}
+                      >
                         {product.image ? (
                           <Image
                             src={product.image}
@@ -310,6 +315,22 @@ export default function AdminProducts() {
           </tbody>
         </table>
       </div>
+
+      {/* Image Preview Tooltip */}
+      {hoveredImage && (
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+          <div className="bg-slate-900 border-4 border-purple-500 rounded-2xl shadow-2xl overflow-hidden pointer-events-none">
+            <Image
+              src={hoveredImage}
+              alt="Preview"
+              width={400}
+              height={560}
+              className="object-contain"
+              style={{ maxWidth: '400px', maxHeight: '560px' }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
