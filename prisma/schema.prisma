@@ -80,6 +80,7 @@ model User {
   subscription    Subscription?
   referrals       Referral[]   @relation("ReferrerRelation")
   deviceFingerprints DeviceFingerprint[]
+  giveawayWins    GiveawayWinner[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
@@ -413,6 +414,7 @@ model GiveawayWinner {
   giveawayId  String
   giveaway    Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
   userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   slot        Int      // Which slot they won
   pickNumber  String   // Their winning pick number
