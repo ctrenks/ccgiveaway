@@ -42,7 +42,6 @@ export async function GET(
   // If user is logged in, get their picks and free entries remaining
   let userPicks: { slot: number; pickNumber: string; isFreeEntry: boolean }[] = [];
   let freeEntriesUsed = 0;
-  let hasClaimed10Credits = false;
 
   if (session?.user?.id) {
     const picks = await prisma.giveawayPick.findMany({
@@ -58,17 +57,6 @@ export async function GET(
     });
     userPicks = picks;
     freeEntriesUsed = picks.filter((p) => p.isFreeEntry).length;
-
-    // Check if user has claimed 10 free credits for this giveaway
-    const creditClaim = await prisma.giveawayCreditClaim.findUnique({
-      where: {
-        userId_giveawayId: {
-          userId: session.user.id,
-          giveawayId: id,
-        },
-      },
-    });
-    hasClaimed10Credits = !!creditClaim;
   }
 
   // Get winner user info if giveaway is completed
@@ -106,6 +94,5 @@ export async function GET(
     userPicks,
     freeEntriesUsed,
     freeEntriesRemaining: giveaway.freeEntriesPerUser - freeEntriesUsed,
-    hasClaimed10Credits,
   });
 }
