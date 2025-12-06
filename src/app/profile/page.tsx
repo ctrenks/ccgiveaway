@@ -31,17 +31,44 @@ interface ReferralData {
 }
 
 export default function ProfilePage() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const [wins, setWins] = useState<GiveawayWin[]>([]);
   const [referralData, setReferralData] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"settings" | "wins" | "referrals">("settings");
+  
+  // Settings form state
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [editingShipping, setEditingShipping] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [formData, setFormData] = useState({
+    displayName: "",
+    image: "",
+    shippingName: "",
+    shippingAddress: "",
+    shippingCity: "",
+    shippingState: "",
+    shippingZip: "",
+    shippingCountry: "United States",
+  });
+  const [saveMessage, setSaveMessage] = useState("");
 
   useEffect(() => {
     if (session?.user) {
       fetchWins();
       fetchReferralData();
+      // Initialize form data from session
+      setFormData({
+        displayName: (session.user as any).displayName || "",
+        image: (session.user as any).image || "",
+        shippingName: (session.user as any).shippingName || "",
+        shippingAddress: (session.user as any).shippingAddress || "",
+        shippingCity: (session.user as any).shippingCity || "",
+        shippingState: (session.user as any).shippingState || "",
+        shippingZip: (session.user as any).shippingZip || "",
+        shippingCountry: (session.user as any).shippingCountry || "United States",
+      });
     }
   }, [session]);
 
@@ -73,6 +100,80 @@ export default function ProfilePage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAvatar(true);
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      if (res.ok) {
+        const { url } = await res.json();
+        setFormData({ ...formData, image: url });
+        await saveProfile({ image: url });
+        setSaveMessage("Avatar updated!");
+        setTimeout(() => setSaveMessage(""), 3000);
+      } else {
+        setSaveMessage("Failed to upload avatar");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      setSaveMessage("Failed to upload avatar");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const saveProfile = async (updates: Partial<typeof formData>) => {
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+
+      if (res.ok) {
+        const { user } = await res.json();
+        await update(); // Refresh session
+        setSaveMessage("Profile updated!");
+        setTimeout(() => setSaveMessage(""), 3000);
+        setEditingProfile(false);
+        setEditingShipping(false);
+        return true;
+      } else {
+        const error = await res.json();
+        setSaveMessage(error.error || "Failed to save");
+        return false;
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      setSaveMessage("Failed to save");
+      return false;
+    }
+  };
+
+  const handleSaveProfile = () => {
+    saveProfile({ displayName: formData.displayName });
+  };
+
+  const handleSaveShipping = () => {
+    saveProfile({
+      shippingName: formData.shippingName,
+      shippingAddress: formData.shippingAddress,
+      shippingCity: formData.shippingCity,
+      shippingState: formData.shippingState,
+      shippingZip: formData.shippingZip,
+      shippingCountry: formData.shippingCountry,
+    });
   };
 
   if (!session) {
@@ -138,22 +239,104 @@ export default function ProfilePage() {
           <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
             <h2 className="text-2xl font-bold text-white mb-6">⚙️ Account Settings</h2>
 
+            {saveMessage && (
+              <div className="mb-4 p-4 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400">
+                {saveMessage}
+              </div>
+            )}
+
             <div className="space-y-6">
-              {/* Profile Info */}
+              {/* Avatar */}
               <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-white mb-4">Profile Information</h3>
-                <div className="space-y-3">
+                <h3 className="text-lg font-bold text-white mb-4">Profile Picture</h3>
+                <div className="flex items-center gap-6">
+                  {formData.image ? (
+                    <Image
+                      src={formData.image}
+                      alt="Avatar"
+                      width={100}
+                      height={100}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-slate-700 flex items-center justify-center text-4xl">
+                      👤
+                    </div>
+                  )}
                   <div>
-                    <label className="text-slate-400 text-sm">Display Name</label>
-                    <p className="text-white font-medium">
-                      {(session.user as any).displayName || (session.user as any).name || "Not set"}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-slate-400 text-sm">Email</label>
-                    <p className="text-white font-medium">{(session.user as any).email}</p>
+                    <label className="cursor-pointer px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors inline-block">
+                      {uploadingAvatar ? "Uploading..." : "Upload New Avatar"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        disabled={uploadingAvatar}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-slate-400 text-xs mt-2">JPG, PNG, GIF or WebP (max 5MB)</p>
                   </div>
                 </div>
+              </div>
+
+              {/* Profile Info */}
+              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-white">Profile Information</h3>
+                  {!editingProfile && (
+                    <button
+                      onClick={() => setEditingProfile(true)}
+                      className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded-lg transition-colors"
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+                
+                {editingProfile ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-slate-400 text-sm mb-2">Display Name</label>
+                      <input
+                        type="text"
+                        value={formData.displayName}
+                        onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                        placeholder="Enter display name"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveProfile}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingProfile(false);
+                          setFormData({ ...formData, displayName: (session.user as any).displayName || "" });
+                        }}
+                        className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-slate-400 text-sm">Display Name</label>
+                      <p className="text-white font-medium">
+                        {(session.user as any).displayName || (session.user as any).name || "Not set"}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-slate-400 text-sm">Email</label>
+                      <p className="text-white font-medium">{(session.user as any).email}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* VIP Status */}
@@ -189,8 +372,111 @@ export default function ProfilePage() {
 
               {/* Shipping Address */}
               <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-white mb-4">Shipping Address</h3>
-                {(session.user as any).shippingAddress ? (
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-white">Shipping Address</h3>
+                  {!editingShipping && (session.user as any).shippingAddress && (
+                    <button
+                      onClick={() => setEditingShipping(true)}
+                      className="px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white text-sm rounded-lg transition-colors"
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+
+                {editingShipping || !(session.user as any).shippingAddress ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-slate-400 text-sm mb-2">Full Name</label>
+                      <input
+                        type="text"
+                        value={formData.shippingName}
+                        onChange={(e) => setFormData({ ...formData, shippingName: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                        placeholder="John Doe"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-400 text-sm mb-2">Street Address</label>
+                      <input
+                        type="text"
+                        value={formData.shippingAddress}
+                        onChange={(e) => setFormData({ ...formData, shippingAddress: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                        placeholder="123 Main St"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-slate-400 text-sm mb-2">City</label>
+                        <input
+                          type="text"
+                          value={formData.shippingCity}
+                          onChange={(e) => setFormData({ ...formData, shippingCity: e.target.value })}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                          placeholder="New York"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 text-sm mb-2">State</label>
+                        <input
+                          type="text"
+                          value={formData.shippingState}
+                          onChange={(e) => setFormData({ ...formData, shippingState: e.target.value })}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                          placeholder="NY"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-slate-400 text-sm mb-2">ZIP Code</label>
+                        <input
+                          type="text"
+                          value={formData.shippingZip}
+                          onChange={(e) => setFormData({ ...formData, shippingZip: e.target.value })}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                          placeholder="10001"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 text-sm mb-2">Country</label>
+                        <input
+                          type="text"
+                          value="United States"
+                          disabled
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-slate-500"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveShipping}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors"
+                      >
+                        Save Address
+                      </button>
+                      {(session.user as any).shippingAddress && (
+                        <button
+                          onClick={() => {
+                            setEditingShipping(false);
+                            setFormData({
+                              ...formData,
+                              shippingName: (session.user as any).shippingName || "",
+                              shippingAddress: (session.user as any).shippingAddress || "",
+                              shippingCity: (session.user as any).shippingCity || "",
+                              shippingState: (session.user as any).shippingState || "",
+                              shippingZip: (session.user as any).shippingZip || "",
+                            });
+                          }}
+                          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
                   <div className="text-slate-300 text-sm space-y-1">
                     <p>{(session.user as any).shippingName}</p>
                     <p>{(session.user as any).shippingAddress}</p>
@@ -200,12 +486,7 @@ export default function ProfilePage() {
                     </p>
                     <p>{(session.user as any).shippingCountry || "USA"}</p>
                   </div>
-                ) : (
-                  <p className="text-slate-400 text-sm">No shipping address on file</p>
                 )}
-                <p className="text-slate-500 text-xs mt-4">
-                  To update your shipping address or display name, please contact support.
-                </p>
               </div>
 
               {/* Account Actions */}

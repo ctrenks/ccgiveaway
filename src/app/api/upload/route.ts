@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     // Check authentication
     const session = await auth();
-    if (!session?.user || session.user.role < ROLES.MODERATOR) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -35,10 +35,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique filename
+    // Generate unique filename based on user role
     const timestamp = Date.now();
     const extension = file.name.split(".").pop();
-    const filename = `products/${timestamp}-${Math.random().toString(36).substring(7)}.${extension}`;
+    const folder = session.user.role >= ROLES.MODERATOR ? "products" : "avatars";
+    const filename = `${folder}/${timestamp}-${Math.random().toString(36).substring(7)}.${extension}`;
 
     // Upload to Vercel Blob
     const blob = await put(filename, file, {
