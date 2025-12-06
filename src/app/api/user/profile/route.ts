@@ -72,19 +72,21 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Build update data - only include fields that are explicitly provided
+    const updateData: any = {};
+    if (displayName !== undefined) updateData.displayName = displayName || null;
+    if (name !== undefined) updateData.name = name;
+    if (image !== undefined) updateData.image = image;
+    if (shippingName !== undefined) updateData.shippingName = shippingName || null;
+    if (shippingAddress !== undefined) updateData.shippingAddress = shippingAddress || null;
+    if (shippingCity !== undefined) updateData.shippingCity = shippingCity || null;
+    if (shippingState !== undefined) updateData.shippingState = shippingState || null;
+    if (shippingZip !== undefined) updateData.shippingZip = shippingZip || null;
+    if (shippingCountry !== undefined) updateData.shippingCountry = shippingCountry || null;
+
     const user = await prisma.user.update({
       where: { id: session.user.id },
-      data: {
-        displayName: displayName || null,
-        name: name || undefined,
-        image: image || undefined,
-        shippingName: shippingName || null,
-        shippingAddress: shippingAddress || null,
-        shippingCity: shippingCity || null,
-        shippingState: shippingState || null,
-        shippingZip: shippingZip || null,
-        shippingCountry: shippingCountry || null,
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,
