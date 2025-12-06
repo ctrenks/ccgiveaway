@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { userId, tier, paymentMethod, cryptoNote } = body;
+  const { userId, tier, paymentMethod, cryptoNote, months = 1 } = body;
 
   if (!userId || !tier) {
     return NextResponse.json(
@@ -58,10 +58,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
   }
 
-  // Calculate period dates
+  // Calculate period dates based on months
   const now = new Date();
   const periodEnd = new Date(now);
-  periodEnd.setMonth(periodEnd.getMonth() + 1);
+  const totalMonths = parseInt(String(months)) || 1;
+  periodEnd.setMonth(periodEnd.getMonth() + totalMonths);
 
   // Create or update subscription
   const subscription = await prisma.subscription.upsert({
@@ -71,19 +72,19 @@ export async function POST(request: Request) {
       tier: tier as SubscriptionTier,
       status: "ACTIVE",
       paymentMethod: paymentMethod || "crypto",
-      amount: price,
+      amount: price * totalMonths,
       currentPeriodStart: now,
       currentPeriodEnd: periodEnd,
-      cryptoNote,
+      cryptoNote: cryptoNote || `Crypto subscription - ${totalMonths} month(s)`,
     },
     update: {
       tier: tier as SubscriptionTier,
       status: "ACTIVE",
       paymentMethod: paymentMethod || "crypto",
-      amount: price,
+      amount: price * totalMonths,
       currentPeriodStart: now,
       currentPeriodEnd: periodEnd,
-      cryptoNote,
+      cryptoNote: cryptoNote || `Crypto subscription - ${totalMonths} month(s)`,
     },
   });
 

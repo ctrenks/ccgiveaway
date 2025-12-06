@@ -12,6 +12,9 @@ interface User {
   email: string | null;
   role: number;
   giveawayCredits: number;
+  subscriptionTier: string | null;
+  subscriptionStart: string | null;
+  subscriptionEnd: string | null;
   createdAt: string;
   _count: {
     orders: number;
@@ -50,6 +53,12 @@ export default function EditUserPage({
   const [creditAmount, setCreditAmount] = useState("");
   const [creditReason, setCreditReason] = useState("");
   const [adjustingCredits, setAdjustingCredits] = useState(false);
+
+  // Subscription management
+  const [subscriptionTier, setSubscriptionTier] = useState("");
+  const [subscriptionMonths, setSubscriptionMonths] = useState("1");
+  const [subscriptionNote, setSubscriptionNote] = useState("");
+  const [creatingSubscription, setCreatingSubscription] = useState(false);
 
   useEffect(() => {
     fetch(`/api/admin/users/${id}`)
@@ -131,6 +140,59 @@ export default function EditUserPage({
       setError(err instanceof Error ? err.message : "Failed to adjust credits");
     } finally {
       setAdjustingCredits(false);
+    }
+  };
+
+  const handleCreateSubscription = async () => {
+    if (!subscriptionTier) {
+      setError("Please select a subscription tier");
+      return;
+    }
+
+    const months = parseInt(subscriptionMonths);
+    if (isNaN(months) || months < 1 || months > 120) {
+      setError("Please enter a valid number of months (1-120)");
+      return;
+    }
+
+    setCreatingSubscription(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const res = await fetch(`/api/admin/subscriptions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: id,
+          tier: subscriptionTier,
+          months,
+          paymentMethod: "crypto",
+          cryptoNote: subscriptionNote || `Crypto subscription - ${months} month(s)`,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create subscription");
+      }
+
+      // Refresh user data
+      const userRes = await fetch(`/api/admin/users/${id}`);
+      const userData = await userRes.json();
+      if (userData.user) {
+        setUser(userData.user);
+      }
+
+      setSubscriptionTier("");
+      setSubscriptionMonths("1");
+      setSubscriptionNote("");
+      setSuccess(`Subscription created: ${months} month(s) of ${subscriptionTier}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create subscription");
+    } finally {
+      setCreatingSubscription(false);
     }
   };
 
@@ -242,6 +304,83 @@ export default function EditUserPage({
                 className="w-full py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
               >
                 {saving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+
+          {/* VIP Subscription */}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+            <h2 className="text-xl font-bold text-white mb-4">
+              VIP Subscription
+            </h2>
+
+            {user.subscriptionTier ? (
+              <div className="mb-6">
+                <div className="text-center p-4 bg-amber-500/20 border border-amber-500/30 rounded-lg">
+                  <div className="text-2xl font-bold text-amber-400 mb-1">
+                    {user.subscriptionTier}
+                  </div>
+                  <div className="text-slate-300 text-sm">
+                    {user.subscriptionEnd && (
+                      <>Expires: {new Date(user.subscriptionEnd).toLocaleDateString()}</>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center mb-6 p-4 bg-slate-800/50 rounded-lg">
+                <div className="text-slate-400">No active subscription</div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">Subscription Tier</label>
+                <select
+                  value={subscriptionTier}
+                  onChange={(e) => setSubscriptionTier(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                >
+                  <option value="">Select tier...</option>
+                  <option value="BASIC">BASIC - $20/mo (5% off, 100 credits/mo)</option>
+                  <option value="PLUS">PLUS - $35/mo (5% off, 200 credits/mo)</option>
+                  <option value="PREMIUM">PREMIUM - $50/mo (7% off, 340 credits/mo)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">Duration (months)</label>
+                <input
+                  type="number"
+                  value={subscriptionMonths}
+                  onChange={(e) => setSubscriptionMonths(e.target.value)}
+                  placeholder="1"
+                  min="1"
+                  max="120"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Enter 1-120 months. User will get monthly credits automatically.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm text-slate-400 mb-1">Note (optional)</label>
+                <input
+                  type="text"
+                  value={subscriptionNote}
+                  onChange={(e) => setSubscriptionNote(e.target.value)}
+                  placeholder="e.g., Paid via BTC"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <button
+                onClick={handleCreateSubscription}
+                disabled={creatingSubscription || !subscriptionTier}
+                className="w-full py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
+              >
+                {creatingSubscription ? "Creating..." : "Create Crypto Subscription"}
               </button>
             </div>
           </div>

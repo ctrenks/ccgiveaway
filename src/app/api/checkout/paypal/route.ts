@@ -56,13 +56,27 @@ export async function POST(request: NextRequest) {
 
     // Note: Shipping address will be collected by PayPal and validated in confirm endpoint
 
+    // Get user subscription tier for discount
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { subscriptionTier: true },
+    });
+
+    const subscriptionTier = user?.subscriptionTier;
+    let discountPercent = 0;
+    if (subscriptionTier === "BASIC" || subscriptionTier === "PLUS") {
+      discountPercent = 5;
+    } else if (subscriptionTier === "PREMIUM") {
+      discountPercent = 7;
+    }
+
     // Validate items and calculate total
     const productIds = items.map((item: { id: string }) => item.id);
     const products = await prisma.product.findMany({
       where: { id: { in: productIds }, active: true },
     });
 
-    let total = 0;
+    let subtotal = 0;
     const orderItems = [];
 
     for (const item of items) {
@@ -80,18 +94,27 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const itemTotal = Number(product.price) * item.quantity;
-      total += itemTotal;
+      let itemPrice = Number(product.price);
+      
+      // Apply VIP discount
+      if (discountPercent > 0) {
+        itemPrice = itemPrice * (1 - discountPercent / 100);
+      }
+
+      const itemTotal = itemPrice * item.quantity;
+      subtotal += itemTotal;
 
       orderItems.push({
         name: product.name,
         unit_amount: {
           currency_code: "USD",
-          value: Number(product.price).toFixed(2),
+          value: itemPrice.toFixed(2),
         },
         quantity: item.quantity.toString(),
       });
     }
+
+    const total = subtotal;
 
     // Create PayPal order
     const accessToken = await getPayPalAccessToken();
@@ -143,15 +166,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Calculate discount amount
+    const originalSubtotal = products.reduce((sum, product) => {
+      const item = items.find((i: { id: string }) => i.id === product.id);
+      return sum + (Number(product.price) * (item?.quantity || 0));
+    }, 0);
+    const discountAmount = originalSubtotal - subtotal;
+
     // Store pending order in database (shipping address will be added when PayPal confirms)
     const order = await prisma.order.create({
       data: {
         userId: session.user.id,
         status: "PENDING",
+        subtotal: originalSubtotal,
         total: total,
         shippingAddress: null, // Will be populated from PayPal on confirmation
         paymentProvider: "paypal",
         paymentId: orderData.id,
+        vipDiscountPercent: discountPercent > 0 ? discountPercent : null,
+        vipDiscountAmount: discountAmount > 0 ? discountAmount : null,
         items: {
           create: items.map((item: { id: string; quantity: number }) => {
             const product = products.find((p) => p.id === item.id)!;

@@ -297,6 +297,10 @@ model Order {
   paymentProvider String?   // "paypal", "coinbase", etc.
   paymentId       String?   // Payment provider's order/charge ID
 
+  // VIP subscription discount
+  vipDiscountPercent Int?    // Percentage discount applied (5 or 7)
+  vipDiscountAmount  Decimal? @db.Decimal(10, 2) // Dollar amount saved
+
   // Giveaway credits earned from this order
   creditsEarned Int         @default(0)
 
@@ -418,6 +422,7 @@ model GiveawayWinner {
   claimed     Boolean  @default(false)
   shippedAt   DateTime?
   trackingNumber String?
+  usedVipFreeShipping Boolean @default(false) // If VIP member used their free shipping
 
   createdAt   DateTime @default(now())
 
