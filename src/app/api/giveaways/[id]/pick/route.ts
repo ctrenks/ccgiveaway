@@ -145,19 +145,28 @@ export async function POST(
   // Check free entries vs credits
   let isFreeEntry = false;
 
-  if (useFreeEntry && !isBoxTopper) {
-    // Free entries cannot be used for box topper
-    const freeEntriesUsed = await prisma.giveawayPick.count({
+  if (useFreeEntry) {
+    // Calculate total free entry credits used (sum of creditCost for free picks)
+    const freeEntriesData = await prisma.giveawayPick.aggregate({
       where: {
         giveawayId: id,
         userId: session.user.id,
         isFreeEntry: true,
       },
+      _sum: {
+        creditCost: true,
+      },
     });
 
-    if (freeEntriesUsed >= giveaway.freeEntriesPerUser) {
+    const freeEntriesUsed = freeEntriesData._sum.creditCost || 0;
+    const freeEntriesRemaining = giveaway.freeEntriesPerUser - freeEntriesUsed;
+
+    if (freeEntriesRemaining < creditCost) {
       return NextResponse.json(
-        { error: "No free entries remaining" },
+        { error: isBoxTopper
+            ? `Box topper requires ${creditCost} free entries. You only have ${freeEntriesRemaining} remaining.`
+            : `This pick requires ${creditCost} ${creditCost === 1 ? 'entry' : 'entries'}. You only have ${freeEntriesRemaining} free entries remaining.`
+        },
         { status: 400 }
       );
     }
@@ -194,6 +203,7 @@ export async function POST(
       slot,
       pickNumber: pickNum,
       isFreeEntry,
+      creditCost,
     },
   });
 

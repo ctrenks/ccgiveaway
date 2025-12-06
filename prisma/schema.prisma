@@ -90,14 +90,14 @@ model DeviceFingerprint {
   id            String   @id @default(cuid())
   userId        String
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   fingerprint   String   // Hash of browser/device characteristics
   ipAddress     String?  // IP address (optional, for additional verification)
   userAgent     String?  // Browser user agent
-  
+
   firstSeen     DateTime @default(now())
   lastSeen      DateTime @default(now())
-  
+
   @@unique([userId, fingerprint])
   @@index([fingerprint])
 }
@@ -259,7 +259,7 @@ model Product {
   tcgPlayerId   String?   // TCGPlayer product ID for re-scanning
   tcgPlayerUrl  String?   // Full TCGPlayer URL
   lastPriceSync DateTime? // Last time price was synced from TCGPlayer
-  
+
   @@unique([tcgPlayerId, isFoil]) // Allow same card as both normal and foil
 
   // Giveaway credits - override default calculation
@@ -400,8 +400,9 @@ model GiveawayPick {
   slot        Int      // Which slot (1 to slotCount)
   pickNumber  String   // 001-999 (stored as string to preserve leading zeros)
 
-  // Entry type
+  // Entry type and cost
   isFreeEntry Boolean  @default(false) // True if used free entry, false if used credit
+  creditCost  Int      @default(1)     // How many credits/free entries this pick consumed
 
   createdAt   DateTime @default(now())
 

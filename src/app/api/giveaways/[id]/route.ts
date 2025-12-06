@@ -56,7 +56,19 @@ export async function GET(
       },
     });
     userPicks = picks;
-    freeEntriesUsed = picks.filter((p) => p.isFreeEntry).length;
+
+    // Calculate total free entries used (sum of creditCost for free picks)
+    const freeEntriesData = await prisma.giveawayPick.aggregate({
+      where: {
+        giveawayId: id,
+        userId: session.user.id,
+        isFreeEntry: true,
+      },
+      _sum: {
+        creditCost: true,
+      },
+    });
+    freeEntriesUsed = freeEntriesData._sum.creditCost || 0;
   }
 
   // Get winner user info if giveaway is completed

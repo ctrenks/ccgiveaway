@@ -197,7 +197,18 @@ export async function POST(
   const existingUserPicks = new Set(
     userPicks.map((p) => `${p.slot}-${parseInt(p.pickNumber)}`)
   );
-  const freeEntriesUsed = userPicks.filter((p) => p.isFreeEntry).length;
+  // Calculate total free entries used (sum of creditCost for free picks)
+  const freeEntriesData = await prisma.giveawayPick.aggregate({
+    where: {
+      giveawayId: id,
+      userId: session.user.id,
+      isFreeEntry: true,
+    },
+    _sum: {
+      creditCost: true,
+    },
+  });
+  const freeEntriesUsed = freeEntriesData._sum.creditCost || 0;
   let freeEntriesRemaining = giveaway.freeEntriesPerUser - freeEntriesUsed;
 
   // Get user credits
@@ -231,15 +242,15 @@ export async function POST(
 
     // Determine if using free entry or credits
     let isFreeEntry = false;
-    if (useFreeEntries && freeEntriesRemaining > 0 && !isBoxTopper) {
+    if (useFreeEntries && freeEntriesRemaining >= creditCost) {
       isFreeEntry = true;
-      freeEntriesRemaining--;
-      totalFreeUsed++;
+      freeEntriesRemaining -= creditCost;
+      totalFreeUsed += creditCost;
     } else if (creditsAvailable >= creditCost) {
       creditsAvailable -= creditCost;
       totalCreditsUsed += creditCost;
     } else {
-      // Not enough credits, stop
+      // Not enough credits or free entries, stop
       break;
     }
 
@@ -249,8 +260,8 @@ export async function POST(
     if (!pickNumber) {
       // No available numbers in this slot
       if (isFreeEntry) {
-        freeEntriesRemaining++;
-        totalFreeUsed--;
+        freeEntriesRemaining += creditCost;
+        totalFreeUsed -= creditCost;
       } else {
         creditsAvailable += creditCost;
         totalCreditsUsed -= creditCost;
@@ -261,8 +272,8 @@ export async function POST(
     // Check if user already has this pick
     if (existingUserPicks.has(`${slot}-${parseInt(pickNumber)}`)) {
       if (isFreeEntry) {
-        freeEntriesRemaining++;
-        totalFreeUsed--;
+        freeEntriesRemaining += creditCost;
+        totalFreeUsed -= creditCost;
       } else {
         creditsAvailable += creditCost;
         totalCreditsUsed -= creditCost;
@@ -278,6 +289,7 @@ export async function POST(
         slot,
         pickNumber,
         isFreeEntry,
+        creditCost,
       },
     });
 
