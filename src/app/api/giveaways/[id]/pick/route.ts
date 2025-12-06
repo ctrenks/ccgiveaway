@@ -50,33 +50,17 @@ export async function POST(
     );
   }
 
-  // Check if user has completed their profile (username + shipping address)
+  // Check if user has a username
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
       displayName: true,
-      shippingName: true,
-      shippingAddress: true,
-      shippingCity: true,
-      shippingState: true,
-      shippingZip: true,
-      shippingCountry: true,
     },
   });
 
-  const profileComplete = !!(
-    user?.displayName &&
-    user?.shippingName &&
-    user?.shippingAddress &&
-    user?.shippingCity &&
-    user?.shippingState &&
-    user?.shippingZip &&
-    user?.shippingCountry
-  );
-
-  if (!profileComplete) {
+  if (!user?.displayName) {
     return NextResponse.json(
-      { error: "Please complete your profile (username and shipping address) before entering giveaways", requiresProfile: true },
+      { error: "Please set a username before entering giveaways", requiresUsername: true },
       { status: 403 }
     );
   }

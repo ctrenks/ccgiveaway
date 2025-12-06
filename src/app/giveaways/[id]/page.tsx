@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCredits } from "@/lib/credits-context";
+import UsernamePrompt from "@/components/UsernamePrompt";
 
 interface Giveaway {
   id: string;
@@ -75,6 +76,16 @@ export default function GiveawayPage({
   const [bulkCount, setBulkCount] = useState(10);
   const [bulkInSlot, setBulkInSlot] = useState(false);
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
+
+  // Username prompt
+  const [needsUsername, setNeedsUsername] = useState(false);
+  
+  // Check if user needs to set username
+  useEffect(() => {
+    if (session?.user && !(session.user as any).displayName) {
+      setNeedsUsername(true);
+    }
+  }, [session]);
 
   // Fetch giveaway data
   useEffect(() => {
@@ -260,6 +271,11 @@ export default function GiveawayPage({
       const data = await res.json();
 
       if (!res.ok) {
+        // Check if user needs to set username
+        if (data.requiresUsername) {
+          setNeedsUsername(true);
+          return;
+        }
         setError(data.error || "Failed to submit pick");
       } else {
         setSuccess(`Pick submitted: Slot ${selectedSlot}, Number ${pickNumber}`);
@@ -311,8 +327,12 @@ export default function GiveawayPage({
   const canPick = ["OPEN", "FILLING"].includes(giveaway.status);
 
   return (
-    <div className="min-h-screen py-12">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      {/* Username Prompt - shown if user doesn't have a username */}
+      {needsUsername && <UsernamePrompt onComplete={() => { setNeedsUsername(false); window.location.reload(); }} />}
+      
+      <div className="min-h-screen py-12">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-slate-500 mb-6">
           <Link href="/" className="hover:text-purple-400 transition-colors">
@@ -1011,5 +1031,6 @@ export default function GiveawayPage({
         })()}
       </div>
     </div>
+    </>
   );
 }
