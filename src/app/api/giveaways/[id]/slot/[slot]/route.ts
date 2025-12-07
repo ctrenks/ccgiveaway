@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 export async function GET(
   request: Request,
@@ -7,12 +8,13 @@ export async function GET(
 ) {
   const { id, slot } = await params;
   const slotNum = parseInt(slot);
+  const session = await auth();
 
   if (isNaN(slotNum)) {
     return NextResponse.json({ error: "Invalid slot" }, { status: 400 });
   }
 
-  // Get all picks for this slot (just the numbers, not user info for privacy)
+  // Get all picks for this slot
   const picks = await prisma.giveawayPick.findMany({
     where: {
       giveawayId: id,
@@ -20,6 +22,7 @@ export async function GET(
     },
     select: {
       pickNumber: true,
+      userId: true,
     },
     orderBy: {
       pickNumber: "asc",
@@ -27,6 +30,9 @@ export async function GET(
   });
 
   const takenNumbers = picks.map((p) => p.pickNumber);
+  const userNumbers = session?.user?.id 
+    ? picks.filter((p) => p.userId === session.user.id).map((p) => p.pickNumber)
+    : [];
 
   // Find gaps in the number sequence
   const takenSet = new Set(takenNumbers.map((n) => parseInt(n)));
@@ -64,6 +70,7 @@ export async function GET(
   return NextResponse.json({
     slot: slotNum,
     takenNumbers,
+    userNumbers, // User's own picks in this slot
     totalTaken: takenNumbers.length,
     totalAvailable: 1000 - takenNumbers.length,
     largestGaps: gaps.slice(0, 5), // Top 5 largest gaps

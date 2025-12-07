@@ -39,6 +39,7 @@ interface UserPick {
 
 interface SlotData {
   takenNumbers: string[];
+  userNumbers: string[]; // User's own picks in this slot
   totalTaken: number;
   totalAvailable: number;
   largestGaps: Array<{ start: number; end: number; size: number }>;
@@ -606,7 +607,8 @@ export default function GiveawayPage({
                 </h2>
                 <p className="text-slate-400 text-sm mb-4">
                   {slotData.totalTaken} taken, {slotData.totalAvailable} available.
-                  <span className="text-red-500 ml-2">■</span> = Taken
+                  <span className="text-green-500 ml-2">■</span> = Your Picks
+                  <span className="text-red-500 ml-2">■</span> = Taken by Others
                   <span className="text-slate-700 ml-2">■</span> = Available
                   <span className="text-slate-500 ml-2">(Hover for number)</span>
                 </p>
@@ -615,6 +617,7 @@ export default function GiveawayPage({
                 <div className="space-y-1">
                   {[0, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((rangeStart) => {
                     const takenSet = new Set(slotData.takenNumbers.map((n) => parseInt(n)));
+                    const userSet = new Set(slotData.userNumbers.map((n) => parseInt(n)));
                     const takenInRange = slotData.takenNumbers.filter((n) => {
                       const num = parseInt(n);
                       return num >= rangeStart && num < rangeStart + 100;
@@ -629,15 +632,18 @@ export default function GiveawayPage({
                           {Array.from({ length: 100 }, (_, i) => {
                             const num = rangeStart + i;
                             const isTaken = takenSet.has(num);
+                            const isUserPick = userSet.has(num);
                             return (
                               <div
                                 key={num}
                                 className={`flex-1 border-r border-slate-900/20 last:border-r-0 cursor-pointer transition-all ${
-                                  isTaken
+                                  isUserPick
+                                    ? "bg-green-500 hover:bg-green-400"
+                                    : isTaken
                                     ? "bg-red-500 hover:bg-red-400"
-                                    : "bg-slate-700/30 hover:bg-green-500/50"
+                                    : "bg-slate-700/30 hover:bg-purple-500/50"
                                 }`}
-                                title={`${String(num).padStart(3, "0")}${isTaken ? " (TAKEN)" : " (Available)"}`}
+                                title={`${String(num).padStart(3, "0")}${isUserPick ? " (YOUR PICK)" : isTaken ? " (TAKEN)" : " (Available)"}`}
                                 onClick={() => !isTaken && setPickNumber(String(num).padStart(3, "0"))}
                               />
                             );
@@ -659,14 +665,21 @@ export default function GiveawayPage({
                     </summary>
                     <div className="mt-2 max-h-32 overflow-y-auto bg-slate-800/50 rounded-lg p-3">
                       <div className="flex flex-wrap gap-1">
-                        {slotData.takenNumbers.map((num) => (
-                          <span
-                            key={num}
-                            className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-xs font-mono rounded"
-                          >
-                            {num}
-                          </span>
-                        ))}
+                        {slotData.takenNumbers.map((num) => {
+                          const isUserPick = slotData.userNumbers.includes(num);
+                          return (
+                            <span
+                              key={num}
+                              className={`px-1.5 py-0.5 text-xs font-mono rounded ${
+                                isUserPick
+                                  ? "bg-green-500/20 text-green-400"
+                                  : "bg-red-500/20 text-red-400"
+                              }`}
+                            >
+                              {num}
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
                   </details>
