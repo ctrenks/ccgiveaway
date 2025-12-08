@@ -67,10 +67,10 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     scrapflyUrl.searchParams.set("render_js", "true");
     scrapflyUrl.searchParams.set("asp", "true"); // Anti-scraping protection bypass
     scrapflyUrl.searchParams.set("country", "us");
-    scrapflyUrl.searchParams.set("rendering_wait", "5000"); // Wait 5s for JS to load prices
-    scrapflyUrl.searchParams.set("wait_for_selector", ".near-mint-table__price"); // Wait for price table
+    scrapflyUrl.searchParams.set("rendering_wait", "10000"); // Wait 10s for Vue app to fully mount
+    // Don't use wait_for_selector - Vue SPA takes time to mount and selector causes timeout
 
-    console.log("🔄 Fetching via Scrapfly:", url);
+    console.log("🔄 Fetching via Scrapfly (10s wait for Vue SPA):", url);
 
     const response = await fetch(scrapflyUrl.toString(), {
       method: "GET",
