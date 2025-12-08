@@ -238,6 +238,10 @@ model Product {
   setName     String? // e.g., "Foundations", "Base Set"
   cardNumber  String? // e.g., "102/165", "PSA 10"
   cardType    String? // e.g., "Land — Mountain Forest Plains", "Creature — Human Soldier"
+  legality    String? // Format legality (e.g., "Standard, Modern, Commander")
+  artist      String? // Card artist name
+  manaCost    String? // Mana cost for Magic cards (e.g., "{3}{U}{B}")
+  powerToughness String? // Power/Toughness for creatures (e.g., "3/3", "*/4")
 
   // Condition
   condition   Condition?  @default(NEW)

@@ -14,6 +14,11 @@ export interface TCGPlayerProduct {
   foilPrice?: number;
   listedPrice?: number;
   url: string;
+  // Additional fields
+  legality?: string;
+  artist?: string;
+  manaCost?: string;
+  powerToughness?: string;
 }
 
 export interface ImportSettings {
@@ -312,6 +317,10 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
       marketPrice: prices.normal,
       foilPrice: prices.foil,
       listedPrice: prices.normal,
+      legality: extractLegality(html),
+      artist: extractArtist(html),
+      manaCost: extractManaCost(html),
+      powerToughness: extractPowerToughness(html),
     };
 
     return product;
@@ -432,8 +441,28 @@ function extractSetName(html: string, slug: string): string {
 }
 
 function extractCardNumber(html: string): string | undefined {
-  const match = html.match(/#?\s*(\d{1,4}\s*\/\s*\d{1,4})/);
-  if (match) return match[1].replace(/\s/g, "");
+  // Try multiple patterns for card/collector number
+  const patterns = [
+    // Pattern: "Number: 123" or "Card Number: 123"
+    /(?:Card\s+)?(?:Number|#):\s*<\/[^>]+>\s*<[^>]+>([^<]+)/i,
+    /(?:Card\s+)?(?:Number|#):\s*([^\n<]+)/i,
+    // Pattern: "123/456" format
+    /#?\s*(\d{1,4}\s*\/\s*\d{1,4})/,
+    // Pattern: In JSON data
+    /"number"\s*:\s*"([^"]+)"/i,
+    /data-number=["']([^"']+)["']/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      let number = match[1].trim().replace(/\s/g, "");
+      if (number && number.length > 0 && number !== 'null') {
+        console.log("Extracted card number:", number);
+        return number;
+      }
+    }
+  }
   return undefined;
 }
 
@@ -447,6 +476,106 @@ function extractRarity(html: string): string | undefined {
   for (const rarity of rarities) {
     if (lowerHtml.includes(rarity.toLowerCase())) {
       return rarity;
+    }
+  }
+  return undefined;
+}
+
+function extractLegality(html: string): string | undefined {
+  // Extract legality information (Standard, Modern, Commander, etc.)
+  const patterns = [
+    /Legality:\s*<\/[^>]+>\s*<[^>]+>([^<]+)/i,
+    /Legality:\s*([^\n<]+)/i,
+    /<dt[^>]*>Legality<\/dt>\s*<dd[^>]*>([^<]+)<\/dd>/i,
+    /"legality"\s*:\s*"([^"]+)"/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      let legality = match[1].trim();
+      legality = decodeHtmlEntities(legality);
+      if (legality && legality.length > 0 && legality !== 'null') {
+        console.log("Extracted legality:", legality);
+        return legality;
+      }
+    }
+  }
+  return undefined;
+}
+
+function extractArtist(html: string): string | undefined {
+  const patterns = [
+    /Artist:\s*<\/[^>]+>\s*<[^>]+>([^<]+)/i,
+    /Artist:\s*([^\n<]+)/i,
+    /<dt[^>]*>Artist<\/dt>\s*<dd[^>]*>([^<]+)<\/dd>/i,
+    /"artist"\s*:\s*"([^"]+)"/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      let artist = match[1].trim();
+      artist = decodeHtmlEntities(artist);
+      if (artist && artist.length > 0 && artist !== 'null') {
+        console.log("Extracted artist:", artist);
+        return artist;
+      }
+    }
+  }
+  return undefined;
+}
+
+function extractManaCost(html: string): string | undefined {
+  // Extract mana cost for Magic cards (e.g., "{3}{U}{B}")
+  const patterns = [
+    /Mana Cost:\s*<\/[^>]+>\s*<[^>]+>([^<]+)/i,
+    /Mana Cost:\s*([^\n<]+)/i,
+    /<dt[^>]*>Mana Cost<\/dt>\s*<dd[^>]*>([^<]+)<\/dd>/i,
+    /"manaCost"\s*:\s*"([^"]+)"/i,
+    // Pattern for mana symbols: {1}{U}{B}
+    /(\{[^\}]+\}(?:\{[^\}]+\})*)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match && match[1]) {
+      let manaCost = match[1].trim();
+      manaCost = decodeHtmlEntities(manaCost);
+      if (manaCost && manaCost.length > 0 && manaCost !== 'null') {
+        console.log("Extracted mana cost:", manaCost);
+        return manaCost;
+      }
+    }
+  }
+  return undefined;
+}
+
+function extractPowerToughness(html: string): string | undefined {
+  // Extract P/T for creatures (e.g., "3/3" or "*/4")
+  const patterns = [
+    /P\s*\/\s*T:\s*<\/[^>]+>\s*<[^>]+>([^<]+)/i,
+    /P\s*\/\s*T:\s*([^\n<]+)/i,
+    /Power\s*\/\s*Toughness:\s*<\/[^>]+>\s*<[^>]+>([^<]+)/i,
+    /Power\s*\/\s*Toughness:\s*([^\n<]+)/i,
+    /<dt[^>]*>P\s*\/\s*T<\/dt>\s*<dd[^>]*>([^<]+)<\/dd>/i,
+    /"powerToughness"\s*:\s*"([^"]+)"/i,
+    // Pattern: "3/3" or "*/4" format
+    /\b(\d+|\*)\s*\/\s*(\d+|\*)\b/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match) {
+      let pt = match[1] || (match[2] ? `${match[1]}/${match[2]}` : null);
+      if (pt) {
+        pt = pt.trim();
+        pt = decodeHtmlEntities(pt);
+        if (pt && pt.length > 0 && pt !== 'null' && /^\d+|\*\/\d+|\*$/.test(pt)) {
+          console.log("Extracted power/toughness:", pt);
+          return pt;
+        }
+      }
     }
   }
   return undefined;

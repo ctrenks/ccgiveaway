@@ -2,12 +2,14 @@
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import AddToCartButton from "@/components/AddToCartButton";
 import { Decimal } from "@prisma/client/runtime/library";
 
 interface Product {
   id: string;
   name: string;
+  slug: string;
   image: string | null;
   price: number | string | Decimal;
   originalPrice: number | string | Decimal | null;
@@ -43,9 +45,9 @@ export default function StoreSearch({ products, creditsPerDollar, creditsEnabled
 
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products;
-    
+
     const query = searchQuery.toLowerCase();
-    return products.filter(product => 
+    return products.filter(product =>
       product.name.toLowerCase().includes(query) ||
       (product.setName && product.setName.toLowerCase().includes(query)) ||
       (product.cardType && product.cardType.toLowerCase().includes(query)) ||
@@ -113,102 +115,107 @@ export default function StoreSearch({ products, creditsPerDollar, creditsEnabled
               key={product.id}
               className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden group hover:border-purple-500/30 transition-all flex flex-col h-full"
             >
-              {/* Image */}
-              <div className="aspect-[3/4] bg-slate-800 relative overflow-hidden">
-                {product.image ? (
-                  <>
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    {/* Foil Glare Effect */}
-                    {product.isFoil && (
-                      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent opacity-30 group-hover:opacity-50 transition-opacity pointer-events-none"
-                        style={{
-                          background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.1) 25%, rgba(255,215,0,0.3) 50%, rgba(255,255,255,0.1) 75%, transparent 100%)',
-                          backgroundSize: '200% 200%',
-                          animation: 'foil-glare 3s ease-in-out infinite',
-                        }}
+              <Link href={`/store/${product.slug}`} className="flex flex-col flex-1">
+                {/* Image */}
+                <div className="aspect-[3/4] bg-slate-800 relative overflow-hidden">
+                  {product.image ? (
+                    <>
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                    )}
-                  </>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-6xl">
-                    🃏
-                  </div>
-                )}
-                
-                {/* Foil Badge */}
-                {product.isFoil && (
-                  <div className="absolute top-3 left-3 bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-900 text-xs font-bold px-2 py-1 rounded shadow-lg">
-                    ✨ FOIL
-                  </div>
-                )}
-                
-                {/* Discount Badge */}
-                {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                  <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-                    {Math.round((1 - Number(product.price) / Number(product.originalPrice)) * 100)}% OFF
-                  </div>
-                )}
-              </div>
-
-              {/* Details */}
-              <div className="p-4 flex flex-col flex-1">
-                {/* Title */}
-                <h3 className="text-white font-medium line-clamp-2 h-12 mb-2">{product.name}</h3>
-
-                {/* Set name */}
-                <p className="text-slate-500 text-sm h-5 mb-2 truncate">
-                  {product.setName || "\u00A0"}
-                </p>
-
-                {/* Tags */}
-                <div className="flex items-center gap-2 h-6 mb-3">
-                  {product.subType && (
-                    <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">
-                      {product.subType.name}
-                    </span>
+                      {/* Foil Glare Effect */}
+                      {product.isFoil && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/20 to-transparent opacity-30 group-hover:opacity-50 transition-opacity pointer-events-none"
+                          style={{
+                            background: 'linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.1) 25%, rgba(255,215,0,0.3) 50%, rgba(255,255,255,0.1) 75%, transparent 100%)',
+                            backgroundSize: '200% 200%',
+                            animation: 'foil-glare 3s ease-in-out infinite',
+                          }}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-6xl">
+                      🃏
+                    </div>
                   )}
-                  {product.condition && (
-                    <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded">
-                      {product.condition}
-                    </span>
+
+                  {/* Foil Badge */}
+                  {product.isFoil && (
+                    <div className="absolute top-3 left-3 bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-900 text-xs font-bold px-2 py-1 rounded shadow-lg">
+                      ✨ FOIL
+                    </div>
+                  )}
+
+                  {/* Discount Badge */}
+                  {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
+                    <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                      {Math.round((1 - Number(product.price) / Number(product.originalPrice)) * 100)}% OFF
+                    </div>
                   )}
                 </div>
 
-                {/* Spacer */}
-                <div className="flex-1"></div>
+                {/* Details */}
+                <div className="p-4 flex flex-col flex-1">
+                  {/* Title */}
+                  <h3 className="text-white font-medium line-clamp-2 h-12 mb-2">{product.name}</h3>
 
-                {/* Price row */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-xl font-bold text-white">
-                      ${Number(product.price).toFixed(2)}
-                    </span>
-                    {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                      <span className="text-sm text-slate-500 line-through ml-2">
-                        ${Number(product.originalPrice).toFixed(2)}
+                  {/* Set name */}
+                  <p className="text-slate-500 text-sm h-5 mb-2 truncate">
+                    {product.setName || "\u00A0"}
+                  </p>
+
+                  {/* Tags */}
+                  <div className="flex items-center gap-2 h-6 mb-3">
+                    {product.subType && (
+                      <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">
+                        {product.subType.name}
+                      </span>
+                    )}
+                    {product.condition && (
+                      <span className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded">
+                        {product.condition}
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-slate-500">
-                    {product.quantity} left
-                  </span>
-                </div>
 
-                {/* Giveaway Credits */}
-                {creditsEnabled && (
-                  <div className="flex items-center gap-1.5 mt-2 text-amber-400">
-                    <span>🎁</span>
-                    <span className="text-sm font-medium">
-                      +{getCreditsForProduct(product, creditsPerDollar, creditsEnabled)} credits
+                  {/* Spacer */}
+                  <div className="flex-1"></div>
+
+                  {/* Price row */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xl font-bold text-white">
+                        ${Number(product.price).toFixed(2)}
+                      </span>
+                      {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
+                        <span className="text-sm text-slate-500 line-through ml-2">
+                          ${Number(product.originalPrice).toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-slate-500">
+                      {product.quantity} left
                     </span>
                   </div>
-                )}
 
+                  {/* Giveaway Credits */}
+                  {creditsEnabled && (
+                    <div className="flex items-center gap-1.5 mt-2 text-amber-400">
+                      <span>🎁</span>
+                      <span className="text-sm font-medium">
+                        +{getCreditsForProduct(product, creditsPerDollar, creditsEnabled)} credits
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </Link>
+
+              {/* Add to Cart Button - Outside Link */}
+              <div className="px-4 pb-4">
                 <AddToCartButton
                   product={{
                     id: product.id,
@@ -217,7 +224,7 @@ export default function StoreSearch({ products, creditsPerDollar, creditsEnabled
                     image: product.image,
                     quantity: product.quantity,
                   }}
-                  className="w-full mt-4"
+                  className="w-full"
                 />
               </div>
             </div>
@@ -227,4 +234,3 @@ export default function StoreSearch({ products, creditsPerDollar, creditsEnabled
     </>
   );
 }
-

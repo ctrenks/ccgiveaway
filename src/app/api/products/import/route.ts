@@ -119,6 +119,10 @@ export async function POST(request: NextRequest) {
         game: previewData.game,
         imageUrl: previewData.imageUrl,
         marketPrice: 0, // Will use manualPrice
+        legality: previewData.legality,
+        artist: previewData.artist,
+        manaCost: previewData.manaCost,
+        powerToughness: previewData.powerToughness,
       };
     } 
     // Otherwise fetch from URL if provided
@@ -261,6 +265,10 @@ export async function POST(request: NextRequest) {
         setName: tcgProduct.setName || null,
         cardNumber: tcgProduct.cardNumber || null,
         cardType: tcgProduct.cardType || null,
+        legality: tcgProduct.legality || null,
+        artist: tcgProduct.artist || null,
+        manaCost: tcgProduct.manaCost || null,
+        powerToughness: tcgProduct.powerToughness || null,
         rarity: tcgProduct.rarity || null,
         image: imageUrl,
         price: ourPrice,
