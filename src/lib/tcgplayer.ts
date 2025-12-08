@@ -67,10 +67,10 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     scrapflyUrl.searchParams.set("render_js", "true");
     scrapflyUrl.searchParams.set("asp", "true"); // Anti-scraping protection bypass
     scrapflyUrl.searchParams.set("country", "us");
-    scrapflyUrl.searchParams.set("rendering_wait", "5000"); // Wait 5s for JS to load prices
-    scrapflyUrl.searchParams.set("wait_for_selector", ".near-mint-table"); // Wait for price table
+    scrapflyUrl.searchParams.set("rendering_wait", "3000"); // Wait 3s for JS (reduced from 5s)
+    // Removed wait_for_selector - can cause timeouts
 
-    console.log("Fetching via Scrapfly:", url);
+    console.log("🔄 Fetching via Scrapfly:", url);
 
     const response = await fetch(scrapflyUrl.toString(), {
       method: "GET",
@@ -89,18 +89,29 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
 
     if (data.result?.content) {
       const html = data.result.content;
-      console.log("Scrapfly returned HTML, length:", html.length);
+      console.log("✅ Scrapfly returned HTML, length:", html.length);
+
+      // Debug: Search for near-mint table
+      if (html.includes("near-mint-table")) {
+        console.log("✅ Found near-mint-table in HTML");
+      } else {
+        console.log("⚠️  near-mint-table NOT found in HTML");
+      }
 
       // Debug: Search for dollar amounts in the response
       const dollarMatches = html.match(/\$[\d,]+\.?\d*/g);
       if (dollarMatches) {
-        console.log("Dollar amounts found in HTML:", dollarMatches.slice(0, 10));
+        console.log("💰 Dollar amounts found:", dollarMatches.slice(0, 15).join(", "));
+      } else {
+        console.log("⚠️  NO dollar amounts found in HTML");
       }
 
-      // Debug: Look for price-related content
-      const priceSection = html.match(/.{0,100}price-points.{0,200}/i);
-      if (priceSection) {
-        console.log("Price section found:", priceSection[0]);
+      // Debug: Look for Normal/Foil text
+      if (html.includes("Normal") || html.includes("normal")) {
+        console.log("✅ Found 'Normal' text in HTML");
+      }
+      if (html.includes("Foil") || html.includes("foil")) {
+        console.log("✅ Found 'Foil' text in HTML");
       }
 
       return html;
@@ -155,23 +166,31 @@ function extractPricesFromHTML(html: string): { normal: number; foil: number } {
   const nearMintTableMatch = html.match(/near-mint-table[^]*?<\/table>/i);
   if (nearMintTableMatch) {
     const tableHtml = nearMintTableMatch[0];
-    console.log("✓ Found near-mint table");
+    console.log("✓ Found near-mint table, length:", tableHtml.length);
+    
+    // Show a snippet of the table for debugging
+    const tableSnippet = tableHtml.substring(0, 300).replace(/\s+/g, ' ');
+    console.log("Table snippet:", tableSnippet);
 
     // Extract Normal price
     const normalMatch = tableHtml.match(/Normal[^$]*\$([\d,]+\.?\d*)/i);
     if (normalMatch && normalMatch[1]) {
       normalPrice = parseFloat(normalMatch[1].replace(/,/g, ""));
-      console.log("✓ Normal price from table:", normalPrice);
+      console.log("✓ Normal price from table:", normalPrice, "| Match:", normalMatch[0]);
+    } else {
+      console.log("✗ Normal price pattern didn't match");
     }
 
     // Extract Foil price
     const foilMatch = tableHtml.match(/Foil[^$]*\$([\d,]+\.?\d*)/i);
     if (foilMatch && foilMatch[1]) {
       foilPrice = parseFloat(foilMatch[1].replace(/,/g, ""));
-      console.log("✓ Foil price from table:", foilPrice);
+      console.log("✓ Foil price from table:", foilPrice, "| Match:", foilMatch[0]);
+    } else {
+      console.log("✗ Foil price pattern didn't match");
     }
   } else {
-    console.log("✗ No near-mint table found");
+    console.log("✗ No near-mint table found in HTML");
   }
 
   // METHOD 2: Look for "Normal" and "Foil" labels with prices nearby
