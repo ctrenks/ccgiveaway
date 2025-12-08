@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
-  fetchTCGPlayerProduct,
+  fetchTCGPlayerProductWithPrices,
   calculateDiscountedPrice,
   type ImportSettings,
 } from "@/lib/tcgplayer";
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
         }
 
         console.log(`Syncing ${product.name} (${product.isFoil ? 'Foil' : 'Normal'})...`);
-        const tcgProduct = await fetchTCGPlayerProduct(product.tcgPlayerUrl);
+        const tcgProduct = await fetchTCGPlayerProductWithPrices(product.tcgPlayerUrl);
         if (!tcgProduct) {
           results.failed++;
           results.details.push({
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
           continue;
         }
         
-        console.log(`  Fetched price: $${tcgProduct.marketPrice}`);
+        console.log(`  Fetched prices - Normal: $${tcgProduct.marketPrice}, Foil: $${tcgProduct.foilPrice}`);
 
 
         // Use foil price if product is foil, otherwise use normal price

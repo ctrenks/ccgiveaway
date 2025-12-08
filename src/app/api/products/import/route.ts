@@ -256,6 +256,10 @@ export async function POST(request: NextRequest) {
       counter++;
     }
 
+    // Set lastPriceSync to 4 days ago so cron will update prices within an hour
+    const fourDaysAgo = new Date();
+    fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
+
     // Create the product
     const product = await prisma.product.create({
       data: {
@@ -280,7 +284,7 @@ export async function POST(request: NextRequest) {
         subTypeId: subType.id,
         tcgPlayerId: tcgProduct.productId || null,
         tcgPlayerUrl: url || null,
-        lastPriceSync: new Date(),
+        lastPriceSync: fourDaysAgo, // Set to 4 days ago so cron updates it soon
         active: true,
       },
       include: {

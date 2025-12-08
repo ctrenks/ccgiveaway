@@ -459,7 +459,8 @@ async function fetchViaHTMLScraping(url: string, parsed: { productId: string; ga
 }
 
 /**
- * Fetch product data from TCGPlayer using API (with prices)
+ * Fetch product data from TCGPlayer using API (fast, for imports)
+ * Prices are entered manually during import, then updated by cron job
  */
 export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProduct | null> {
   try {
@@ -470,33 +471,81 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
 
     console.log("Fetching TCGPlayer product via API:", parsed.productId);
 
-    // Try API first
+    // Get card data from API (fast - no Scrapfly needed for import)
     const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
-
+    
     if (apiData) {
-      // Parse API data (includes prices)
       const product = parseAPIData(apiData, url, parsed.game) as TCGPlayerProduct;
-
-      console.log("Extracted from API:", {
+      
+      console.log("Product data from API:", {
         name: product.name,
         setName: product.setName,
         cardNumber: product.cardNumber,
         cardType: product.cardType,
-        description: product.description?.substring(0, 50),
-        rarity: product.rarity,
-        artist: product.artist,
         manaCost: product.manaCost,
-        powerToughness: product.powerToughness,
+        artist: product.artist,
         marketPrice: product.marketPrice,
       });
 
       return product;
     }
 
-    // Fallback to Scrapfly/HTML if API fails
-    console.log("API failed, falling back to HTML scraping with Scrapfly...");
-    let html = await fetchWithScrapfly(url);
+    // Fallback to HTML scraping if API fails
+    console.log("API failed, falling back to HTML scraping...");
+    const html = await fetchDirect(url);
+    if (!html) {
+      throw new Error("Failed to fetch page content");
+    }
 
+    const name = extractName(html, parsed.slug);
+    const imageUrl = extractImage(html);
+    const setName = extractSetName(html, parsed.slug);
+    const cardType = extractCardType(html);
+    const description = extractDescription(html);
+
+    const product: TCGPlayerProduct = {
+      productId: parsed.productId,
+      url,
+      game: parsed.game,
+      name,
+      setName,
+      cardNumber: extractCardNumber(html),
+      cardType,
+      description,
+      rarity: extractRarity(html),
+      imageUrl,
+      marketPrice: 0,
+      foilPrice: 0,
+      listedPrice: 0,
+      legality: extractLegality(html),
+      artist: extractArtist(html),
+      manaCost: extractManaCost(html),
+      powerToughness: extractPowerToughness(html),
+    };
+
+    return product;
+  } catch (error) {
+    console.error("TCGPlayer fetch error:", error);
+    return null;
+  }
+}
+
+/**
+ * Fetch product with prices from Scrapfly (for cron price updates)
+ * Gets accurate normal/foil price separation
+ */
+export async function fetchTCGPlayerProductWithPrices(url: string): Promise<TCGPlayerProduct | null> {
+  try {
+    const parsed = parseTCGPlayerUrl(url);
+    if (!parsed) {
+      throw new Error("Invalid TCGPlayer URL");
+    }
+
+    console.log("Fetching prices from TCGPlayer (Scrapfly):", parsed.productId);
+
+    // Get prices from Scrapfly (renders JS for accurate pricing)
+    let html = await fetchWithScrapfly(url);
+    
     if (!html) {
       console.log("Scrapfly failed, trying direct fetch...");
       html = await fetchDirect(url);
@@ -506,8 +555,25 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
       throw new Error("Failed to fetch page content");
     }
 
-    // Extract from HTML (old method)
     const prices = extractPricesFromHTML(html);
+    console.log("Prices - Normal:", prices.normal, "Foil:", prices.foil);
+
+    // Get card data from API (fast)
+    const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
+    
+    if (apiData) {
+      const product = parseAPIData(apiData, url, parsed.game) as TCGPlayerProduct;
+      
+      // Override with accurate scraped prices
+      product.marketPrice = prices.normal || 0;
+      product.foilPrice = prices.foil || 0;
+      product.listedPrice = prices.normal || 0;
+      
+      console.log("Combined data - Normal: $" + product.marketPrice + ", Foil: $" + product.foilPrice);
+      return product;
+    }
+
+    // Fallback to pure HTML scraping
     const name = extractName(html, parsed.slug);
     const imageUrl = extractImage(html);
     const setName = extractSetName(html, parsed.slug);
