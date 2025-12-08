@@ -349,9 +349,14 @@ function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlaye
     powerToughness = `${attrs.power || '*'}/${attrs.toughness || '*'}`;
   }
 
+  // Combine card name and set name for better display
+  const cardName = apiData.productName || '';
+  const setName = apiData.setName || '';
+  const fullName = setName ? `${cardName} - ${setName}` : cardName;
+  
   return {
     productId: apiData.productId?.toString() || '',
-    name: apiData.productName || '',
+    name: fullName,
     setName: apiData.setName || '',
     cardNumber: attrs.number || formatted['#'] || undefined,
     cardType: attrs.fullType || formatted['Card Type'] || undefined,
