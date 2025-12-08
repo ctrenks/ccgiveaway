@@ -67,12 +67,10 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     scrapflyUrl.searchParams.set("render_js", "true");
     scrapflyUrl.searchParams.set("asp", "true"); // Anti-scraping protection bypass
     scrapflyUrl.searchParams.set("country", "us");
-    scrapflyUrl.searchParams.set("rendering_wait", "15000"); // Wait 15s for full JS rendering
-    scrapflyUrl.searchParams.set("auto_scroll", "true"); // Auto-scroll to trigger lazy loading
-    scrapflyUrl.searchParams.set("session", "1"); // Use session to maintain state
-    scrapflyUrl.searchParams.set("cache", "false"); // Don't use cached version
+    scrapflyUrl.searchParams.set("rendering_wait", "1000"); // Wait 1s for JS to load prices
+    scrapflyUrl.searchParams.set("wait_for_selector", ".price-points__upper__price"); // Wait for price element
 
-    console.log("🔄 Fetching via Scrapfly (15s wait + auto-scroll):", url);
+    console.log("🔄 Fetching via Scrapfly:", url);
 
     const response = await fetch(scrapflyUrl.toString(), {
       method: "GET",
