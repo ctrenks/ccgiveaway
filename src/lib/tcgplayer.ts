@@ -67,8 +67,8 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     scrapflyUrl.searchParams.set("render_js", "true");
     scrapflyUrl.searchParams.set("asp", "true"); // Anti-scraping protection bypass
     scrapflyUrl.searchParams.set("country", "us");
-    scrapflyUrl.searchParams.set("rendering_wait", "1000"); // Wait 1s for JS to load prices
-    scrapflyUrl.searchParams.set("wait_for_selector", ".price-points__upper__price"); // Wait for price element
+    scrapflyUrl.searchParams.set("rendering_wait", "5000"); // Wait 5s for JS to load prices
+    scrapflyUrl.searchParams.set("wait_for_selector", ".near-mint-table__price"); // Wait for price table
 
     console.log("🔄 Fetching via Scrapfly:", url);
 
