@@ -67,8 +67,8 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     scrapflyUrl.searchParams.set("render_js", "true");
     scrapflyUrl.searchParams.set("asp", "true"); // Anti-scraping protection bypass
     scrapflyUrl.searchParams.set("country", "us");
-    scrapflyUrl.searchParams.set("rendering_wait", "1000"); // Wait 1s for JS to load prices
-    scrapflyUrl.searchParams.set("wait_for_selector", ".price-points__upper__price"); // Wait for price element
+    scrapflyUrl.searchParams.set("rendering_wait", "3000"); // Wait 3s for JS to load prices (increased)
+    // Removed wait_for_selector as it might be blocking if element name changed
 
     console.log("Fetching via Scrapfly:", url);
 
@@ -148,38 +148,60 @@ function extractPricesFromHTML(html: string): { normal: number; foil: number } {
   let normalPrice = 0;
   let foilPrice = 0;
 
-  // First try to find the near-mint table with both prices
-  // <section data-v-6d035c54="" class="near-mint__container">
-  //   <table data-v-8422f827="" data-v-6d035c54="" class="near-mint-table">
-  //     <tr><td><span>Normal:</span></td><td><span class="near-mint-table__price">$23.93</span></td>
-  //         <td><span>Foil:</span></td><td><span class="near-mint-table__price">$26.90</span></td></tr>
-  //   </table>
-  // </section>
+  console.log("=== Extracting Prices from HTML ===");
+  console.log("HTML length:", html.length);
 
+  // METHOD 1: Try to find the near-mint table with both prices
   const nearMintTableMatch = html.match(/near-mint-table[^]*?<\/table>/i);
   if (nearMintTableMatch) {
     const tableHtml = nearMintTableMatch[0];
-    console.log("Found near-mint table:", tableHtml.slice(0, 300));
+    console.log("✓ Found near-mint table");
 
     // Extract Normal price
     const normalMatch = tableHtml.match(/Normal[^$]*\$([\d,]+\.?\d*)/i);
     if (normalMatch && normalMatch[1]) {
       normalPrice = parseFloat(normalMatch[1].replace(/,/g, ""));
-      console.log("Found Normal price:", normalPrice);
+      console.log("✓ Normal price from table:", normalPrice);
     }
 
     // Extract Foil price
     const foilMatch = tableHtml.match(/Foil[^$]*\$([\d,]+\.?\d*)/i);
     if (foilMatch && foilMatch[1]) {
       foilPrice = parseFloat(foilMatch[1].replace(/,/g, ""));
-      console.log("Found Foil price:", foilPrice);
+      console.log("✓ Foil price from table:", foilPrice);
+    }
+  } else {
+    console.log("✗ No near-mint table found");
+  }
+
+  // METHOD 2: Look for "Normal" and "Foil" labels with prices nearby
+  if (normalPrice === 0) {
+    const normalSection = html.match(/Normal[^$]{0,100}\$([\d,]+\.?\d*)/i);
+    if (normalSection && normalSection[1]) {
+      normalPrice = parseFloat(normalSection[1].replace(/,/g, ""));
+      console.log("✓ Normal price from label:", normalPrice);
     }
   }
 
-  // If we didn't find prices in the table, fall back to old method (gets one price)
-  if (normalPrice === 0) {
-    normalPrice = extractSinglePrice(html);
+  if (foilPrice === 0) {
+    const foilSection = html.match(/Foil[^$]{0,100}\$([\d,]+\.?\d*)/i);
+    if (foilSection && foilSection[1]) {
+      foilPrice = parseFloat(foilSection[1].replace(/,/g, ""));
+      console.log("✓ Foil price from label:", foilPrice);
+    }
   }
+
+  // METHOD 3: If we still don't have normal price, fall back to Market Price
+  if (normalPrice === 0) {
+    console.log("Falling back to single price extraction...");
+    normalPrice = extractSinglePrice(html);
+    if (normalPrice > 0) {
+      console.log("✓ Market price (as normal):", normalPrice);
+    }
+  }
+
+  console.log("=== Final Prices ===");
+  console.log("Normal:", normalPrice, "| Foil:", foilPrice);
 
   return { normal: normalPrice, foil: foilPrice };
 }
@@ -553,6 +575,19 @@ export async function fetchTCGPlayerProductWithPrices(url: string): Promise<TCGP
 
     if (!html) {
       throw new Error("Failed to fetch page content");
+    }
+
+    console.log("HTML fetched successfully, length:", html.length);
+    
+    // Save HTML to debug if needed (only in development)
+    if (process.env.NODE_ENV === "development") {
+      try {
+        const fs = require("fs");
+        fs.writeFileSync("debug-tcgplayer.html", html);
+        console.log("✓ Saved HTML to debug-tcgplayer.html");
+      } catch (e) {
+        // Ignore write errors
+      }
     }
 
     // Extract prices from HTML
