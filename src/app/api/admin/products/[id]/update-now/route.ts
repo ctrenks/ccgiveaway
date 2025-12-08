@@ -57,8 +57,8 @@ export async function POST(
 
     // Calculate new price based on foil status
     const originalPrice = product.isFoil
-      ? tcgProduct.foilPrice || tcgProduct.marketPrice
-      : tcgProduct.marketPrice || tcgProduct.foilPrice;
+      ? (tcgProduct.foilPrice || tcgProduct.marketPrice || 0)
+      : (tcgProduct.marketPrice || tcgProduct.foilPrice || 0);
 
     const newPrice = originalPrice > 0 
       ? calculateDiscountedPrice(originalPrice, discountSettings)
