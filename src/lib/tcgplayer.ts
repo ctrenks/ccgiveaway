@@ -67,10 +67,12 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     scrapflyUrl.searchParams.set("render_js", "true");
     scrapflyUrl.searchParams.set("asp", "true"); // Anti-scraping protection bypass
     scrapflyUrl.searchParams.set("country", "us");
-    scrapflyUrl.searchParams.set("rendering_wait", "3000"); // Wait 3s for JS (reduced from 5s)
-    // Removed wait_for_selector - can cause timeouts
+    scrapflyUrl.searchParams.set("rendering_wait", "15000"); // Wait 15s for full JS rendering
+    scrapflyUrl.searchParams.set("auto_scroll", "true"); // Auto-scroll to trigger lazy loading
+    scrapflyUrl.searchParams.set("session", "1"); // Use session to maintain state
+    scrapflyUrl.searchParams.set("cache", "false"); // Don't use cached version
 
-    console.log("🔄 Fetching via Scrapfly:", url);
+    console.log("🔄 Fetching via Scrapfly (15s wait + auto-scroll):", url);
 
     const response = await fetch(scrapflyUrl.toString(), {
       method: "GET",
