@@ -14,6 +14,11 @@ interface PreviewData {
     imageUrl?: string;
     game: string;
     productId?: string;
+    // New fields
+    legality?: string;
+    artist?: string;
+    manaCost?: string;
+    powerToughness?: string;
   };
   priceInfo: {
     tcgPlayerPrice: number;
@@ -130,6 +135,10 @@ export default function ImportProduct() {
             rarity: preview.product.rarity,
             imageUrl: preview.product.imageUrl,
             game: preview.product.game,
+            legality: preview.product.legality,
+            artist: preview.product.artist,
+            manaCost: preview.product.manaCost,
+            powerToughness: preview.product.powerToughness,
           } : undefined,
         }),
       });
@@ -240,13 +249,43 @@ export default function ImportProduct() {
                 {preview.product.setName && (
                   <div>
                     <div className="text-slate-500 text-sm">Set</div>
-                    <div className="text-white">{preview.product.setName}</div>
+                    <div className="text-white">{preview.product.setName} {preview.product.cardNumber && <span className="text-slate-500">#{preview.product.cardNumber}</span>}</div>
+                  </div>
+                )}
+                {preview.product.cardType && (
+                  <div>
+                    <div className="text-slate-500 text-sm">Type</div>
+                    <div className="text-white">{preview.product.cardType}</div>
+                  </div>
+                )}
+                {preview.product.manaCost && (
+                  <div>
+                    <div className="text-slate-500 text-sm">Mana Cost</div>
+                    <div className="text-white font-mono">{preview.product.manaCost}</div>
+                  </div>
+                )}
+                {preview.product.powerToughness && (
+                  <div>
+                    <div className="text-slate-500 text-sm">P/T</div>
+                    <div className="text-white font-bold">{preview.product.powerToughness}</div>
                   </div>
                 )}
                 {preview.product.rarity && (
                   <div>
                     <div className="text-slate-500 text-sm">Rarity</div>
                     <div className="text-white">{preview.product.rarity}</div>
+                  </div>
+                )}
+                {preview.product.artist && (
+                  <div>
+                    <div className="text-slate-500 text-sm">Artist</div>
+                    <div className="text-white">{preview.product.artist}</div>
+                  </div>
+                )}
+                {preview.product.legality && (
+                  <div>
+                    <div className="text-slate-500 text-sm">Legal In</div>
+                    <div className="text-white text-xs">{preview.product.legality}</div>
                   </div>
                 )}
                 <div>

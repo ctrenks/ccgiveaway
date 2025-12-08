@@ -1,19 +1,21 @@
 /**
- * Script to update existing cards with improved name extraction and cardType
+ * Script to update existing cards with all data fields (no pricing)
  * Run with: npx tsx scripts/update-card-data.ts
+ * 
+ * Updates: name, cardNumber, cardType, description, legality, artist, manaCost, powerToughness
  */
 
 import { PrismaClient } from "@prisma/client";
-import { fetchTCGPlayerProduct } from "../src/lib/tcgplayer";
+import { fetchTCGPlayerProductData } from "../src/lib/tcgplayer";
 
 const prisma = new PrismaClient();
 
 async function updateCardData() {
-  console.log("Starting card data update...\n");
+  console.log("Starting card data update (all fields except pricing)...\n");
 
   try {
     // Get all products that have a TCGPlayer URL
-    const allProducts = await prisma.product.findMany({
+    const products = await prisma.product.findMany({
       where: {
         tcgPlayerUrl: {
           not: null,
@@ -23,20 +25,18 @@ async function updateCardData() {
         id: true,
         name: true,
         tcgPlayerUrl: true,
+        cardNumber: true,
         cardType: true,
         description: true,
+        legality: true,
+        artist: true,
+        manaCost: true,
+        powerToughness: true,
       },
     });
 
-    // Filter for names less than 25 characters OR missing cardType
-    const products = allProducts.filter(
-      (p) => p.name.length < 25 || !p.cardType
-    );
-
-    console.log(`Found ${allProducts.length} total products with TCGPlayer URLs`);
-    console.log(`Filtered to ${products.length} products that need updating:`);
-    console.log(`  - ${allProducts.filter(p => p.name.length < 25).length} with name < 25 characters`);
-    console.log(`  - ${allProducts.filter(p => !p.cardType).length} missing cardType\n`);
+    console.log(`Found ${products.length} total products with TCGPlayer URLs`);
+    console.log(`Will update all data fields (name, cardNumber, cardType, description, legality, artist, manaCost, powerToughness)\n`);
 
     let updated = 0;
     let skipped = 0;
@@ -44,7 +44,7 @@ async function updateCardData() {
 
     for (let i = 0; i < products.length; i++) {
       const product = products[i];
-      console.log(`[${i + 1}/${products.length}] Processing: ${product.name} (${product.name.length} chars)`);
+      console.log(`[${i + 1}/${products.length}] Processing: ${product.name}`);
 
       if (!product.tcgPlayerUrl) {
         console.log("  ⚠️  No URL, skipping\n");
@@ -53,9 +53,9 @@ async function updateCardData() {
       }
 
       try {
-        // Fetch updated data from TCGPlayer
-        console.log(`  🔍 Fetching from TCGPlayer...`);
-        const tcgData = await fetchTCGPlayerProduct(product.tcgPlayerUrl);
+        // Fetch updated data from TCGPlayer (direct fetch, no Scrapfly)
+        console.log(`  🔍 Fetching from TCGPlayer (direct)...`);
+        const tcgData = await fetchTCGPlayerProductData(product.tcgPlayerUrl);
 
         if (!tcgData) {
           console.log("  ❌ Failed to fetch data\n");
@@ -66,26 +66,62 @@ async function updateCardData() {
         // Prepare update data
         const updateData: any = {};
         let hasUpdates = false;
+        const changes: string[] = [];
 
         // Check if name changed (improved extraction)
         if (tcgData.name && tcgData.name !== product.name) {
           updateData.name = tcgData.name;
           hasUpdates = true;
-          console.log(`  📝 Name: "${product.name}" → "${tcgData.name}"`);
+          changes.push(`📝 Name: "${product.name}" → "${tcgData.name}"`);
         }
 
-        // Check if cardType is missing or different
+        // Check if cardNumber changed or is missing
+        if (tcgData.cardNumber && tcgData.cardNumber !== product.cardNumber) {
+          updateData.cardNumber = tcgData.cardNumber;
+          hasUpdates = true;
+          changes.push(`#️⃣ Card Number: "${product.cardNumber || 'null'}" → "${tcgData.cardNumber}"`);
+        }
+
+        // Check if cardType changed or is missing
         if (tcgData.cardType && tcgData.cardType !== product.cardType) {
           updateData.cardType = tcgData.cardType;
           hasUpdates = true;
-          console.log(`  🃏 Card Type: "${product.cardType || 'null'}" → "${tcgData.cardType}"`);
+          changes.push(`🃏 Card Type: "${product.cardType || 'null'}" → "${tcgData.cardType}"`);
         }
 
-        // Check if description is missing
-        if (tcgData.description && !product.description) {
+        // Check if description is missing or different
+        if (tcgData.description && tcgData.description !== product.description) {
           updateData.description = tcgData.description;
           hasUpdates = true;
-          console.log(`  📄 Description: Added (${tcgData.description.substring(0, 50)}...)`);
+          changes.push(`📄 Description: ${product.description ? 'Updated' : 'Added'} (${tcgData.description.substring(0, 40)}...)`);
+        }
+
+        // Check if legality is missing or different
+        if (tcgData.legality && tcgData.legality !== product.legality) {
+          updateData.legality = tcgData.legality;
+          hasUpdates = true;
+          changes.push(`⚖️ Legality: "${product.legality || 'null'}" → "${tcgData.legality}"`);
+        }
+
+        // Check if artist is missing or different
+        if (tcgData.artist && tcgData.artist !== product.artist) {
+          updateData.artist = tcgData.artist;
+          hasUpdates = true;
+          changes.push(`🎨 Artist: "${product.artist || 'null'}" → "${tcgData.artist}"`);
+        }
+
+        // Check if manaCost is missing or different
+        if (tcgData.manaCost && tcgData.manaCost !== product.manaCost) {
+          updateData.manaCost = tcgData.manaCost;
+          hasUpdates = true;
+          changes.push(`💎 Mana Cost: "${product.manaCost || 'null'}" → "${tcgData.manaCost}"`);
+        }
+
+        // Check if powerToughness is missing or different
+        if (tcgData.powerToughness && tcgData.powerToughness !== product.powerToughness) {
+          updateData.powerToughness = tcgData.powerToughness;
+          hasUpdates = true;
+          changes.push(`💪 P/T: "${product.powerToughness || 'null'}" → "${tcgData.powerToughness}"`);
         }
 
         // Update if there are changes
@@ -94,6 +130,7 @@ async function updateCardData() {
             where: { id: product.id },
             data: updateData,
           });
+          changes.forEach(change => console.log(`  ${change}`));
           console.log("  ✅ Updated\n");
           updated++;
         } else {
@@ -101,9 +138,9 @@ async function updateCardData() {
           skipped++;
         }
 
-        // Rate limiting - wait 2 seconds between requests
+        // Rate limiting - wait 1.5 seconds between requests (direct fetch is faster)
         if (i < products.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 1500));
         }
       } catch (error) {
         console.log(`  ❌ Error: ${error instanceof Error ? error.message : "Unknown error"}\n`);
@@ -111,14 +148,15 @@ async function updateCardData() {
       }
     }
 
-    console.log("\n" + "=".repeat(50));
-    console.log("Update complete!");
-    console.log("=".repeat(50));
-    console.log(`✅ Updated: ${updated}`);
-    console.log(`⏭️  Skipped: ${skipped}`);
-    console.log(`❌ Failed: ${failed}`);
-    console.log(`📊 Total processed: ${products.length}`);
-    console.log(`📊 Total in database: ${allProducts.length}`);
+    console.log("\n" + "=".repeat(60));
+    console.log("Card Data Update Complete!");
+    console.log("=".repeat(60));
+    console.log(`✅ Updated: ${updated} cards`);
+    console.log(`⏭️  Skipped (no changes): ${skipped} cards`);
+    console.log(`❌ Failed: ${failed} cards`);
+    console.log(`📊 Total processed: ${products.length} cards`);
+    console.log("\nFields updated: name, cardNumber, cardType, description,");
+    console.log("                legality, artist, manaCost, powerToughness");
   } catch (error) {
     console.error("Fatal error:", error);
     process.exit(1);

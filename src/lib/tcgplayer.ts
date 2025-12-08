@@ -264,6 +264,78 @@ function extractSinglePrice(html: string): number {
 }
 
 /**
+ * Fetch product data only (no prices) from TCGPlayer using direct fetch
+ * Faster and doesn't require Scrapfly - use for updating card data
+ */
+export async function fetchTCGPlayerProductData(url: string): Promise<Omit<TCGPlayerProduct, 'marketPrice' | 'foilPrice' | 'listedPrice'> | null> {
+  try {
+    const parsed = parseTCGPlayerUrl(url);
+    if (!parsed) {
+      throw new Error("Invalid TCGPlayer URL");
+    }
+
+    console.log("Fetching TCGPlayer product data (direct):", parsed.productId);
+
+    // Use direct fetch (no JavaScript rendering needed for static data)
+    const html = await fetchDirect(url);
+
+    if (!html) {
+      throw new Error("Failed to fetch page content");
+    }
+
+    console.log("HTML length:", html.length);
+
+    // Extract data from HTML (no prices)
+    const name = extractName(html, parsed.slug);
+    const imageUrl = extractImage(html);
+    const setName = extractSetName(html, parsed.slug);
+    const cardType = extractCardType(html);
+    const description = extractDescription(html);
+    const cardNumber = extractCardNumber(html);
+    const rarity = extractRarity(html);
+    const legality = extractLegality(html);
+    const artist = extractArtist(html);
+    const manaCost = extractManaCost(html);
+    const powerToughness = extractPowerToughness(html);
+
+    console.log("Extracted:", { 
+      name, 
+      setName, 
+      cardNumber,
+      cardType: cardType?.substring(0, 50), 
+      description: description?.substring(0, 50),
+      rarity,
+      legality: legality?.substring(0, 50),
+      artist,
+      manaCost,
+      powerToughness,
+    });
+
+    const product = {
+      productId: parsed.productId,
+      url,
+      game: parsed.game,
+      name,
+      setName,
+      cardNumber,
+      cardType,
+      description,
+      rarity,
+      imageUrl,
+      legality,
+      artist,
+      manaCost,
+      powerToughness,
+    };
+
+    return product;
+  } catch (error) {
+    console.error("TCGPlayer fetch error:", error);
+    return null;
+  }
+}
+
+/**
  * Fetch product data from TCGPlayer using Scrapfly
  */
 export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProduct | null> {
