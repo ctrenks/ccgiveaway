@@ -6,10 +6,14 @@ import {
   type ImportSettings,
 } from "@/lib/tcgplayer";
 
-// Vercel Cron - runs every hour, but only syncs products older than 3 days
+// Vercel Cron - runs every hour, syncs products older than 3 days
+// Uses TCGPlayer public API (fast!) with Scrapfly fallback
+// Processes 50 products per run with smart failsafes
 // Add to vercel.json: { "crons": [{ "path": "/api/cron/sync-prices", "schedule": "0 * * * *" }] }
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
     // Verify cron secret (set CRON_SECRET in Vercel env)
     const authHeader = request.headers.get("authorization");
@@ -46,7 +50,7 @@ export async function GET(request: NextRequest) {
           { lastPriceSync: { lt: cutoffDate } },
         ],
       },
-      take: 20, // Process in batches to avoid timeout (runs hourly now)
+      take: 50, // Increased from 20 - API is much faster than Scrapfly
     });
 
     const results = {
@@ -65,6 +69,7 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
+        console.log(`Syncing ${product.name} (${product.isFoil ? 'Foil' : 'Normal'})...`);
         const tcgProduct = await fetchTCGPlayerProduct(product.tcgPlayerUrl);
         if (!tcgProduct) {
           results.failed++;
@@ -75,6 +80,9 @@ export async function GET(request: NextRequest) {
           });
           continue;
         }
+        
+        console.log(`  Fetched price: $${tcgProduct.marketPrice}`);
+
 
         // Use foil price if product is foil, otherwise use normal price
         const originalPrice = product.isFoil 
@@ -159,8 +167,10 @@ export async function GET(request: NextRequest) {
           reason: priceChangePercent > 0 ? `${priceChangePercent.toFixed(1)}% change` : "no change",
         });
 
-        // Small delay to avoid rate limiting
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        console.log(`  ✓ Updated: $${oldPrice} → $${newPrice}`);
+
+        // Small delay to avoid rate limiting (reduced from 500ms - API is fast!)
+        await new Promise((resolve) => setTimeout(resolve, 100));
       } catch (error) {
         console.error(`Failed to sync product ${product.id}:`, error);
         results.failed++;
@@ -173,7 +183,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Log the sync
-    console.log(`Price sync completed: ${results.updated} updated, ${results.requiresReview} require review, ${results.failed} failed, ${results.skipped} skipped`);
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`Price sync completed in ${duration}s: ${results.updated} updated, ${results.requiresReview} require review, ${results.failed} failed, ${results.skipped} skipped`);
+    console.log(`  Using TCGPlayer API - ${results.total} products processed in ${duration}s (~${(parseFloat(duration) / Math.max(results.total, 1)).toFixed(2)}s per product)`);
 
     // Log items requiring review for admin attention
     if (results.requiresReview > 0) {
@@ -183,8 +195,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Synced ${results.updated} products${results.requiresReview > 0 ? `, ${results.requiresReview} require review` : ''}`,
+      message: `Synced ${results.updated} products in ${duration}s${results.requiresReview > 0 ? `, ${results.requiresReview} require review` : ''}`,
       results,
+      duration: `${duration}s`,
     });
   } catch (error) {
     console.error("Cron sync error:", error);
