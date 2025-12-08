@@ -94,6 +94,13 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
       // Debug: Search for near-mint table
       if (html.includes("near-mint-table")) {
         console.log("✅ Found near-mint-table in HTML");
+        
+        // Extract and show the full table
+        const tableMatch = html.match(/near-mint-table[^]*?<\/table>/i);
+        if (tableMatch) {
+          console.log("📊 Full table HTML:");
+          console.log(tableMatch[0].substring(0, 500));
+        }
       } else {
         console.log("⚠️  near-mint-table NOT found in HTML");
       }
@@ -112,6 +119,13 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
       }
       if (html.includes("Foil") || html.includes("foil")) {
         console.log("✅ Found 'Foil' text in HTML");
+      }
+
+      // Debug: Show a snippet around "Normal" if it exists
+      const normalIndex = html.indexOf("Normal");
+      if (normalIndex > -1) {
+        const snippet = html.substring(normalIndex, normalIndex + 200);
+        console.log("📝 Snippet around 'Normal':", snippet.replace(/\s+/g, ' '));
       }
 
       return html;
