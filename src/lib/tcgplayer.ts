@@ -155,19 +155,19 @@ function extractPricesFromHTML(html: string): { normal: number; foil: number } {
   //         <td><span>Foil:</span></td><td><span class="near-mint-table__price">$26.90</span></td></tr>
   //   </table>
   // </section>
-  
+
   const nearMintTableMatch = html.match(/near-mint-table[^]*?<\/table>/i);
   if (nearMintTableMatch) {
     const tableHtml = nearMintTableMatch[0];
     console.log("Found near-mint table:", tableHtml.slice(0, 300));
-    
+
     // Extract Normal price
     const normalMatch = tableHtml.match(/Normal[^$]*\$([\d,]+\.?\d*)/i);
     if (normalMatch && normalMatch[1]) {
       normalPrice = parseFloat(normalMatch[1].replace(/,/g, ""));
       console.log("Found Normal price:", normalPrice);
     }
-    
+
     // Extract Foil price
     const foilMatch = tableHtml.match(/Foil[^$]*\$([\d,]+\.?\d*)/i);
     if (foilMatch && foilMatch[1]) {
@@ -271,7 +271,7 @@ async function fetchFromTCGPlayerAPI(productId: string): Promise<any | null> {
   try {
     const apiUrl = `https://mp-search-api.tcgplayer.com/v1/product/${productId}/details`;
     console.log("Fetching from TCGPlayer API:", apiUrl);
-    
+
     const response = await fetch(apiUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -299,13 +299,13 @@ async function fetchFromTCGPlayerAPI(productId: string): Promise<any | null> {
 function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlayerProduct> {
   const attrs = apiData.customAttributes || {};
   const formatted = apiData.formattedAttributes || {};
-  
+
   // Parse mana cost from convertedCost and color
-  let manaCost = undefined;
+  let manaCost: string | undefined = undefined;
   if (attrs.convertedCost) {
     const cmc = parseInt(attrs.convertedCost);
     const colors = attrs.color || [];
-    
+
     // If we have colors, construct mana cost
     if (colors.length > 0) {
       const colorSymbols: Record<string, string> = {
@@ -317,7 +317,7 @@ function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlaye
         'Colorless': 'C',
       };
       const symbols = colors.map((c: string) => colorSymbols[c] || '').filter(Boolean);
-      
+
       if (symbols.length > 0) {
         const generic = Math.max(0, cmc - symbols.length);
         manaCost = '';
@@ -336,21 +336,21 @@ function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlaye
       manaCost = '{0}';
     }
   }
-  
+
   // Parse legality from formats (if available)
-  let legality = undefined;
+  let legality: string | undefined = undefined;
   if (attrs.formats && Array.isArray(attrs.formats) && attrs.formats.length > 0) {
     legality = attrs.formats.join(', ');
   }
-  
+
   // Parse power/toughness
-  let powerToughness = undefined;
+  let powerToughness: string | undefined = undefined;
   if (attrs.power !== null && attrs.toughness !== null) {
     powerToughness = `${attrs.power}/${attrs.toughness}`;
   } else if (attrs.power === '*' || attrs.toughness === '*') {
     powerToughness = `${attrs.power || '*'}/${attrs.toughness || '*'}`;
   }
-  
+
   return {
     productId: apiData.productId?.toString() || '',
     name: apiData.productName || '',
@@ -387,7 +387,7 @@ export async function fetchTCGPlayerProductData(url: string): Promise<Omit<TCGPl
 
     // Use TCGPlayer API
     const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
-    
+
     if (!apiData) {
       console.log("API fetch failed, falling back to HTML scraping...");
       // Fallback to HTML scraping if API fails
@@ -396,7 +396,7 @@ export async function fetchTCGPlayerProductData(url: string): Promise<Omit<TCGPl
 
     // Parse API data
     const product = parseAPIData(apiData, url, parsed.game);
-    
+
     console.log("Extracted from API:", {
       name: product.name,
       setName: product.setName,
@@ -469,11 +469,11 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
 
     // Try API first
     const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
-    
+
     if (apiData) {
       // Parse API data (includes prices)
       const product = parseAPIData(apiData, url, parsed.game) as TCGPlayerProduct;
-      
+
       console.log("Extracted from API:", {
         name: product.name,
         setName: product.setName,
@@ -795,7 +795,7 @@ function extractCardType(html: string): string | undefined {
   // "Card Type: Land — Mountain Forest Plains"
   // "Card Type:</span><span>Instant</span>"
   // "Type: Creature — Human Soldier"
-  
+
   const patterns = [
     /Card Type:\s*<\/[^>]+>\s*<[^>]+>([^<]+)</i,
     /Card Type:\s*([^\n<]+)/i,
@@ -827,7 +827,7 @@ function extractDescription(html: string): string | undefined {
   // "Card Text:</span><span>Enter the battlefield tapped...</span>"
   // "Card Text: Tap: Add R, G, or W."
   // Meta description tag
-  
+
   const patterns = [
     /Card Text:\s*<\/[^>]+>\s*<[^>]+>([^<]+)</i,
     /Card Text:\s*([^\n<]+(?:<br[^>]*>[^\n<]+)*)/i,
@@ -849,10 +849,10 @@ function extractDescription(html: string): string | undefined {
         .replace(/<br\s*\/?>/gi, '\n')
         .replace(/\s+/g, ' ')
         .trim();
-      
+
       // Filter out generic TCGPlayer descriptions
-      if (description && 
-          description.length > 5 && 
+      if (description &&
+          description.length > 5 &&
           !description.includes('TCGplayer') &&
           !description.includes('Buy and sell') &&
           description !== 'null') {
