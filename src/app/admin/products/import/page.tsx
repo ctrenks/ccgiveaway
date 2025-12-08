@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import ManaSymbols from "@/components/ManaSymbols";
 
 interface PreviewData {
   product: {
@@ -261,7 +262,9 @@ export default function ImportProduct() {
                 {preview.product.manaCost && (
                   <div>
                     <div className="text-slate-500 text-sm">Mana Cost</div>
-                    <div className="text-white font-mono">{preview.product.manaCost}</div>
+                    <div className="mt-1">
+                      <ManaSymbols manaCost={preview.product.manaCost} size="md" />
+                    </div>
                   </div>
                 )}
                 {preview.product.powerToughness && (

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import AddToCartButton from "@/components/AddToCartButton";
+import ManaSymbols from "@/components/ManaSymbols";
 import { auth } from "@/lib/auth";
 
 interface ProductPageProps {
@@ -279,7 +280,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 {product.setName && (
                   <p className="text-lg text-slate-400 mb-4">
                     <span className="text-purple-400">Set:</span> {product.setName}
-                    {product.cardNumber && <span className="ml-2 text-slate-500">#{product.cardNumber}</span>}
                   </p>
                 )}
 
@@ -303,6 +303,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 space-y-4">
                 <h2 className="text-xl font-semibold text-white mb-4">Card Details</h2>
 
+                {product.cardNumber && (
+                  <div>
+                    <span className="text-slate-400 text-sm">Card Number:</span>
+                    <p className="text-white font-semibold">#{product.cardNumber}</p>
+                  </div>
+                )}
+
                 {product.cardType && (
                   <div>
                     <span className="text-slate-400 text-sm">Type:</span>
@@ -313,7 +320,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 {product.manaCost && (
                   <div>
                     <span className="text-slate-400 text-sm">Mana Cost:</span>
-                    <p className="text-white font-mono text-lg">{product.manaCost}</p>
+                    <div className="mt-1">
+                      <ManaSymbols manaCost={product.manaCost} size="lg" />
+                    </div>
                   </div>
                 )}
 
