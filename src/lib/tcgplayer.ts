@@ -532,7 +532,7 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
 
 /**
  * Fetch product with prices from Scrapfly (for cron price updates)
- * Gets accurate normal/foil price separation
+ * Gets accurate normal/foil price separation PLUS all card data
  */
 export async function fetchTCGPlayerProductWithPrices(url: string): Promise<TCGPlayerProduct | null> {
   try {
@@ -541,9 +541,9 @@ export async function fetchTCGPlayerProductWithPrices(url: string): Promise<TCGP
       throw new Error("Invalid TCGPlayer URL");
     }
 
-    console.log("Fetching prices from TCGPlayer (Scrapfly):", parsed.productId);
+    console.log("Fetching full data from TCGPlayer (Scrapfly):", parsed.productId);
 
-    // Get prices from Scrapfly (renders JS for accurate pricing)
+    // Get prices AND all data from Scrapfly (renders JS for accurate pricing)
     let html = await fetchWithScrapfly(url);
     
     if (!html) {
@@ -555,10 +555,11 @@ export async function fetchTCGPlayerProductWithPrices(url: string): Promise<TCGP
       throw new Error("Failed to fetch page content");
     }
 
+    // Extract prices from HTML
     const prices = extractPricesFromHTML(html);
     console.log("Prices - Normal:", prices.normal, "Foil:", prices.foil);
 
-    // Get card data from API (fast)
+    // Get card data from API (fast and reliable)
     const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
     
     if (apiData) {
@@ -569,11 +570,27 @@ export async function fetchTCGPlayerProductWithPrices(url: string): Promise<TCGP
       product.foilPrice = prices.foil || 0;
       product.listedPrice = prices.normal || 0;
       
-      console.log("Combined data - Normal: $" + product.marketPrice + ", Foil: $" + product.foilPrice);
+      // Also extract legality and other data from HTML (more complete)
+      const htmlLegality = extractLegality(html);
+      const htmlManaCost = extractManaCost(html);
+      
+      // Prefer HTML data if more complete
+      if (htmlLegality) product.legality = htmlLegality;
+      if (htmlManaCost && !product.manaCost) product.manaCost = htmlManaCost;
+      
+      console.log("Combined data:", {
+        name: product.name,
+        normalPrice: product.marketPrice,
+        foilPrice: product.foilPrice,
+        manaCost: product.manaCost,
+        legality: product.legality,
+      });
+      
       return product;
     }
 
     // Fallback to pure HTML scraping
+    console.log("API failed, using HTML scraping only...");
     const name = extractName(html, parsed.slug);
     const imageUrl = extractImage(html);
     const setName = extractSetName(html, parsed.slug);

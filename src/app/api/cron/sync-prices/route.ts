@@ -146,13 +146,22 @@ export async function GET(request: NextRequest) {
         }
 
         // Safe to update - price change is less than 10%
+        // Also update all card data fields while we're at it
         await prisma.product.update({
           where: { id: product.id },
           data: {
             originalPrice: originalPrice,
             price: newPrice,
             lastPriceSync: new Date(),
-            // Optionally update image if it changed
+            // Update all card data fields (since we have Scrapfly data)
+            cardNumber: tcgProduct.cardNumber || product.cardNumber,
+            cardType: tcgProduct.cardType || product.cardType,
+            description: tcgProduct.description || product.description,
+            legality: tcgProduct.legality || product.legality,
+            artist: tcgProduct.artist || product.artist,
+            manaCost: tcgProduct.manaCost || product.manaCost,
+            powerToughness: tcgProduct.powerToughness || product.powerToughness,
+            rarity: tcgProduct.rarity || product.rarity,
             image: tcgProduct.imageUrl || product.image,
           },
         });

@@ -15,6 +15,7 @@ interface Product {
   quantity: number;
   active: boolean;
   isFoil: boolean;
+  tcgPlayerUrl: string | null;
   createdAt: Date;
   category: { id: string; name: string };
   subType: { id: string; name: string } | null;
@@ -27,6 +28,7 @@ export default function AdminProducts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [updatingQuantity, setUpdatingQuantity] = useState<string | null>(null);
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
+  const [updatingProduct, setUpdatingProduct] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -97,6 +99,41 @@ export default function AdminProducts() {
       console.error("Failed to update quantity:", error);
     } finally {
       setUpdatingQuantity(null);
+    }
+  };
+
+  const updateProductNow = async (productId: string) => {
+    if (!confirm("Update this product's prices and data from TCGPlayer now? This will use Scrapfly.")) {
+      return;
+    }
+
+    setUpdatingProduct(productId);
+
+    try {
+      const res = await fetch(`/api/admin/products/${productId}/update-now`, {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(
+          `Product updated successfully!\n\n` +
+          `Old Price: $${data.changes.oldPrice}\n` +
+          `New Price: $${data.changes.newPrice}\n` +
+          `Normal: $${data.changes.normalPrice}\n` +
+          `Foil: $${data.changes.foilPrice}`
+        );
+        // Refresh products list
+        fetchProducts();
+      } else {
+        alert(`Update failed: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Failed to update product:", error);
+      alert("Failed to update product. Check console for details.");
+    } finally {
+      setUpdatingProduct(null);
     }
   };
 
@@ -302,12 +339,22 @@ export default function AdminProducts() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/products/${product.id}`}
-                      className="text-purple-400 hover:text-purple-300 text-sm"
-                    >
-                      Edit
-                    </Link>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => updateProductNow(product.id)}
+                        disabled={updatingProduct === product.id}
+                        className="px-2 py-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 text-white text-xs rounded transition-colors"
+                        title="Update prices and data from TCGPlayer now"
+                      >
+                        {updatingProduct === product.id ? "⏳" : "🔄"} Update
+                      </button>
+                      <Link
+                        href={`/admin/products/${product.id}`}
+                        className="text-purple-400 hover:text-purple-300 text-sm"
+                      >
+                        Edit
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))
