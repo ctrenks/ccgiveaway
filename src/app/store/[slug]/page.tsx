@@ -7,9 +7,9 @@ import AddToCartButton from "@/components/AddToCartButton";
 import { auth } from "@/lib/auth";
 
 interface ProductPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 async function getProduct(slug: string) {
@@ -31,7 +31,8 @@ function getCreditsForProduct(price: number): number {
 }
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
-  const product = await getProduct(params.slug);
+  const { slug } = await params;
+  const product = await getProduct(slug);
 
   if (!product) {
     return {
@@ -142,7 +143,7 @@ function generateFAQ(product: any) {
   // Condition FAQ
   faqs.push({
     question: "What condition is this card in?",
-    answer: `This card is in ${product.condition === "NEW" ? "Near Mint/New" : product.condition === "OPENED" ? "Lightly Played/Opened" : "Played"} condition.`,
+    answer: `This card is in ${product.condition === "NEW" ? "Near Mint/New" : product.condition === "OPENED" ? "Near Mint/Opened" : "Played"} condition.`,
   });
 
   // Shipping FAQ
@@ -198,7 +199,8 @@ function generateStructuredData(product: any, faqs: any[]) {
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const product = await getProduct(params.slug);
+  const { slug } = await params;
+  const product = await getProduct(slug);
 
   if (!product) {
     notFound();
@@ -353,8 +355,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 <div>
                   <span className="text-slate-400 text-sm">Condition:</span>
                   <p className="text-white">
-                    {product.condition === "NEW" ? "Near Mint / New" :
-                     product.condition === "OPENED" ? "Lightly Played / Opened" : "Played"}
+                    {product.condition === "NEW" ? "Near Mint / New" : 
+                     product.condition === "OPENED" ? "Near Mint / Opened" : "Played"}
                   </p>
                 </div>
 
