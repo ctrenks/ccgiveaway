@@ -264,7 +264,116 @@ function extractSinglePrice(html: string): number {
 }
 
 /**
- * Fetch product data only (no prices) from TCGPlayer using direct fetch
+ * Fetch product data from TCGPlayer's public API
+ * Much faster and more reliable than HTML scraping!
+ */
+async function fetchFromTCGPlayerAPI(productId: string): Promise<any | null> {
+  try {
+    const apiUrl = `https://mp-search-api.tcgplayer.com/v1/product/${productId}/details`;
+    console.log("Fetching from TCGPlayer API:", apiUrl);
+    
+    const response = await fetch(apiUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      console.error("TCGPlayer API error:", response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log("TCGPlayer API response:", data);
+    return data;
+  } catch (error) {
+    console.error("TCGPlayer API fetch error:", error);
+    return null;
+  }
+}
+
+/**
+ * Convert API data to our TCGPlayerProduct format
+ */
+function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlayerProduct> {
+  const attrs = apiData.customAttributes || {};
+  const formatted = apiData.formattedAttributes || {};
+  
+  // Parse mana cost from convertedCost and color
+  let manaCost = undefined;
+  if (attrs.convertedCost) {
+    const cmc = parseInt(attrs.convertedCost);
+    const colors = attrs.color || [];
+    
+    // If we have colors, construct mana cost
+    if (colors.length > 0) {
+      const colorSymbols: Record<string, string> = {
+        'White': 'W',
+        'Blue': 'U',
+        'Black': 'B',
+        'Red': 'R',
+        'Green': 'G',
+        'Colorless': 'C',
+      };
+      const symbols = colors.map((c: string) => colorSymbols[c] || '').filter(Boolean);
+      
+      if (symbols.length > 0) {
+        const generic = Math.max(0, cmc - symbols.length);
+        manaCost = '';
+        if (generic > 0) {
+          manaCost = `{${generic}}`;
+        }
+        symbols.forEach((s: string) => {
+          manaCost += `{${s}}`;
+        });
+      }
+    } else if (cmc > 0) {
+      // Colorless spell
+      manaCost = `{${cmc}}`;
+    } else if (cmc === 0) {
+      // Zero mana cost
+      manaCost = '{0}';
+    }
+  }
+  
+  // Parse legality from formats (if available)
+  let legality = undefined;
+  if (attrs.formats && Array.isArray(attrs.formats) && attrs.formats.length > 0) {
+    legality = attrs.formats.join(', ');
+  }
+  
+  // Parse power/toughness
+  let powerToughness = undefined;
+  if (attrs.power !== null && attrs.toughness !== null) {
+    powerToughness = `${attrs.power}/${attrs.toughness}`;
+  } else if (attrs.power === '*' || attrs.toughness === '*') {
+    powerToughness = `${attrs.power || '*'}/${attrs.toughness || '*'}`;
+  }
+  
+  return {
+    productId: apiData.productId?.toString() || '',
+    name: apiData.productName || '',
+    setName: apiData.setName || '',
+    cardNumber: attrs.number || formatted['#'] || undefined,
+    cardType: attrs.fullType || formatted['Card Type'] || undefined,
+    description: attrs.description || formatted['Description'] || undefined,
+    rarity: apiData.rarityName || undefined,
+    imageUrl: apiData.imageUrl || `https://tcgplayer-cdn.tcgplayer.com/product/${apiData.productId}_200w.jpg` || undefined,
+    game,
+    url,
+    legality,
+    artist: formatted['Artist'] || undefined,
+    manaCost,
+    powerToughness,
+    marketPrice: apiData.marketPrice || 0,
+    foilPrice: 0, // TCGPlayer API doesn't separate foil prices easily
+    listedPrice: apiData.lowestPrice || apiData.marketPrice || 0,
+  };
+}
+
+/**
+ * Fetch product data only (no prices) from TCGPlayer using API
  * Faster and doesn't require Scrapfly - use for updating card data
  */
 export async function fetchTCGPlayerProductData(url: string): Promise<Omit<TCGPlayerProduct, 'marketPrice' | 'foilPrice' | 'listedPrice'> | null> {
@@ -274,61 +383,35 @@ export async function fetchTCGPlayerProductData(url: string): Promise<Omit<TCGPl
       throw new Error("Invalid TCGPlayer URL");
     }
 
-    console.log("Fetching TCGPlayer product data (direct):", parsed.productId);
+    console.log("Fetching TCGPlayer product data via API:", parsed.productId);
 
-    // Use direct fetch (no JavaScript rendering needed for static data)
-    const html = await fetchDirect(url);
-
-    if (!html) {
-      throw new Error("Failed to fetch page content");
+    // Use TCGPlayer API
+    const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
+    
+    if (!apiData) {
+      console.log("API fetch failed, falling back to HTML scraping...");
+      // Fallback to HTML scraping if API fails
+      return await fetchViaHTMLScraping(url, parsed);
     }
 
-    console.log("HTML length:", html.length);
-
-    // Extract data from HTML (no prices)
-    const name = extractName(html, parsed.slug);
-    const imageUrl = extractImage(html);
-    const setName = extractSetName(html, parsed.slug);
-    const cardType = extractCardType(html);
-    const description = extractDescription(html);
-    const cardNumber = extractCardNumber(html);
-    const rarity = extractRarity(html);
-    const legality = extractLegality(html);
-    const artist = extractArtist(html);
-    const manaCost = extractManaCost(html);
-    const powerToughness = extractPowerToughness(html);
-
-    console.log("Extracted:", { 
-      name, 
-      setName, 
-      cardNumber,
-      cardType: cardType?.substring(0, 50), 
-      description: description?.substring(0, 50),
-      rarity,
-      legality: legality?.substring(0, 50),
-      artist,
-      manaCost,
-      powerToughness,
+    // Parse API data
+    const product = parseAPIData(apiData, url, parsed.game);
+    
+    console.log("Extracted from API:", {
+      name: product.name,
+      setName: product.setName,
+      cardNumber: product.cardNumber,
+      cardType: product.cardType?.substring(0, 50),
+      description: product.description?.substring(0, 50),
+      rarity: product.rarity,
+      artist: product.artist,
+      manaCost: product.manaCost,
+      powerToughness: product.powerToughness,
     });
 
-    const product = {
-      productId: parsed.productId,
-      url,
-      game: parsed.game,
-      name,
-      setName,
-      cardNumber,
-      cardType,
-      description,
-      rarity,
-      imageUrl,
-      legality,
-      artist,
-      manaCost,
-      powerToughness,
-    };
-
-    return product;
+    // Remove price fields for this function
+    const { marketPrice, foilPrice, listedPrice, ...dataOnly } = product as TCGPlayerProduct;
+    return dataOnly;
   } catch (error) {
     console.error("TCGPlayer fetch error:", error);
     return null;
@@ -336,7 +419,44 @@ export async function fetchTCGPlayerProductData(url: string): Promise<Omit<TCGPl
 }
 
 /**
- * Fetch product data from TCGPlayer using Scrapfly
+ * Fallback HTML scraping method (if API fails)
+ */
+async function fetchViaHTMLScraping(url: string, parsed: { productId: string; game: string; slug: string }): Promise<Omit<TCGPlayerProduct, 'marketPrice' | 'foilPrice' | 'listedPrice'> | null> {
+  const html = await fetchDirect(url);
+  if (!html) return null;
+
+  const name = extractName(html, parsed.slug);
+  const imageUrl = extractImage(html);
+  const setName = extractSetName(html, parsed.slug);
+  const cardType = extractCardType(html);
+  const description = extractDescription(html);
+  const cardNumber = extractCardNumber(html);
+  const rarity = extractRarity(html);
+  const legality = extractLegality(html);
+  const artist = extractArtist(html);
+  const manaCost = extractManaCost(html);
+  const powerToughness = extractPowerToughness(html);
+
+  return {
+    productId: parsed.productId,
+    url,
+    game: parsed.game,
+    name,
+    setName,
+    cardNumber,
+    cardType,
+    description,
+    rarity,
+    imageUrl,
+    legality,
+    artist,
+    manaCost,
+    powerToughness,
+  };
+}
+
+/**
+ * Fetch product data from TCGPlayer using API (with prices)
  */
 export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProduct | null> {
   try {
@@ -345,12 +465,35 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
       throw new Error("Invalid TCGPlayer URL");
     }
 
-    console.log("Fetching TCGPlayer product:", parsed.productId);
+    console.log("Fetching TCGPlayer product via API:", parsed.productId);
 
-    // Try Scrapfly first (renders JavaScript, gets real prices)
+    // Try API first
+    const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
+    
+    if (apiData) {
+      // Parse API data (includes prices)
+      const product = parseAPIData(apiData, url, parsed.game) as TCGPlayerProduct;
+      
+      console.log("Extracted from API:", {
+        name: product.name,
+        setName: product.setName,
+        cardNumber: product.cardNumber,
+        cardType: product.cardType,
+        description: product.description?.substring(0, 50),
+        rarity: product.rarity,
+        artist: product.artist,
+        manaCost: product.manaCost,
+        powerToughness: product.powerToughness,
+        marketPrice: product.marketPrice,
+      });
+
+      return product;
+    }
+
+    // Fallback to Scrapfly/HTML if API fails
+    console.log("API failed, falling back to HTML scraping with Scrapfly...");
     let html = await fetchWithScrapfly(url);
 
-    // Fallback to direct fetch if Scrapfly fails
     if (!html) {
       console.log("Scrapfly failed, trying direct fetch...");
       html = await fetchDirect(url);
@@ -360,20 +503,13 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
       throw new Error("Failed to fetch page content");
     }
 
-    console.log("HTML length:", html.length);
-
-    // Extract both normal and foil prices from rendered HTML
+    // Extract from HTML (old method)
     const prices = extractPricesFromHTML(html);
-    console.log("Prices from HTML - Normal:", prices.normal, "Foil:", prices.foil);
-
-    // Extract other data from HTML
     const name = extractName(html, parsed.slug);
     const imageUrl = extractImage(html);
     const setName = extractSetName(html, parsed.slug);
     const cardType = extractCardType(html);
     const description = extractDescription(html);
-
-    console.log("Extracted:", { name, imageUrl: imageUrl?.substring(0, 50), setName, cardType, description: description?.substring(0, 50), normalPrice: prices.normal, foilPrice: prices.foil });
 
     const product: TCGPlayerProduct = {
       productId: parsed.productId,
