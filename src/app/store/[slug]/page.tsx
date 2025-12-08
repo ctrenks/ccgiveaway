@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { AddToCartButton } from "@/components/AddToCartButton";
+import AddToCartButton from "@/components/AddToCartButton";
 import { auth } from "@/lib/auth";
 
 interface ProductPageProps {
@@ -369,10 +369,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <div className="space-y-4">
                 {product.quantity > 0 ? (
                   <AddToCartButton
-                    productId={product.id}
-                    productName={product.name}
-                    price={price}
-                    image={product.image}
+                    product={{
+                      id: product.id,
+                      name: product.name,
+                      price: price,
+                      image: product.image,
+                      quantity: product.quantity,
+                    }}
                     className="w-full"
                   />
                 ) : (
