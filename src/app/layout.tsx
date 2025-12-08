@@ -39,6 +39,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Mana font for Magic: The Gathering mana symbols */}
+        <link
+          href="https://cdn.jsdelivr.net/npm/mana-font@latest/css/mana.min.css"
+          rel="stylesheet"
+          type="text/css"
+        />
+      </head>
       <body className={`${outfit.variable} ${jetbrainsMono.variable} antialiased`}>
         {/* Google tag (gtag.js) */}
         <Script

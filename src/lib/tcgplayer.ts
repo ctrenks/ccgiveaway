@@ -271,7 +271,7 @@ async function fetchFromTCGPlayerAPI(productId: string): Promise<any | null> {
   try {
     const apiUrl = `https://mp-search-api.tcgplayer.com/v1/product/${productId}/details`;
     console.log("Fetching from TCGPlayer API:", apiUrl);
-
+    
     const response = await fetch(apiUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -293,20 +293,20 @@ async function fetchFromTCGPlayerAPI(productId: string): Promise<any | null> {
   }
 }
 
+
 /**
  * Convert API data to our TCGPlayerProduct format
  */
 function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlayerProduct> {
   const attrs = apiData.customAttributes || {};
   const formatted = apiData.formattedAttributes || {};
-
-  // Parse mana cost from convertedCost and color
+  
+  // Parse mana cost from TCGPlayer data
   let manaCost: string | undefined = undefined;
   if (attrs.convertedCost) {
     const cmc = parseInt(attrs.convertedCost);
     const colors = attrs.color || [];
-
-    // If we have colors, construct mana cost
+    
     if (colors.length > 0) {
       const colorSymbols: Record<string, string> = {
         'White': 'W',
@@ -317,7 +317,7 @@ function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlaye
         'Colorless': 'C',
       };
       const symbols = colors.map((c: string) => colorSymbols[c] || '').filter(Boolean);
-
+      
       if (symbols.length > 0) {
         const generic = Math.max(0, cmc - symbols.length);
         manaCost = '';
@@ -329,15 +329,13 @@ function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlaye
         });
       }
     } else if (cmc > 0) {
-      // Colorless spell
       manaCost = `{${cmc}}`;
     } else if (cmc === 0) {
-      // Zero mana cost
       manaCost = '{0}';
     }
   }
-
-  // Parse legality from formats (if available)
+  
+  // Parse legality from formats (TCGPlayer doesn't always have this)
   let legality: string | undefined = undefined;
   if (attrs.formats && Array.isArray(attrs.formats) && attrs.formats.length > 0) {
     legality = attrs.formats.join(', ');
