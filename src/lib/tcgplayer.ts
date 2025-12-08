@@ -167,7 +167,7 @@ function extractPricesFromHTML(html: string): { normal: number; foil: number } {
   if (nearMintTableMatch) {
     const tableHtml = nearMintTableMatch[0];
     console.log("✓ Found near-mint table, length:", tableHtml.length);
-    
+
     // Show a snippet of the table for debugging
     const tableSnippet = tableHtml.substring(0, 300).replace(/\s+/g, ' ');
     console.log("Table snippet:", tableSnippet);
@@ -312,7 +312,7 @@ async function fetchFromTCGPlayerAPI(productId: string): Promise<any | null> {
   try {
     const apiUrl = `https://mp-search-api.tcgplayer.com/v1/product/${productId}/details`;
     console.log("Fetching from TCGPlayer API:", apiUrl);
-    
+
     const response = await fetch(apiUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -341,13 +341,13 @@ async function fetchFromTCGPlayerAPI(productId: string): Promise<any | null> {
 function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlayerProduct> {
   const attrs = apiData.customAttributes || {};
   const formatted = apiData.formattedAttributes || {};
-  
+
   // Parse mana cost from TCGPlayer data
   let manaCost: string | undefined = undefined;
   if (attrs.convertedCost) {
     const cmc = parseInt(attrs.convertedCost);
     const colors = attrs.color || [];
-    
+
     if (colors.length > 0) {
       const colorSymbols: Record<string, string> = {
         'White': 'W',
@@ -358,7 +358,7 @@ function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlaye
         'Colorless': 'C',
       };
       const symbols = colors.map((c: string) => colorSymbols[c] || '').filter(Boolean);
-      
+
       if (symbols.length > 0) {
         const generic = Math.max(0, cmc - symbols.length);
         manaCost = '';
@@ -375,7 +375,7 @@ function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlaye
       manaCost = '{0}';
     }
   }
-  
+
   // Parse legality from formats (TCGPlayer doesn't always have this)
   let legality: string | undefined = undefined;
   if (attrs.formats && Array.isArray(attrs.formats) && attrs.formats.length > 0) {
@@ -394,7 +394,7 @@ function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlaye
   const cardName = apiData.productName || '';
   const setName = apiData.setName || '';
   const fullName = setName ? `${cardName} - ${setName}` : cardName;
-  
+
   return {
     productId: apiData.productId?.toString() || '',
     name: fullName,
@@ -514,10 +514,10 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
 
     // Get card data from API (fast - no Scrapfly needed for import)
     const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
-    
+
     if (apiData) {
       const product = parseAPIData(apiData, url, parsed.game) as TCGPlayerProduct;
-      
+
       console.log("Product data from API:", {
         name: product.name,
         setName: product.setName,
@@ -586,7 +586,7 @@ export async function fetchTCGPlayerProductWithPrices(url: string): Promise<TCGP
 
     // Get prices AND all data from Scrapfly (renders JS for accurate pricing)
     let html = await fetchWithScrapfly(url);
-    
+
     if (!html) {
       console.log("Scrapfly failed, trying direct fetch...");
       html = await fetchDirect(url);
@@ -597,7 +597,7 @@ export async function fetchTCGPlayerProductWithPrices(url: string): Promise<TCGP
     }
 
     console.log("HTML fetched successfully, length:", html.length);
-    
+
     // Save HTML to debug if needed (only in development)
     if (process.env.NODE_ENV === "development") {
       try {
@@ -615,23 +615,23 @@ export async function fetchTCGPlayerProductWithPrices(url: string): Promise<TCGP
 
     // Get card data from API (fast and reliable)
     const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
-    
+
     if (apiData) {
       const product = parseAPIData(apiData, url, parsed.game) as TCGPlayerProduct;
-      
+
       // Override with accurate scraped prices
       product.marketPrice = prices.normal || 0;
       product.foilPrice = prices.foil || 0;
       product.listedPrice = prices.normal || 0;
-      
+
       // Also extract legality and other data from HTML (more complete)
       const htmlLegality = extractLegality(html);
       const htmlManaCost = extractManaCost(html);
-      
+
       // Prefer HTML data if more complete
       if (htmlLegality) product.legality = htmlLegality;
       if (htmlManaCost && !product.manaCost) product.manaCost = htmlManaCost;
-      
+
       console.log("Combined data:", {
         name: product.name,
         normalPrice: product.marketPrice,
@@ -639,7 +639,7 @@ export async function fetchTCGPlayerProductWithPrices(url: string): Promise<TCGP
         manaCost: product.manaCost,
         legality: product.legality,
       });
-      
+
       return product;
     }
 
