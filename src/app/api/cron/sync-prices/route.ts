@@ -15,14 +15,21 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    // Verify cron secret (set CRON_SECRET in Vercel env)
+    // Verify this is a legitimate cron request
     const authHeader = request.headers.get("authorization");
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      // Also allow Vercel's cron header
-      const vercelCron = request.headers.get("x-vercel-cron");
-      if (!vercelCron) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
+    const vercelCron = request.headers.get("x-vercel-cron");
+    
+    // Allow if either:
+    // 1. Valid CRON_SECRET provided (for manual testing)
+    // 2. Request has x-vercel-cron header (automatic from Vercel)
+    const isAuthorized = 
+      (process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`) ||
+      vercelCron === "1"; // Vercel sets this to "1" for cron jobs
+    
+    if (!isAuthorized) {
+      return NextResponse.json({ 
+        error: "Unauthorized - must be called by Vercel Cron or with valid CRON_SECRET" 
+      }, { status: 401 });
     }
 
     // Check if auto-sync is enabled
