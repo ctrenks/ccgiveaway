@@ -86,11 +86,13 @@ export async function POST(request: Request) {
     }
 
     const contactEmail = process.env.CONTACT_EMAIL || "contact@collectorcardgiveaway.com";
-    console.log("Sending contact form email to:", contactEmail);
-
-    // Send email using Resend
-    // Note: You can use "onboarding@resend.dev" for testing without domain verification
     const fromEmail = process.env.RESEND_FROM_EMAIL || "Collector Card Giveaway <onboarding@resend.dev>";
+
+    console.log("📧 Contact Form Config:", {
+      to: contactEmail,
+      from: fromEmail,
+      hasResendKey: !!resend,
+    });
 
     const { data, error } = await resend.emails.send({
       from: fromEmail,
@@ -127,10 +129,10 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("Contact email sent successfully:", data?.id);
+    console.log("✅ Contact email sent successfully:", data?.id);
 
     // Send confirmation email to user
-    await resend.emails.send({
+    const { data: confirmData, error: confirmError } = await resend.emails.send({
       from: fromEmail,
       to: email,
       subject: "We received your message!",
@@ -159,6 +161,13 @@ export async function POST(request: Request) {
         </div>
       `,
     });
+
+    if (confirmError) {
+      console.error("⚠️ Confirmation email failed:", JSON.stringify(confirmError, null, 2));
+      // Don't fail the whole request - main email was sent
+    } else {
+      console.log("✅ Confirmation email sent:", confirmData?.id);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
