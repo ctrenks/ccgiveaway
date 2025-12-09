@@ -70,13 +70,10 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     scrapflyUrl.searchParams.set("render_js", "true");
     scrapflyUrl.searchParams.set("asp", "true"); // Anti-scraping protection bypass
     scrapflyUrl.searchParams.set("country", "us");
-    scrapflyUrl.searchParams.set("rendering_wait", "1000"); // Wait 1s for JS to load prices
-    scrapflyUrl.searchParams.set(
-      "wait_for_selector",
-      ".price-points__upper__price"
-    ); // Wait for price element
+    scrapflyUrl.searchParams.set("rendering_wait", "3000"); // Wait 3s for JS to render
+    // REMOVED wait_for_selector - TCGPlayer changed their HTML, selector doesn't exist anymore
 
-    console.log("Fetching via Scrapfly:", url);
+    console.log("Fetching via Scrapfly (no selector, 3s wait):", url);
 
     const response = await fetch(scrapflyUrl.toString(), {
       method: "GET",
@@ -94,33 +91,15 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
 
     const data = await response.json();
 
-    // Log the ENTIRE Scrapfly response for debugging
-    console.log("=== FULL SCRAPFLY RESPONSE ===");
-    console.log(JSON.stringify(data, null, 2));
-    console.log("=== END SCRAPFLY RESPONSE ===");
-
     if (data.result?.content) {
       const html = data.result.content;
       console.log("✓ Scrapfly returned HTML, length:", html.length);
-
-      // Check for key indicators
-      if (html.includes("near-mint-table")) {
-        console.log("✓ Contains near-mint-table");
-      } else {
-        console.log("✗ Missing near-mint-table");
-      }
-
-      if (html.includes("price-points__upper__price")) {
-        console.log("✓ Contains price-points__upper__price");
-      } else {
-        console.log("✗ Missing price-points__upper__price");
-      }
-
-      // Check if it's just the Vue shell
+      
+      // Check if it's the Vue shell (no prices)
       if (html.includes("hostInit") && html.length < 50000) {
-        console.warn("⚠️ Scrapfly returned Vue shell only (JS didn't render)");
+        console.warn("⚠️ Vue shell only - prices not rendered");
       }
-
+      
       return html;
     }
 
@@ -621,43 +600,50 @@ export async function fetchTCGPlayerProductWithPrices(
     }
 
     console.log(
-      "Fetching TCGPlayer product WITH PRICES (Scrapfly):",
+      "Fetching TCGPlayer product WITH PRICES (API primary, HTML fallback):",
       parsed.productId
     );
 
-    // Fetch HTML using Scrapfly for prices AND data
-    let html = await fetchWithScrapfly(url);
-
-    if (!html) {
-      console.log("Scrapfly failed, trying direct fetch...");
-      html = await fetchDirect(url);
-    }
-
-    if (!html) {
-      throw new Error("Failed to fetch page content");
-    }
-
-    // Extract prices from HTML
-    const prices = extractPricesFromHTML(html);
-    console.log("Prices - Normal:", prices.normal, "Foil:", prices.foil);
-
-    // Get card data from API (fast and reliable for non-price data)
+    // Get card data from API first (reliable and has marketPrice)
     const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
 
     if (apiData) {
-      // Use API data + Scrapfly prices
+      // Use API data
       const product = parseAPIData(
         apiData,
         url,
         parsed.game
       ) as TCGPlayerProduct;
-      product.marketPrice = prices.normal;
-      product.foilPrice = prices.foil;
-      product.listedPrice = prices.normal;
+      console.log("✓ API marketPrice:", product.marketPrice);
 
-      // Also extract legality from HTML if not in API
-      if (!product.legality) {
-        product.legality = extractLegality(html);
+      // Try to get more accurate foil/normal separation from HTML
+      let html = await fetchWithScrapfly(url);
+      if (!html) {
+        console.log("Scrapfly failed, trying direct fetch...");
+        html = await fetchDirect(url);
+      }
+
+      if (html) {
+        const prices = extractPricesFromHTML(html);
+        console.log("HTML prices - Normal:", prices.normal, "Foil:", prices.foil);
+        
+        // Use HTML prices if available (more accurate separation)
+        if (prices.normal > 0 || prices.foil > 0) {
+          console.log("✓ Using HTML prices");
+          product.marketPrice = prices.normal || product.marketPrice || 0;
+          product.foilPrice = prices.foil || 0;
+          product.listedPrice = prices.normal || product.marketPrice || 0;
+        } else {
+          console.log("⚠️ HTML prices not found, using API marketPrice");
+          // API prices already set by parseAPIData
+        }
+
+        // Extract legality from HTML if not in API
+        if (!product.legality) {
+          product.legality = extractLegality(html);
+        }
+      } else {
+        console.log("⚠️ No HTML available, using API marketPrice only");
       }
 
       return product;
