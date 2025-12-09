@@ -70,10 +70,11 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     scrapflyUrl.searchParams.set("render_js", "true");
     scrapflyUrl.searchParams.set("asp", "true"); // Anti-scraping protection bypass
     scrapflyUrl.searchParams.set("country", "us");
-    scrapflyUrl.searchParams.set("rendering_wait", "3000"); // Wait 3s for JS to render
+    scrapflyUrl.searchParams.set("rendering_wait", "10000"); // Wait 10s for Vue app to render
+    scrapflyUrl.searchParams.set("auto_scroll", "true"); // Scroll page to trigger lazy loading
     // REMOVED wait_for_selector - TCGPlayer changed their HTML, selector doesn't exist anymore
 
-    console.log("Fetching via Scrapfly (no selector, 3s wait):", url);
+    console.log("Fetching via Scrapfly (10s wait + scroll):", url);
 
     const response = await fetch(scrapflyUrl.toString(), {
       method: "GET",
@@ -91,6 +92,11 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
 
     const data = await response.json();
 
+    // Log full Scrapfly response for debugging
+    console.log("=== SCRAPFLY FULL RESPONSE ===");
+    console.log(JSON.stringify(data, null, 2));
+    console.log("=== END SCRAPFLY RESPONSE ===");
+
     if (data.result?.content) {
       const html = data.result.content;
       console.log("✓ Scrapfly returned HTML, length:", html.length);
@@ -99,6 +105,9 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
       if (html.includes("hostInit") && html.length < 50000) {
         console.warn("⚠️ Vue shell only - prices not rendered");
       }
+      
+      // Log a sample of the HTML to see what we got
+      console.log("HTML preview (first 1000 chars):", html.substring(0, 1000));
       
       return html;
     }
