@@ -29,7 +29,9 @@ export interface ImportSettings {
 /**
  * Parse TCGPlayer URL to extract product info
  */
-export function parseTCGPlayerUrl(url: string): { productId: string; game: string; slug: string } | null {
+export function parseTCGPlayerUrl(
+  url: string
+): { productId: string; game: string; slug: string } | null {
   try {
     const urlObj = new URL(url);
     const pathParts = urlObj.pathname.split("/").filter(Boolean);
@@ -51,6 +53,7 @@ export function parseTCGPlayerUrl(url: string): { productId: string; game: strin
 
 /**
  * Fetch page using Scrapfly API (renders JavaScript)
+ * RESTORED TO EXACT WORKING VERSION
  */
 async function fetchWithScrapfly(url: string): Promise<string | null> {
   const apiKey = process.env.SCRAPFLY_API_KEY;
@@ -67,15 +70,18 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     scrapflyUrl.searchParams.set("render_js", "true");
     scrapflyUrl.searchParams.set("asp", "true"); // Anti-scraping protection bypass
     scrapflyUrl.searchParams.set("country", "us");
-    scrapflyUrl.searchParams.set("rendering_wait", "10000"); // Wait 10s for Vue app to fully mount
-    // Don't use wait_for_selector - Vue SPA takes time to mount and selector causes timeout
+    scrapflyUrl.searchParams.set("rendering_wait", "1000"); // Wait 1s for JS to load prices
+    scrapflyUrl.searchParams.set(
+      "wait_for_selector",
+      ".price-points__upper__price"
+    ); // Wait for price element
 
-    console.log("🔄 Fetching via Scrapfly (10s wait for Vue SPA):", url);
+    console.log("Fetching via Scrapfly:", url);
 
     const response = await fetch(scrapflyUrl.toString(), {
       method: "GET",
       headers: {
-        "Accept": "application/json",
+        Accept: "application/json",
       },
     });
 
@@ -89,45 +95,7 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
 
     if (data.result?.content) {
       const html = data.result.content;
-      console.log("✅ Scrapfly returned HTML, length:", html.length);
-
-      // Debug: Search for near-mint table
-      if (html.includes("near-mint-table")) {
-        console.log("✅ Found near-mint-table in HTML");
-        
-        // Extract and show the full table
-        const tableMatch = html.match(/near-mint-table[^]*?<\/table>/i);
-        if (tableMatch) {
-          console.log("📊 Full table HTML:");
-          console.log(tableMatch[0].substring(0, 500));
-        }
-      } else {
-        console.log("⚠️  near-mint-table NOT found in HTML");
-      }
-
-      // Debug: Search for dollar amounts in the response
-      const dollarMatches = html.match(/\$[\d,]+\.?\d*/g);
-      if (dollarMatches) {
-        console.log("💰 Dollar amounts found:", dollarMatches.slice(0, 15).join(", "));
-      } else {
-        console.log("⚠️  NO dollar amounts found in HTML");
-      }
-
-      // Debug: Look for Normal/Foil text
-      if (html.includes("Normal") || html.includes("normal")) {
-        console.log("✅ Found 'Normal' text in HTML");
-      }
-      if (html.includes("Foil") || html.includes("foil")) {
-        console.log("✅ Found 'Foil' text in HTML");
-      }
-
-      // Debug: Show a snippet around "Normal" if it exists
-      const normalIndex = html.indexOf("Normal");
-      if (normalIndex > -1) {
-        const snippet = html.substring(normalIndex, normalIndex + 200);
-        console.log("📝 Snippet around 'Normal':", snippet.replace(/\s+/g, ' '));
-      }
-
+      console.log("Scrapfly returned HTML, length:", html.length);
       return html;
     }
 
@@ -146,8 +114,10 @@ async function fetchDirect(url: string): Promise<string | null> {
   try {
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
       },
       cache: "no-store",
@@ -173,68 +143,31 @@ function extractPricesFromHTML(html: string): { normal: number; foil: number } {
   let normalPrice = 0;
   let foilPrice = 0;
 
-  console.log("=== Extracting Prices from HTML ===");
-  console.log("HTML length:", html.length);
-
-  // METHOD 1: Try to find the near-mint table with both prices
+  // Try to find the near-mint table with both prices
   const nearMintTableMatch = html.match(/near-mint-table[^]*?<\/table>/i);
   if (nearMintTableMatch) {
     const tableHtml = nearMintTableMatch[0];
-    console.log("✓ Found near-mint table, length:", tableHtml.length);
-
-    // Show a snippet of the table for debugging
-    const tableSnippet = tableHtml.substring(0, 300).replace(/\s+/g, ' ');
-    console.log("Table snippet:", tableSnippet);
+    console.log("Found near-mint table:", tableHtml.slice(0, 300));
 
     // Extract Normal price
     const normalMatch = tableHtml.match(/Normal[^$]*\$([\d,]+\.?\d*)/i);
     if (normalMatch && normalMatch[1]) {
       normalPrice = parseFloat(normalMatch[1].replace(/,/g, ""));
-      console.log("✓ Normal price from table:", normalPrice, "| Match:", normalMatch[0]);
-    } else {
-      console.log("✗ Normal price pattern didn't match");
+      console.log("Found Normal price:", normalPrice);
     }
 
     // Extract Foil price
     const foilMatch = tableHtml.match(/Foil[^$]*\$([\d,]+\.?\d*)/i);
     if (foilMatch && foilMatch[1]) {
       foilPrice = parseFloat(foilMatch[1].replace(/,/g, ""));
-      console.log("✓ Foil price from table:", foilPrice, "| Match:", foilMatch[0]);
-    } else {
-      console.log("✗ Foil price pattern didn't match");
+      console.log("Found Foil price:", foilPrice);
     }
-  } else {
-    console.log("✗ No near-mint table found in HTML");
   }
 
-  // METHOD 2: Look for "Normal" and "Foil" labels with prices nearby
+  // If we didn't find prices in the table, fall back to old method (gets one price)
   if (normalPrice === 0) {
-    const normalSection = html.match(/Normal[^$]{0,100}\$([\d,]+\.?\d*)/i);
-    if (normalSection && normalSection[1]) {
-      normalPrice = parseFloat(normalSection[1].replace(/,/g, ""));
-      console.log("✓ Normal price from label:", normalPrice);
-    }
-  }
-
-  if (foilPrice === 0) {
-    const foilSection = html.match(/Foil[^$]{0,100}\$([\d,]+\.?\d*)/i);
-    if (foilSection && foilSection[1]) {
-      foilPrice = parseFloat(foilSection[1].replace(/,/g, ""));
-      console.log("✓ Foil price from label:", foilPrice);
-    }
-  }
-
-  // METHOD 3: If we still don't have normal price, fall back to Market Price
-  if (normalPrice === 0) {
-    console.log("Falling back to single price extraction...");
     normalPrice = extractSinglePrice(html);
-    if (normalPrice > 0) {
-      console.log("✓ Market price (as normal):", normalPrice);
-    }
   }
-
-  console.log("=== Final Prices ===");
-  console.log("Normal:", normalPrice, "| Foil:", foilPrice);
 
   return { normal: normalPrice, foil: foilPrice };
 }
@@ -262,14 +195,21 @@ function extractSinglePrice(html: string): number {
     if (match && match[1]) {
       const price = parseFloat(match[1].replace(/,/g, ""));
       if (price > 0) {
-        console.log("Found market price:", price, "via pattern:", pattern.toString().slice(0, 50));
+        console.log(
+          "Found market price:",
+          price,
+          "via pattern:",
+          pattern.toString().slice(0, 50)
+        );
         return price;
       }
     }
   }
 
   // Look for the price-points section and extract price from it
-  const priceSection = html.match(/price-points__upper[^]*?price-points__upper__price[^>]*>([^<]+)/i);
+  const priceSection = html.match(
+    /price-points__upper[^]*?price-points__upper__price[^>]*>([^<]+)/i
+  );
   if (priceSection && priceSection[1]) {
     const priceMatch = priceSection[1].match(/\$([\d,]+\.?\d*)/);
     if (priceMatch) {
@@ -285,7 +225,10 @@ function extractSinglePrice(html: string): number {
   const marketPriceIndex = html.indexOf("Market Price");
   if (marketPriceIndex > -1) {
     const nearbyHtml = html.substring(marketPriceIndex, marketPriceIndex + 500);
-    console.log("Near Market Price:", nearbyHtml.replace(/\s+/g, ' ').slice(0, 200));
+    console.log(
+      "Near Market Price:",
+      nearbyHtml.replace(/\s+/g, " ").slice(0, 200)
+    );
 
     const nearbyPriceMatch = nearbyHtml.match(/\$([\d,]+\.[\d]{2})/);
     if (nearbyPriceMatch) {
@@ -329,8 +272,9 @@ async function fetchFromTCGPlayerAPI(productId: string): Promise<any | null> {
 
     const response = await fetch(apiUrl, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept": "application/json",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        Accept: "application/json",
       },
     });
 
@@ -348,11 +292,14 @@ async function fetchFromTCGPlayerAPI(productId: string): Promise<any | null> {
   }
 }
 
-
 /**
  * Convert API data to our TCGPlayerProduct format
  */
-function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlayerProduct> {
+function parseAPIData(
+  apiData: any,
+  url: string,
+  game: string
+): Partial<TCGPlayerProduct> {
   const attrs = apiData.customAttributes || {};
   const formatted = apiData.formattedAttributes || {};
 
@@ -364,18 +311,20 @@ function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlaye
 
     if (colors.length > 0) {
       const colorSymbols: Record<string, string> = {
-        'White': 'W',
-        'Blue': 'U',
-        'Black': 'B',
-        'Red': 'R',
-        'Green': 'G',
-        'Colorless': 'C',
+        White: "W",
+        Blue: "U",
+        Black: "B",
+        Red: "R",
+        Green: "G",
+        Colorless: "C",
       };
-      const symbols = colors.map((c: string) => colorSymbols[c] || '').filter(Boolean);
+      const symbols = colors
+        .map((c: string) => colorSymbols[c] || "")
+        .filter(Boolean);
 
       if (symbols.length > 0) {
         const generic = Math.max(0, cmc - symbols.length);
-        manaCost = '';
+        manaCost = "";
         if (generic > 0) {
           manaCost = `{${generic}}`;
         }
@@ -386,42 +335,49 @@ function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlaye
     } else if (cmc > 0) {
       manaCost = `{${cmc}}`;
     } else if (cmc === 0) {
-      manaCost = '{0}';
+      manaCost = "{0}";
     }
   }
 
   // Parse legality from formats (TCGPlayer doesn't always have this)
   let legality: string | undefined = undefined;
-  if (attrs.formats && Array.isArray(attrs.formats) && attrs.formats.length > 0) {
-    legality = attrs.formats.join(', ');
+  if (
+    attrs.formats &&
+    Array.isArray(attrs.formats) &&
+    attrs.formats.length > 0
+  ) {
+    legality = attrs.formats.join(", ");
   }
 
   // Parse power/toughness
   let powerToughness: string | undefined = undefined;
   if (attrs.power !== null && attrs.toughness !== null) {
     powerToughness = `${attrs.power}/${attrs.toughness}`;
-  } else if (attrs.power === '*' || attrs.toughness === '*') {
-    powerToughness = `${attrs.power || '*'}/${attrs.toughness || '*'}`;
+  } else if (attrs.power === "*" || attrs.toughness === "*") {
+    powerToughness = `${attrs.power || "*"}/${attrs.toughness || "*"}`;
   }
 
   // Combine card name and set name for better display
-  const cardName = apiData.productName || '';
-  const setName = apiData.setName || '';
+  const cardName = apiData.productName || "";
+  const setName = apiData.setName || "";
   const fullName = setName ? `${cardName} - ${setName}` : cardName;
 
   return {
-    productId: apiData.productId?.toString() || '',
+    productId: apiData.productId?.toString() || "",
     name: fullName,
-    setName: apiData.setName || '',
-    cardNumber: attrs.number || formatted['#'] || undefined,
-    cardType: attrs.fullType || formatted['Card Type'] || undefined,
-    description: attrs.description || formatted['Description'] || undefined,
+    setName: apiData.setName || "",
+    cardNumber: attrs.number || formatted["#"] || undefined,
+    cardType: attrs.fullType || formatted["Card Type"] || undefined,
+    description: attrs.description || formatted["Description"] || undefined,
     rarity: apiData.rarityName || undefined,
-    imageUrl: apiData.imageUrl || `https://tcgplayer-cdn.tcgplayer.com/product/${apiData.productId}_200w.jpg` || undefined,
+    imageUrl:
+      apiData.imageUrl ||
+      `https://tcgplayer-cdn.tcgplayer.com/product/${apiData.productId}_200w.jpg` ||
+      undefined,
     game,
     url,
     legality,
-    artist: formatted['Artist'] || undefined,
+    artist: formatted["Artist"] || undefined,
     manaCost,
     powerToughness,
     marketPrice: apiData.marketPrice || 0,
@@ -434,7 +390,12 @@ function parseAPIData(apiData: any, url: string, game: string): Partial<TCGPlaye
  * Fetch product data only (no prices) from TCGPlayer using API
  * Faster and doesn't require Scrapfly - use for updating card data
  */
-export async function fetchTCGPlayerProductData(url: string): Promise<Omit<TCGPlayerProduct, 'marketPrice' | 'foilPrice' | 'listedPrice'> | null> {
+export async function fetchTCGPlayerProductData(
+  url: string
+): Promise<Omit<
+  TCGPlayerProduct,
+  "marketPrice" | "foilPrice" | "listedPrice"
+> | null> {
   try {
     const parsed = parseTCGPlayerUrl(url);
     if (!parsed) {
@@ -468,7 +429,8 @@ export async function fetchTCGPlayerProductData(url: string): Promise<Omit<TCGPl
     });
 
     // Remove price fields for this function
-    const { marketPrice, foilPrice, listedPrice, ...dataOnly } = product as TCGPlayerProduct;
+    const { marketPrice, foilPrice, listedPrice, ...dataOnly } =
+      product as TCGPlayerProduct;
     return dataOnly;
   } catch (error) {
     console.error("TCGPlayer fetch error:", error);
@@ -479,7 +441,13 @@ export async function fetchTCGPlayerProductData(url: string): Promise<Omit<TCGPl
 /**
  * Fallback HTML scraping method (if API fails)
  */
-async function fetchViaHTMLScraping(url: string, parsed: { productId: string; game: string; slug: string }): Promise<Omit<TCGPlayerProduct, 'marketPrice' | 'foilPrice' | 'listedPrice'> | null> {
+async function fetchViaHTMLScraping(
+  url: string,
+  parsed: { productId: string; game: string; slug: string }
+): Promise<Omit<
+  TCGPlayerProduct,
+  "marketPrice" | "foilPrice" | "listedPrice"
+> | null> {
   const html = await fetchDirect(url);
   if (!html) return null;
 
@@ -517,7 +485,9 @@ async function fetchViaHTMLScraping(url: string, parsed: { productId: string; ga
  * Fetch product data from TCGPlayer using API (fast, for imports)
  * Prices are entered manually during import, then updated by cron job
  */
-export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProduct | null> {
+export async function fetchTCGPlayerProduct(
+  url: string
+): Promise<TCGPlayerProduct | null> {
   try {
     const parsed = parseTCGPlayerUrl(url);
     if (!parsed) {
@@ -530,7 +500,11 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
     const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
 
     if (apiData) {
-      const product = parseAPIData(apiData, url, parsed.game) as TCGPlayerProduct;
+      const product = parseAPIData(
+        apiData,
+        url,
+        parsed.game
+      ) as TCGPlayerProduct;
 
       console.log("Product data from API:", {
         name: product.name,
@@ -589,16 +563,21 @@ export async function fetchTCGPlayerProduct(url: string): Promise<TCGPlayerProdu
  * Fetch product with prices from Scrapfly (for cron price updates)
  * Gets accurate normal/foil price separation PLUS all card data
  */
-export async function fetchTCGPlayerProductWithPrices(url: string): Promise<TCGPlayerProduct | null> {
+export async function fetchTCGPlayerProductWithPrices(
+  url: string
+): Promise<TCGPlayerProduct | null> {
   try {
     const parsed = parseTCGPlayerUrl(url);
     if (!parsed) {
       throw new Error("Invalid TCGPlayer URL");
     }
 
-    console.log("Fetching full data from TCGPlayer (Scrapfly):", parsed.productId);
+    console.log(
+      "Fetching TCGPlayer product WITH PRICES (Scrapfly):",
+      parsed.productId
+    );
 
-    // Get prices AND all data from Scrapfly (renders JS for accurate pricing)
+    // Fetch HTML using Scrapfly for prices AND data
     let html = await fetchWithScrapfly(url);
 
     if (!html) {
@@ -610,72 +589,44 @@ export async function fetchTCGPlayerProductWithPrices(url: string): Promise<TCGP
       throw new Error("Failed to fetch page content");
     }
 
-    console.log("HTML fetched successfully, length:", html.length);
-
-    // Save HTML to debug if needed (only in development)
-    if (process.env.NODE_ENV === "development") {
-      try {
-        const fs = require("fs");
-        fs.writeFileSync("debug-tcgplayer.html", html);
-        console.log("✓ Saved HTML to debug-tcgplayer.html");
-      } catch (e) {
-        // Ignore write errors
-      }
-    }
-
     // Extract prices from HTML
     const prices = extractPricesFromHTML(html);
     console.log("Prices - Normal:", prices.normal, "Foil:", prices.foil);
 
-    // Get card data from API (fast and reliable)
+    // Get card data from API (fast and reliable for non-price data)
     const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
 
     if (apiData) {
-      const product = parseAPIData(apiData, url, parsed.game) as TCGPlayerProduct;
+      // Use API data + Scrapfly prices
+      const product = parseAPIData(
+        apiData,
+        url,
+        parsed.game
+      ) as TCGPlayerProduct;
+      product.marketPrice = prices.normal;
+      product.foilPrice = prices.foil;
+      product.listedPrice = prices.normal;
 
-      // Override with accurate scraped prices
-      product.marketPrice = prices.normal || 0;
-      product.foilPrice = prices.foil || 0;
-      product.listedPrice = prices.normal || 0;
-
-      // Also extract legality and other data from HTML (more complete)
-      const htmlLegality = extractLegality(html);
-      const htmlManaCost = extractManaCost(html);
-
-      // Prefer HTML data if more complete
-      if (htmlLegality) product.legality = htmlLegality;
-      if (htmlManaCost && !product.manaCost) product.manaCost = htmlManaCost;
-
-      console.log("Combined data:", {
-        name: product.name,
-        normalPrice: product.marketPrice,
-        foilPrice: product.foilPrice,
-        manaCost: product.manaCost,
-        legality: product.legality,
-      });
+      // Also extract legality from HTML if not in API
+      if (!product.legality) {
+        product.legality = extractLegality(html);
+      }
 
       return product;
     }
 
-    // Fallback to pure HTML scraping
-    console.log("API failed, using HTML scraping only...");
-    const name = extractName(html, parsed.slug);
-    const imageUrl = extractImage(html);
-    const setName = extractSetName(html, parsed.slug);
-    const cardType = extractCardType(html);
-    const description = extractDescription(html);
-
+    // Fallback to pure HTML scraping if API fails
     const product: TCGPlayerProduct = {
       productId: parsed.productId,
       url,
       game: parsed.game,
-      name,
-      setName,
+      name: extractName(html, parsed.slug),
+      setName: extractSetName(html, parsed.slug),
       cardNumber: extractCardNumber(html),
-      cardType,
-      description,
+      cardType: extractCardType(html),
+      description: extractDescription(html),
       rarity: extractRarity(html),
-      imageUrl,
+      imageUrl: extractImage(html),
       marketPrice: prices.normal,
       foilPrice: prices.foil,
       listedPrice: prices.normal,
@@ -706,7 +657,7 @@ function extractName(html: string, slug: string): string {
       let name = match[1].trim();
       // Decode HTML entities
       name = decodeHtmlEntities(name);
-      if (name && name.length > 2 && !name.includes('TCGplayer')) {
+      if (name && name.length > 2 && !name.includes("TCGplayer")) {
         console.log("Extracted name from breadcrumb:", name);
         return name;
       }
@@ -731,7 +682,11 @@ function extractName(html: string, slug: string): string {
       // Decode HTML entities
       name = decodeHtmlEntities(name);
       // Clean up
-      name = name.split(" | ")[0].split(" - TCG")[0].split(" - Price")[0].trim();
+      name = name
+        .split(" | ")[0]
+        .split(" - TCG")[0]
+        .split(" - Price")[0]
+        .trim();
       if (name && name.length > 2) return name;
     }
   }
@@ -745,14 +700,16 @@ function decodeHtmlEntities(text: string): string {
     .replace(/&#39;/g, "'")
     .replace(/&apos;/g, "'")
     .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&mdash;/g, '—')
-    .replace(/&ndash;/g, '–')
-    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&mdash;/g, "—")
+    .replace(/&ndash;/g, "–")
+    .replace(/&nbsp;/g, " ")
     .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
-    .replace(/&#x([0-9a-f]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
+    .replace(/&#x([0-9a-f]+);/gi, (match, hex) =>
+      String.fromCharCode(parseInt(hex, 16))
+    );
 }
 
 function extractImage(html: string): string | undefined {
@@ -819,7 +776,7 @@ function extractCardNumber(html: string): string | undefined {
     const match = html.match(pattern);
     if (match && match[1]) {
       let number = match[1].trim().replace(/\s/g, "");
-      if (number && number.length > 0 && number !== 'null') {
+      if (number && number.length > 0 && number !== "null") {
         console.log("Extracted card number:", number);
         return number;
       }
@@ -830,8 +787,15 @@ function extractCardNumber(html: string): string | undefined {
 
 function extractRarity(html: string): string | undefined {
   const rarities = [
-    "Mythic Rare", "Secret Rare", "Ultra Rare", "Illustration Rare",
-    "Special Art Rare", "Holo Rare", "Rare", "Uncommon", "Common"
+    "Mythic Rare",
+    "Secret Rare",
+    "Ultra Rare",
+    "Illustration Rare",
+    "Special Art Rare",
+    "Holo Rare",
+    "Rare",
+    "Uncommon",
+    "Common",
   ];
 
   const lowerHtml = html.toLowerCase();
@@ -857,7 +821,7 @@ function extractLegality(html: string): string | undefined {
     if (match && match[1]) {
       let legality = match[1].trim();
       legality = decodeHtmlEntities(legality);
-      if (legality && legality.length > 0 && legality !== 'null') {
+      if (legality && legality.length > 0 && legality !== "null") {
         console.log("Extracted legality:", legality);
         return legality;
       }
@@ -879,7 +843,7 @@ function extractArtist(html: string): string | undefined {
     if (match && match[1]) {
       let artist = match[1].trim();
       artist = decodeHtmlEntities(artist);
-      if (artist && artist.length > 0 && artist !== 'null') {
+      if (artist && artist.length > 0 && artist !== "null") {
         console.log("Extracted artist:", artist);
         return artist;
       }
@@ -904,7 +868,7 @@ function extractManaCost(html: string): string | undefined {
     if (match && match[1]) {
       let manaCost = match[1].trim();
       manaCost = decodeHtmlEntities(manaCost);
-      if (manaCost && manaCost.length > 0 && manaCost !== 'null') {
+      if (manaCost && manaCost.length > 0 && manaCost !== "null") {
         console.log("Extracted mana cost:", manaCost);
         return manaCost;
       }
@@ -933,7 +897,12 @@ function extractPowerToughness(html: string): string | undefined {
       if (pt) {
         pt = pt.trim();
         pt = decodeHtmlEntities(pt);
-        if (pt && pt.length > 0 && pt !== 'null' && /^\d+|\*\/\d+|\*$/.test(pt)) {
+        if (
+          pt &&
+          pt.length > 0 &&
+          pt !== "null" &&
+          /^\d+|\*\/\d+|\*$/.test(pt)
+        ) {
           console.log("Extracted power/toughness:", pt);
           return pt;
         }
@@ -964,8 +933,8 @@ function extractCardType(html: string): string | undefined {
       let cardType = match[1].trim();
       // Decode HTML entities and clean up
       cardType = decodeHtmlEntities(cardType);
-      cardType = cardType.replace(/\s+/g, ' ').trim();
-      if (cardType && cardType.length > 0 && cardType !== 'null') {
+      cardType = cardType.replace(/\s+/g, " ").trim();
+      if (cardType && cardType.length > 0 && cardType !== "null") {
         console.log("Extracted card type:", cardType);
         return cardType;
       }
@@ -1000,16 +969,18 @@ function extractDescription(html: string): string | undefined {
       // Decode HTML entities and clean up
       description = decodeHtmlEntities(description);
       description = description
-        .replace(/<br\s*\/?>/gi, '\n')
-        .replace(/\s+/g, ' ')
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/\s+/g, " ")
         .trim();
 
       // Filter out generic TCGPlayer descriptions
-      if (description &&
-          description.length > 5 &&
-          !description.includes('TCGplayer') &&
-          !description.includes('Buy and sell') &&
-          description !== 'null') {
+      if (
+        description &&
+        description.length > 5 &&
+        !description.includes("TCGplayer") &&
+        !description.includes("Buy and sell") &&
+        description !== "null"
+      ) {
         console.log("Extracted description:", description.substring(0, 100));
         return description;
       }
@@ -1022,18 +993,14 @@ function extractDescription(html: string): string | undefined {
 function formatSlugAsName(slug: string): string {
   const parts = slug.split("-");
   const nameParts = parts.slice(Math.max(1, parts.length - 4));
-  return nameParts
-    .map(p => p.charAt(0).toUpperCase() + p.slice(1))
-    .join(" ");
+  return nameParts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
 }
 
 function formatSlugAsSet(slug: string): string {
   const parts = slug.split("-");
   if (parts.length < 3) return "";
   const setParts = parts.slice(1, Math.max(2, parts.length - 3));
-  return setParts
-    .map(p => p.charAt(0).toUpperCase() + p.slice(1))
-    .join(" ");
+  return setParts.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
 }
 
 export function calculateDiscountedPrice(
@@ -1058,5 +1025,8 @@ export function mapGameToSubType(game: string): string {
     "flesh-and-blood": "Flesh and Blood",
     "star-wars": "Star Wars Unlimited",
   };
-  return mapping[game.toLowerCase()] || game.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+  return (
+    mapping[game.toLowerCase()] ||
+    game.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+  );
 }
