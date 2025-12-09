@@ -93,7 +93,7 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     }
 
     const data = await response.json();
-    
+
     // Log the ENTIRE Scrapfly response for debugging
     console.log("=== FULL SCRAPFLY RESPONSE ===");
     console.log(JSON.stringify(data, null, 2));
@@ -102,25 +102,25 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     if (data.result?.content) {
       const html = data.result.content;
       console.log("✓ Scrapfly returned HTML, length:", html.length);
-      
+
       // Check for key indicators
       if (html.includes("near-mint-table")) {
         console.log("✓ Contains near-mint-table");
       } else {
         console.log("✗ Missing near-mint-table");
       }
-      
+
       if (html.includes("price-points__upper__price")) {
         console.log("✓ Contains price-points__upper__price");
       } else {
         console.log("✗ Missing price-points__upper__price");
       }
-      
+
       // Check if it's just the Vue shell
       if (html.includes("hostInit") && html.length < 50000) {
         console.warn("⚠️ Scrapfly returned Vue shell only (JS didn't render)");
       }
-      
+
       return html;
     }
 
@@ -169,11 +169,14 @@ function extractPricesFromHTML(html: string): { normal: number; foil: number } {
   let foilPrice = 0;
 
   console.log("=== Extracting Prices ===");
-  
+
   // Log all dollar amounts found in HTML
   const dollarMatches = html.match(/\$[\d,]+\.?\d*/g);
   if (dollarMatches && dollarMatches.length > 0) {
-    console.log("Dollar amounts in HTML:", dollarMatches.slice(0, 10).join(", "));
+    console.log(
+      "Dollar amounts in HTML:",
+      dollarMatches.slice(0, 10).join(", ")
+    );
   } else {
     console.log("⚠️ NO dollar amounts found in HTML");
   }
@@ -183,7 +186,7 @@ function extractPricesFromHTML(html: string): { normal: number; foil: number } {
   if (nearMintTableMatch) {
     const tableHtml = nearMintTableMatch[0];
     console.log("✓ Found near-mint table");
-    
+
     // Extract Normal price
     const normalMatch = tableHtml.match(/Normal[^$]*\$([\d,]+\.?\d*)/i);
     if (normalMatch && normalMatch[1]) {
@@ -192,7 +195,7 @@ function extractPricesFromHTML(html: string): { normal: number; foil: number } {
     } else {
       console.log("✗ Normal price not found in table");
     }
-    
+
     // Extract Foil price
     const foilMatch = tableHtml.match(/Foil[^$]*\$([\d,]+\.?\d*)/i);
     if (foilMatch && foilMatch[1]) {
@@ -211,7 +214,9 @@ function extractPricesFromHTML(html: string): { normal: number; foil: number } {
     normalPrice = extractSinglePrice(html);
   }
 
-  console.log("=== Final: Normal=$" + normalPrice + ", Foil=$" + foilPrice + " ===");
+  console.log(
+    "=== Final: Normal=$" + normalPrice + ", Foil=$" + foilPrice + " ==="
+  );
   return { normal: normalPrice, foil: foilPrice };
 }
 
