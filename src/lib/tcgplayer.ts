@@ -389,6 +389,21 @@ function parseAPIData(
   const setName = apiData.setName || "";
   const fullName = setName ? `${cardName} - ${setName}` : cardName;
 
+  // Handle foil-only vs normal-only vs both
+  let marketPrice = 0;
+  let foilPrice = 0;
+  
+  if (apiData.foilOnly) {
+    // Foil-only card: marketPrice goes to foilPrice
+    foilPrice = apiData.marketPrice || 0;
+  } else if (apiData.normalOnly) {
+    // Normal-only card: marketPrice stays as normal
+    marketPrice = apiData.marketPrice || 0;
+  } else {
+    // Card has both versions: API doesn't separate, so put in normal for now
+    marketPrice = apiData.marketPrice || 0;
+  }
+
   return {
     productId: apiData.productId?.toString() || "",
     name: fullName,
@@ -407,8 +422,8 @@ function parseAPIData(
     artist: formatted["Artist"] || undefined,
     manaCost,
     powerToughness,
-    marketPrice: apiData.marketPrice || 0,
-    foilPrice: 0, // TCGPlayer API doesn't separate foil prices easily
+    marketPrice,
+    foilPrice,
     listedPrice: apiData.lowestPrice || apiData.marketPrice || 0,
   };
 }
