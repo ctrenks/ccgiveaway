@@ -624,62 +624,50 @@ export async function fetchTCGPlayerProductWithPrices(
     }
 
     console.log(
-      "Fetching TCGPlayer product WITH PRICES (API primary, HTML fallback):",
+      "Fetching TCGPlayer product WITH PRICES (Scrapfly for prices, API for data):",
       parsed.productId
     );
 
-    // Fetch HTML first (needed for fallback)
+    // Use Scrapfly to get HTML with prices
     let html = await fetchWithScrapfly(url);
     if (!html) {
       console.log("Scrapfly failed, trying direct fetch...");
       html = await fetchDirect(url);
     }
 
-    // Get card data from API (reliable and has marketPrice)
+    if (!html) {
+      throw new Error("Failed to fetch page content");
+    }
+
+    // Extract prices from HTML
+    const prices = extractPricesFromHTML(html);
+    console.log("Extracted prices from HTML - Normal:", prices.normal, "Foil:", prices.foil);
+
+    // Get card data from API
     const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
 
     if (apiData) {
-      // Use API data
+      // Use API data + HTML prices
       const product = parseAPIData(
         apiData,
         url,
         parsed.game
       ) as TCGPlayerProduct;
-      console.log("✓ API marketPrice:", product.marketPrice);
-
-      // Try to get more accurate foil/normal separation from HTML
-      if (html) {
-        const prices = extractPricesFromHTML(html);
-        console.log("HTML prices - Normal:", prices.normal, "Foil:", prices.foil);
-        
-        // Use HTML prices if available (more accurate separation)
-        if (prices.normal > 0 || prices.foil > 0) {
-          console.log("✓ Using HTML prices");
-          product.marketPrice = prices.normal || product.marketPrice || 0;
-          product.foilPrice = prices.foil || 0;
-          product.listedPrice = prices.normal || product.marketPrice || 0;
-        } else {
-          console.log("⚠️ HTML prices not found, using API marketPrice");
-          // API prices already set by parseAPIData
-        }
-
-        // Extract legality from HTML if not in API
-        if (!product.legality) {
-          product.legality = extractLegality(html);
-        }
+      
+      // Override with HTML prices if we got them
+      if (prices.normal > 0 || prices.foil > 0) {
+        console.log("✓ Using HTML prices (Scrapfly)");
+        product.marketPrice = prices.normal || 0;
+        product.foilPrice = prices.foil || 0;
+        product.listedPrice = prices.normal || 0;
       } else {
-        console.log("⚠️ No HTML available, using API marketPrice only");
+        console.log("✓ HTML had no prices, using API marketPrice");
       }
 
       return product;
     }
 
     // Fallback to pure HTML scraping if API fails
-    if (!html) {
-      throw new Error("Failed to fetch page content");
-    }
-
-    const prices = extractPricesFromHTML(html);
     const product: TCGPlayerProduct = {
       productId: parsed.productId,
       url,
