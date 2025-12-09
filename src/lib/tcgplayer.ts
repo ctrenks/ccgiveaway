@@ -604,7 +604,14 @@ export async function fetchTCGPlayerProductWithPrices(
       parsed.productId
     );
 
-    // Get card data from API first (reliable and has marketPrice)
+    // Fetch HTML first (needed for fallback)
+    let html = await fetchWithScrapfly(url);
+    if (!html) {
+      console.log("Scrapfly failed, trying direct fetch...");
+      html = await fetchDirect(url);
+    }
+
+    // Get card data from API (reliable and has marketPrice)
     const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
 
     if (apiData) {
@@ -617,12 +624,6 @@ export async function fetchTCGPlayerProductWithPrices(
       console.log("✓ API marketPrice:", product.marketPrice);
 
       // Try to get more accurate foil/normal separation from HTML
-      let html = await fetchWithScrapfly(url);
-      if (!html) {
-        console.log("Scrapfly failed, trying direct fetch...");
-        html = await fetchDirect(url);
-      }
-
       if (html) {
         const prices = extractPricesFromHTML(html);
         console.log("HTML prices - Normal:", prices.normal, "Foil:", prices.foil);
@@ -650,6 +651,11 @@ export async function fetchTCGPlayerProductWithPrices(
     }
 
     // Fallback to pure HTML scraping if API fails
+    if (!html) {
+      throw new Error("Failed to fetch page content");
+    }
+
+    const prices = extractPricesFromHTML(html);
     const product: TCGPlayerProduct = {
       productId: parsed.productId,
       url,
