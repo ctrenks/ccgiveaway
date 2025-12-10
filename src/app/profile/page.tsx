@@ -37,7 +37,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<"settings" | "wins" | "referrals">("settings");
-  
+
   // Settings form state
   const [editingProfile, setEditingProfile] = useState(false);
   const [editingShipping, setEditingShipping] = useState(false);
@@ -292,7 +292,7 @@ export default function ProfilePage() {
                     </button>
                   )}
                 </div>
-                
+
                 {editingProfile ? (
                   <div className="space-y-4">
                     <div>
@@ -643,7 +643,7 @@ export default function ProfilePage() {
                   <p className="text-slate-300 text-sm mb-4">
                     Share this link with friends. When they sign up, you both win! You get <strong className="text-purple-400">100 credits</strong> instantly.
                   </p>
-                  
+
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -678,6 +678,189 @@ export default function ProfilePage() {
                     >
                       Share on Facebook
                     </a>
+                  </div>
+
+                  {/* Printable QR Code Section */}
+                  <div className="mt-6 pt-6 border-t border-purple-500/30">
+                    <h4 className="text-md font-bold text-white mb-4 flex items-center gap-2">
+                      <span>🖨️</span> Printable QR Flyer
+                    </h4>
+
+                    {/* QR Flyer Preview */}
+                    <div
+                      id="qr-flyer"
+                      className="relative bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 border-2 border-purple-500/50 rounded-2xl p-6 overflow-hidden"
+                    >
+                      {/* Background Pattern */}
+                      <div className="absolute inset-0 opacity-10">
+                        <div className="absolute top-4 left-4 text-6xl">✨</div>
+                        <div className="absolute top-8 right-8 text-4xl">🃏</div>
+                        <div className="absolute bottom-8 left-8 text-4xl">⚔️</div>
+                        <div className="absolute bottom-4 right-4 text-6xl">🔮</div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="relative z-10 text-center">
+                        {/* Header */}
+                        <div className="mb-4">
+                          <h3 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 drop-shadow-lg tracking-wide">
+                            FREE MAGIC CARDS
+                          </h3>
+                          <p className="text-purple-300 text-lg font-medium mt-1">
+                            Scan & Win Rare Cards!
+                          </p>
+                        </div>
+
+                        {/* QR Code */}
+                        <div className="inline-block p-3 bg-white rounded-xl shadow-2xl shadow-purple-500/30 mb-4">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(referralData.referralUrl)}&bgcolor=ffffff&color=1e1b4b`}
+                            alt="Scan to get free Magic cards"
+                            className="w-44 h-44"
+                          />
+                        </div>
+
+                        {/* Call to Action */}
+                        <div className="space-y-2">
+                          <p className="text-white text-lg font-bold">
+                            🎁 Get <span className="text-amber-400">10 FREE Entries</span> 🎁
+                          </p>
+                          <p className="text-slate-300 text-sm">
+                            Join Collector Card Giveaway
+                          </p>
+                          <p className="text-purple-400 text-xs font-mono break-all px-4">
+                            {referralData.referralUrl}
+                          </p>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="mt-4 pt-4 border-t border-purple-500/30">
+                          <p className="text-slate-400 text-xs">
+                            Win Pokemon, Magic & One Piece cards for FREE!
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Print Button */}
+                    <button
+                      onClick={() => {
+                        const printWindow = window.open('', '_blank');
+                        if (!printWindow) return;
+
+                        printWindow.document.write(`
+                          <!DOCTYPE html>
+                          <html>
+                            <head>
+                              <title>Free Magic Cards - QR Flyer</title>
+                              <style>
+                                * { margin: 0; padding: 0; box-sizing: border-box; }
+                                body {
+                                  display: flex;
+                                  justify-content: center;
+                                  align-items: center;
+                                  min-height: 100vh;
+                                  background: #0f0a1a;
+                                  font-family: system-ui, -apple-system, sans-serif;
+                                }
+                                .flyer {
+                                  width: 4in;
+                                  padding: 24px;
+                                  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+                                  border: 3px solid #a855f7;
+                                  border-radius: 16px;
+                                  text-align: center;
+                                  position: relative;
+                                  overflow: hidden;
+                                }
+                                .header {
+                                  font-size: 28px;
+                                  font-weight: 900;
+                                  background: linear-gradient(to right, #fbbf24, #fde047, #fbbf24);
+                                  -webkit-background-clip: text;
+                                  -webkit-text-fill-color: transparent;
+                                  background-clip: text;
+                                  margin-bottom: 4px;
+                                }
+                                .subheader {
+                                  color: #c4b5fd;
+                                  font-size: 16px;
+                                  margin-bottom: 16px;
+                                }
+                                .qr-container {
+                                  display: inline-block;
+                                  padding: 12px;
+                                  background: white;
+                                  border-radius: 12px;
+                                  margin-bottom: 16px;
+                                }
+                                .qr-container img {
+                                  width: 160px;
+                                  height: 160px;
+                                }
+                                .cta {
+                                  color: white;
+                                  font-size: 18px;
+                                  font-weight: bold;
+                                  margin-bottom: 4px;
+                                }
+                                .cta span { color: #fbbf24; }
+                                .site { color: #cbd5e1; font-size: 12px; margin-bottom: 8px; }
+                                .url {
+                                  color: #a78bfa;
+                                  font-size: 10px;
+                                  font-family: monospace;
+                                  word-break: break-all;
+                                  padding: 0 16px;
+                                }
+                                .footer {
+                                  margin-top: 12px;
+                                  padding-top: 12px;
+                                  border-top: 1px solid rgba(168, 85, 247, 0.3);
+                                  color: #94a3b8;
+                                  font-size: 11px;
+                                }
+                                .emoji { font-size: 48px; position: absolute; opacity: 0.15; }
+                                .e1 { top: 8px; left: 8px; }
+                                .e2 { top: 16px; right: 16px; font-size: 32px; }
+                                .e3 { bottom: 16px; left: 16px; font-size: 32px; }
+                                .e4 { bottom: 8px; right: 8px; }
+                                @media print {
+                                  body { background: white; }
+                                  .flyer { border-width: 2px; }
+                                }
+                              </style>
+                            </head>
+                            <body>
+                              <div class="flyer">
+                                <div class="emoji e1">✨</div>
+                                <div class="emoji e2">🃏</div>
+                                <div class="emoji e3">⚔️</div>
+                                <div class="emoji e4">🔮</div>
+                                <div class="header">FREE MAGIC CARDS</div>
+                                <div class="subheader">Scan & Win Rare Cards!</div>
+                                <div class="qr-container">
+                                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(referralData.referralUrl)}&bgcolor=ffffff&color=1e1b4b" alt="QR Code" />
+                                </div>
+                                <div class="cta">🎁 Get <span>10 FREE Entries</span> 🎁</div>
+                                <div class="site">Join Collector Card Giveaway</div>
+                                <div class="url">${referralData.referralUrl}</div>
+                                <div class="footer">Win Pokemon, Magic & One Piece cards for FREE!</div>
+                              </div>
+                              <script>window.onload = function() { window.print(); }</script>
+                            </body>
+                          </html>
+                        `);
+                        printWindow.document.close();
+                      }}
+                      className="mt-4 w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl transition-all font-bold text-lg shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2"
+                    >
+                      <span>🖨️</span> Print QR Flyer
+                    </button>
+                    <p className="text-slate-500 text-xs text-center mt-2">
+                      Print and hang at your local game store, card shop, or gaming events!
+                    </p>
                   </div>
                 </div>
 
