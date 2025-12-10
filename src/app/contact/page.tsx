@@ -9,7 +9,7 @@ export default function ContactPage() {
     email: "",
     subject: "",
     message: "",
-    website: "", // Honeypot field
+    hp_field: "", // Honeypot field - obscure name to avoid autofill
   });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -19,7 +19,8 @@ export default function ContactPage() {
     e.preventDefault();
 
     // If honeypot is filled, silently "succeed" without sending
-    if (formData.website) {
+    if (formData.hp_field) {
+      console.log("🤖 Honeypot triggered - likely spam");
       setSuccess(true);
       return;
     }
@@ -46,7 +47,7 @@ export default function ContactPage() {
       }
 
       setSuccess(true);
-      setFormData({ name: "", email: "", subject: "", message: "", website: "" });
+      setFormData({ name: "", email: "", subject: "", message: "", hp_field: "" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send message");
     } finally {
@@ -162,15 +163,15 @@ export default function ContactPage() {
                 />
               </div>
 
-              {/* Honeypot field - hidden from real users */}
+              {/* Honeypot field - hidden from real users, obscure name to avoid autofill */}
               <div className="absolute -left-[9999px] opacity-0" aria-hidden="true">
-                <label htmlFor="website">Website</label>
+                <label htmlFor="hp_field">Leave this field blank</label>
                 <input
                   type="text"
-                  id="website"
-                  name="website"
-                  value={formData.website}
-                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  id="hp_field"
+                  name="hp_field"
+                  value={formData.hp_field}
+                  onChange={(e) => setFormData({ ...formData, hp_field: e.target.value })}
                   tabIndex={-1}
                   autoComplete="off"
                 />
