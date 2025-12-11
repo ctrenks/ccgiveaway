@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -43,27 +43,23 @@ export default function AdminProducts() {
     setDisplayCount(ITEMS_PER_PAGE);
   }, [searchQuery]);
 
-  // Infinite scroll observer
-  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
-    const [entry] = entries;
-    if (entry.isIntersecting) {
-      setDisplayCount(prev => prev + ITEMS_PER_PAGE);
-    }
-  }, []);
-
+  // Infinite scroll - load more when scrolling near bottom
   useEffect(() => {
-    const observer = new IntersectionObserver(handleObserver, {
-      root: null,
-      rootMargin: "200px",
-      threshold: 0,
-    });
+    const currentRef = loadMoreRef.current;
+    if (!currentRef) return;
 
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current);
-    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setDisplayCount(prev => prev + ITEMS_PER_PAGE);
+        }
+      },
+      { rootMargin: "200px" }
+    );
 
+    observer.observe(currentRef);
     return () => observer.disconnect();
-  }, [handleObserver]);
+  }, [products, searchQuery]); // Re-observe when products or search changes
 
   const fetchProducts = async () => {
     const res = await fetch("/api/admin/products");
@@ -401,19 +397,21 @@ export default function AdminProducts() {
       </div>
 
       {/* Load More Trigger / Status */}
-      <div className="mt-4 text-center">
+      <div ref={loadMoreRef} className="mt-4 text-center py-4">
         {hasMore ? (
-          <div ref={loadMoreRef} className="py-4">
-            <div className="inline-flex items-center gap-2 text-slate-400">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
-              <span>Loading more... ({displayedProducts.length} of {filteredProducts.length})</span>
-            </div>
+          <div className="inline-flex items-center gap-2 text-slate-400">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+            <span>Scroll for more... ({displayedProducts.length} of {filteredProducts.length})</span>
           </div>
         ) : filteredProducts.length > ITEMS_PER_PAGE ? (
-          <p className="text-slate-500 py-4">
+          <p className="text-slate-500">
             Showing all {filteredProducts.length} products
           </p>
-        ) : null}
+        ) : (
+          <p className="text-slate-500">
+            {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'}
+          </p>
+        )}
       </div>
 
       {/* Image Preview Tooltip */}
