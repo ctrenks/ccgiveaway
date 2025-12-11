@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -21,6 +21,8 @@ interface Product {
   subType: { id: string; name: string } | null;
 }
 
+const ITEMS_PER_PAGE = 50;
+
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [totalValue, setTotalValue] = useState<number | null>(null);
@@ -29,10 +31,39 @@ export default function AdminProducts() {
   const [updatingQuantity, setUpdatingQuantity] = useState<string | null>(null);
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
   const [updatingProduct, setUpdatingProduct] = useState<string | null>(null);
+  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Reset display count when search changes
+  useEffect(() => {
+    setDisplayCount(ITEMS_PER_PAGE);
+  }, [searchQuery]);
+
+  // Infinite scroll observer
+  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
+    const [entry] = entries;
+    if (entry.isIntersecting) {
+      setDisplayCount(prev => prev + ITEMS_PER_PAGE);
+    }
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(handleObserver, {
+      root: null,
+      rootMargin: "200px",
+      threshold: 0,
+    });
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [handleObserver]);
 
   const fetchProducts = async () => {
     const res = await fetch("/api/admin/products");
@@ -153,6 +184,10 @@ export default function AdminProducts() {
     );
   });
 
+  // Paginate - show only displayCount items
+  const displayedProducts = filteredProducts.slice(0, displayCount);
+  const hasMore = displayCount < filteredProducts.length;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -240,14 +275,14 @@ export default function AdminProducts() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
-            {filteredProducts.length === 0 ? (
+            {displayedProducts.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
                   {searchQuery ? `No products found matching "${searchQuery}"` : "No products yet. Add your first product!"}
                 </td>
               </tr>
             ) : (
-              filteredProducts.map((product) => (
+              displayedProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-slate-800/30">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -363,6 +398,22 @@ export default function AdminProducts() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Load More Trigger / Status */}
+      <div className="mt-4 text-center">
+        {hasMore ? (
+          <div ref={loadMoreRef} className="py-4">
+            <div className="inline-flex items-center gap-2 text-slate-400">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+              <span>Loading more... ({displayedProducts.length} of {filteredProducts.length})</span>
+            </div>
+          </div>
+        ) : filteredProducts.length > ITEMS_PER_PAGE ? (
+          <p className="text-slate-500 py-4">
+            Showing all {filteredProducts.length} products
+          </p>
+        ) : null}
       </div>
 
       {/* Image Preview Tooltip */}
