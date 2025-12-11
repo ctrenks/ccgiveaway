@@ -7,7 +7,8 @@ import {
 } from "@/lib/tcgplayer";
 
 // Vercel Cron - runs every hour, syncs products older than 3 days
-// Uses TCGPlayer public API (fast!) with Scrapfly fallback
+// Uses TCGPlayer APIs directly (pricepoints API for foil/normal prices)
+// No Scrapfly needed - pure API calls, fast and free!
 // Processes 50 products per run with smart failsafes
 // Add to vercel.json: { "crons": [{ "path": "/api/cron/sync-prices", "schedule": "0 * * * *" }] }
 
@@ -160,7 +161,7 @@ export async function GET(request: NextRequest) {
             originalPrice: originalPrice,
             price: newPrice,
             lastPriceSync: new Date(),
-            // Update all card data fields (since we have Scrapfly data)
+            // Update all card data fields from API
             cardNumber: tcgProduct.cardNumber || product.cardNumber,
             cardType: tcgProduct.cardType || product.cardType,
             description: tcgProduct.description || product.description,
@@ -201,7 +202,7 @@ export async function GET(request: NextRequest) {
     // Log the sync
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`Price sync completed in ${duration}s: ${results.updated} updated, ${results.requiresReview} require review, ${results.failed} failed, ${results.skipped} skipped`);
-    console.log(`  Using TCGPlayer API - ${results.total} products processed in ${duration}s (~${(parseFloat(duration) / Math.max(results.total, 1)).toFixed(2)}s per product)`);
+    console.log(`  Using TCGPlayer pricepoints API - ${results.total} products processed in ${duration}s (~${(parseFloat(duration) / Math.max(results.total, 1)).toFixed(2)}s per product)`);
 
     // Log items requiring review for admin attention
     if (results.requiresReview > 0) {

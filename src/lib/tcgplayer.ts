@@ -100,15 +100,15 @@ async function fetchWithScrapfly(url: string): Promise<string | null> {
     if (data.result?.content) {
       const html = data.result.content;
       console.log("✓ Scrapfly returned HTML, length:", html.length);
-      
+
       // Check if it's the Vue shell (no prices)
       if (html.includes("hostInit") && html.length < 50000) {
         console.warn("⚠️ Vue shell only - prices not rendered");
       }
-      
+
       // Log a sample of the HTML to see what we got
       console.log("HTML preview (first 1000 chars):", html.substring(0, 1000));
-      
+
       return html;
     }
 
@@ -329,6 +329,51 @@ async function fetchFromTCGPlayerAPI(productId: string): Promise<any | null> {
 }
 
 /**
+ * Fetch pricepoints from TCGPlayer API - gets SEPARATE normal and foil prices!
+ * This is the key API for accurate pricing.
+ */
+async function fetchPricepoints(productId: string): Promise<{ normalPrice: number; foilPrice: number } | null> {
+  try {
+    const apiUrl = `https://mpapi.tcgplayer.com/v2/product/${productId}/pricepoints`;
+    console.log("Fetching pricepoints from TCGPlayer:", apiUrl);
+
+    const response = await fetch(apiUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      console.error("TCGPlayer pricepoints API error:", response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log("TCGPlayer pricepoints response:", data);
+
+    let normalPrice = 0;
+    let foilPrice = 0;
+
+    for (const pricepoint of data) {
+      if (pricepoint.printingType === "Normal") {
+        normalPrice = pricepoint.marketPrice || 0;
+      }
+      if (pricepoint.printingType === "Foil") {
+        foilPrice = pricepoint.marketPrice || 0;
+      }
+    }
+
+    console.log(`Pricepoints: Normal=$${normalPrice}, Foil=$${foilPrice}`);
+    return { normalPrice, foilPrice };
+  } catch (error) {
+    console.error("TCGPlayer pricepoints fetch error:", error);
+    return null;
+  }
+}
+
+/**
  * Convert API data to our TCGPlayerProduct format
  */
 function parseAPIData(
@@ -401,7 +446,7 @@ function parseAPIData(
   // Handle foil-only vs normal-only vs both
   let marketPrice = 0;
   let foilPrice = 0;
-  
+
   if (apiData.foilOnly) {
     // Foil-only card: marketPrice goes to foilPrice
     foilPrice = apiData.marketPrice || 0;
@@ -611,8 +656,8 @@ export async function fetchTCGPlayerProduct(
 }
 
 /**
- * Fetch product with prices from Scrapfly (for cron price updates)
- * Gets accurate normal/foil price separation PLUS all card data
+ * Fetch product with prices using TCGPlayer APIs (no Scrapfly needed!)
+ * Uses the pricepoints API for accurate normal/foil price separation
  */
 export async function fetchTCGPlayerProductWithPrices(
   url: string
@@ -624,50 +669,56 @@ export async function fetchTCGPlayerProductWithPrices(
     }
 
     console.log(
-      "Fetching TCGPlayer product WITH PRICES (Scrapfly for prices, API for data):",
+      "Fetching TCGPlayer product WITH PRICES (pure API - no Scrapfly!):",
       parsed.productId
     );
 
-    // Use Scrapfly to get HTML with prices
-    let html = await fetchWithScrapfly(url);
-    if (!html) {
-      console.log("Scrapfly failed, trying direct fetch...");
-      html = await fetchDirect(url);
-    }
-
-    if (!html) {
-      throw new Error("Failed to fetch page content");
-    }
-
-    // Extract prices from HTML
-    const prices = extractPricesFromHTML(html);
-    console.log("Extracted prices from HTML - Normal:", prices.normal, "Foil:", prices.foil);
-
-    // Get card data from API
+    // Get card data from product details API
     const apiData = await fetchFromTCGPlayerAPI(parsed.productId);
 
+    // Get separate normal/foil prices from pricepoints API
+    const priceData = await fetchPricepoints(parsed.productId);
+
     if (apiData) {
-      // Use API data + HTML prices
+      // Use API data
       const product = parseAPIData(
         apiData,
         url,
         parsed.game
       ) as TCGPlayerProduct;
-      
-      // Override with HTML prices if we got them
-      if (prices.normal > 0 || prices.foil > 0) {
-        console.log("✓ Using HTML prices (Scrapfly)");
-        product.marketPrice = prices.normal || 0;
-        product.foilPrice = prices.foil || 0;
-        product.listedPrice = prices.normal || 0;
+
+      // Use pricepoints API for accurate normal/foil prices
+      if (priceData) {
+        console.log("✓ Using pricepoints API for prices");
+        product.marketPrice = priceData.normalPrice || 0;
+        product.foilPrice = priceData.foilPrice || 0;
+        product.listedPrice = priceData.normalPrice || priceData.foilPrice || 0;
+
+        // If foilOnly, the "marketPrice" from main API is actually foil
+        if (apiData.foilOnly && priceData.foilPrice > 0) {
+          product.marketPrice = 0; // No normal version exists
+          product.listedPrice = priceData.foilPrice;
+        }
+        // If normalOnly, no foil version exists
+        if (apiData.normalOnly) {
+          product.foilPrice = 0;
+        }
       } else {
-        console.log("✓ HTML had no prices, using API marketPrice");
+        console.log("✓ Pricepoints failed, using main API marketPrice");
       }
 
       return product;
     }
 
-    // Fallback to pure HTML scraping if API fails
+    // Fallback to HTML scraping if API fails
+    console.log("API failed, falling back to HTML scraping...");
+    const html = await fetchDirect(url);
+    if (!html) {
+      throw new Error("Failed to fetch page content");
+    }
+
+    const prices = extractPricesFromHTML(html);
+
     const product: TCGPlayerProduct = {
       productId: parsed.productId,
       url,
