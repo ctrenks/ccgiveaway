@@ -14,22 +14,22 @@ import {
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
-  
+
   try {
     // Verify this is a legitimate cron request
     const authHeader = request.headers.get("authorization");
     const vercelCron = request.headers.get("x-vercel-cron");
-    
+
     // Allow if either:
     // 1. Valid CRON_SECRET provided (for manual testing)
     // 2. Request has x-vercel-cron header (automatic from Vercel)
-    const isAuthorized = 
+    const isAuthorized =
       (process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`) ||
       vercelCron === "1"; // Vercel sets this to "1" for cron jobs
-    
+
     if (!isAuthorized) {
-      return NextResponse.json({ 
-        error: "Unauthorized - must be called by Vercel Cron or with valid CRON_SECRET" 
+      return NextResponse.json({
+        error: "Unauthorized - must be called by Vercel Cron or with valid CRON_SECRET"
       }, { status: 401 });
     }
 
@@ -88,15 +88,15 @@ export async function GET(request: NextRequest) {
           });
           continue;
         }
-        
+
         console.log(`  Fetched prices - Normal: $${tcgProduct.marketPrice}, Foil: $${tcgProduct.foilPrice}`);
 
 
         // Use foil price if product is foil, otherwise use normal price
-        const originalPrice = product.isFoil 
+        const originalPrice = product.isFoil
           ? (tcgProduct.foilPrice || tcgProduct.marketPrice)
           : (tcgProduct.marketPrice || tcgProduct.foilPrice);
-        
+
         if (!originalPrice) {
           results.skipped++;
           results.details.push({
@@ -126,8 +126,8 @@ export async function GET(request: NextRequest) {
         }
 
         // Failsafe 2: Check if price change is more than 10%
-        const priceChangePercent = oldPrice > 0 
-          ? Math.abs((newPrice - oldPrice) / oldPrice) * 100 
+        const priceChangePercent = oldPrice > 0
+          ? Math.abs((newPrice - oldPrice) / oldPrice) * 100
           : 0;
 
         if (priceChangePercent > 10) {
@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
             reason: `Price change: ${priceChangePercent.toFixed(1)}% (${oldPrice > newPrice ? 'decrease' : 'increase'})`,
           });
           console.warn(`Flagged for review: ${product.name} - ${priceChangePercent.toFixed(1)}% change ($${oldPrice} → $${newPrice})`);
-          
+
           // Update lastPriceSync so we don't keep checking this same product every hour
           await prisma.product.update({
             where: { id: product.id },

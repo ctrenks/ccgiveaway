@@ -1,10 +1,11 @@
 // Test Scrapfly directly to see what's being returned
 // Run: node scripts/test-scrapfly.js
 
-const fs = require('fs');
+const fs = require("fs");
 
 const SCRAPFLY_API_KEY = process.env.SCRAPFLY_API_KEY;
-const TEST_URL = "https://www.tcgplayer.com/product/238607/magic-modern-horizons-2-arid-mesa?page=1&Language=English";
+const TEST_URL =
+  "https://www.tcgplayer.com/product/238607/magic-modern-horizons-2-arid-mesa?page=1&Language=English";
 
 async function testScrapfly() {
   if (!SCRAPFLY_API_KEY) {
@@ -89,7 +90,9 @@ async function testScrapfly() {
       console.log("\n💵 Scrapfly cost:", data.context.cost.total, "credits");
     }
 
-    console.log("\n✅ Done! Check scrapfly-response.json and scrapfly-page.html");
+    console.log(
+      "\n✅ Done! Check scrapfly-response.json and scrapfly-page.html"
+    );
   } catch (error) {
     console.error("❌ Error:", error.message);
     process.exit(1);
@@ -97,4 +100,3 @@ async function testScrapfly() {
 }
 
 testScrapfly();
-
