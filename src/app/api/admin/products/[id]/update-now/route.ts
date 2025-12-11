@@ -56,13 +56,20 @@ export async function POST(
     };
 
     // Calculate new price based on foil status
+    console.log(`Product isFoil: ${product.isFoil}`);
+    console.log(`TCG Normal Price: $${tcgProduct.marketPrice}, Foil Price: $${tcgProduct.foilPrice}`);
+
     const originalPrice = product.isFoil
       ? (tcgProduct.foilPrice || tcgProduct.marketPrice || 0)
       : (tcgProduct.marketPrice || tcgProduct.foilPrice || 0);
 
-    const newPrice = originalPrice > 0 
+    console.log(`Selected originalPrice: $${originalPrice} (using ${product.isFoil ? 'foil' : 'normal'} price)`);
+
+    const newPrice = originalPrice > 0
       ? calculateDiscountedPrice(originalPrice, discountSettings)
       : Number(product.price);
+
+    console.log(`Discounted newPrice: $${newPrice}`);
 
     // Update product with all new data
     const updated = await prisma.product.update({
@@ -96,6 +103,8 @@ export async function POST(
         newPrice: Number(updated.price),
         normalPrice: tcgProduct.marketPrice,
         foilPrice: tcgProduct.foilPrice,
+        usedPrice: product.isFoil ? "foil" : "normal",
+        isFoil: product.isFoil,
       },
     });
   } catch (error) {
@@ -108,4 +117,3 @@ export async function POST(
     );
   }
 }
-

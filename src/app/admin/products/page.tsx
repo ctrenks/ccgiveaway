@@ -103,7 +103,7 @@ export default function AdminProducts() {
   };
 
   const updateProductNow = async (productId: string) => {
-    if (!confirm("Update this product's prices and data from TCGPlayer now? This will use Scrapfly.")) {
+    if (!confirm("Update this product's prices and data from TCGPlayer now?")) {
       return;
     }
 
@@ -121,8 +121,10 @@ export default function AdminProducts() {
           `Product updated successfully!\n\n` +
           `Old Price: $${data.changes.oldPrice}\n` +
           `New Price: $${data.changes.newPrice}\n` +
-          `Normal: $${data.changes.normalPrice}\n` +
-          `Foil: $${data.changes.foilPrice}`
+          `\nTCGPlayer Prices:\n` +
+          `Normal: $${data.changes.normalPrice || 'N/A'}\n` +
+          `Foil: $${data.changes.foilPrice || 'N/A'}\n` +
+          `\nUsed: ${data.changes.usedPrice?.toUpperCase()} price (isFoil: ${data.changes.isFoil})`
         );
         // Refresh products list
         fetchProducts();
