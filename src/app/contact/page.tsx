@@ -1,7 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+
+// Generate a simple math challenge
+function generateMathChallenge(): { question: string; answer: number } {
+  const a = Math.floor(Math.random() * 10) + 1;
+  const b = Math.floor(Math.random() * 10) + 1;
+  return { question: `${a} + ${b}`, answer: a + b };
+}
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -10,10 +17,18 @@ export default function ContactPage() {
     subject: "",
     message: "",
     hp_field: "", // Honeypot field - obscure name to avoid autofill
+    mathAnswer: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [mathChallenge, setMathChallenge] = useState<{ question: string; answer: number } | null>(null);
+  const [formLoadTime] = useState(Date.now());
+
+  // Generate math challenge on client side only
+  useEffect(() => {
+    setMathChallenge(generateMathChallenge());
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +37,20 @@ export default function ContactPage() {
     if (formData.hp_field) {
       console.log("🤖 Honeypot triggered - likely spam");
       setSuccess(true);
+      return;
+    }
+
+    // Check math challenge
+    if (!mathChallenge || parseInt(formData.mathAnswer) !== mathChallenge.answer) {
+      setError("Please solve the math problem correctly.");
+      return;
+    }
+
+    // Check if form was filled too fast (less than 2 seconds = bot)
+    const timeTaken = Date.now() - formLoadTime;
+    if (timeTaken < 2000) {
+      console.log("🤖 Form submitted too fast - likely spam");
+      setSuccess(true); // Fake success to not alert bot
       return;
     }
 
@@ -47,7 +76,7 @@ export default function ContactPage() {
       }
 
       setSuccess(true);
-      setFormData({ name: "", email: "", subject: "", message: "", hp_field: "" });
+      setFormData({ name: "", email: "", subject: "", message: "", hp_field: "", mathAnswer: "" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send message");
     } finally {
@@ -162,6 +191,27 @@ export default function ContactPage() {
                   placeholder="How can we help you?"
                 />
               </div>
+
+              {/* Math Challenge - Simple captcha alternative */}
+              {mathChallenge && (
+                <div>
+                  <label htmlFor="mathAnswer" className="block text-sm font-medium text-slate-300 mb-2">
+                    Quick verification: What is {mathChallenge.question}? *
+                  </label>
+                  <input
+                    type="text"
+                    id="mathAnswer"
+                    inputMode="numeric"
+                    value={formData.mathAnswer}
+                    onChange={(e) => setFormData({ ...formData, mathAnswer: e.target.value })}
+                    required
+                    className="w-32 bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors"
+                    placeholder="?"
+                    autoComplete="off"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">This helps us prevent spam</p>
+                </div>
+              )}
 
               {/* Honeypot field - hidden from real users, obscure name to avoid autofill */}
               <div className="absolute -left-[9999px] opacity-0" aria-hidden="true">

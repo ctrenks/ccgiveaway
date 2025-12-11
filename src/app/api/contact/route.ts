@@ -28,6 +28,62 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
+// Detect gibberish/spam content
+function isGibberish(text: string): boolean {
+  // Check for very short messages (often spam)
+  if (text.trim().length < 10) return true;
+
+  // Check for random character strings (like "zyyUmchW")
+  // Pattern: mostly consonants, weird capitalization, no spaces in long words
+  const words = text.split(/\s+/);
+  for (const word of words) {
+    // Skip short words
+    if (word.length < 6) continue;
+
+    // Count vowels vs consonants
+    const vowels = (word.match(/[aeiouAEIOU]/g) || []).length;
+    const ratio = vowels / word.length;
+
+    // Normal English words have ~35-40% vowels
+    // Random strings often have very few vowels
+    if (ratio < 0.15 && word.length > 5) {
+      return true;
+    }
+  }
+
+  // Check for excessive special characters (spam often has weird chars)
+  const specialCharRatio = (text.match(/[^a-zA-Z0-9\s.,!?'"()-]/g) || []).length / text.length;
+  if (specialCharRatio > 0.2) return true;
+
+  // Check for repeated characters (like "aaaaaaa")
+  if (/(.)\1{4,}/i.test(text)) return true;
+
+  return false;
+}
+
+// Check if email domain looks suspicious
+function isSuspiciousEmail(email: string): boolean {
+  const domain = email.split("@")[1]?.toLowerCase();
+  if (!domain) return true;
+
+  // Known disposable email domains (add more as needed)
+  const disposableDomains = [
+    "tempmail.com", "throwaway.com", "mailinator.com", "guerrillamail.com",
+    "10minutemail.com", "temp-mail.org", "fakeinbox.com", "trashmail.com"
+  ];
+
+  if (disposableDomains.some(d => domain.includes(d))) return true;
+
+  // Check for gibberish in domain
+  const domainName = domain.split(".")[0];
+  if (domainName && domainName.length > 10) {
+    const vowels = (domainName.match(/[aeiou]/g) || []).length;
+    if (vowels / domainName.length < 0.15) return true;
+  }
+
+  return false;
+}
+
 export async function POST(request: Request) {
   try {
     // Get IP for rate limiting
@@ -74,6 +130,16 @@ export async function POST(request: Request) {
         { error: "Message is too long (max 5000 characters)" },
         { status: 400 }
       );
+    }
+
+    // Check for spam/gibberish content
+    const isSpamMessage = isGibberish(message) || isGibberish(name);
+    const isSuspiciousSender = isSuspiciousEmail(email);
+
+    if (isSpamMessage) {
+      console.log("🚫 Spam detected - gibberish content:", { name, message: message.substring(0, 50) });
+      // Return success to not alert the spammer
+      return NextResponse.json({ success: true });
     }
 
     // Check if Resend is configured
@@ -131,7 +197,12 @@ export async function POST(request: Request) {
 
     console.log("✅ Contact email sent successfully:", data?.id);
 
-    // Send confirmation email to user
+    // Send confirmation email to user (skip for suspicious emails to prevent bounces)
+    if (isSuspiciousSender) {
+      console.log("⚠️ Skipping confirmation email for suspicious sender:", email);
+      return NextResponse.json({ success: true });
+    }
+
     const { data: confirmData, error: confirmError } = await resend.emails.send({
       from: fromEmail,
       to: email,
